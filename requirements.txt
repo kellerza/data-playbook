@@ -1,0 +1,10 @@
+attr
+voluptuous
+openpyxl
+yaml
+
+# Everything hook
+requests
+
+# Optional, not easy on Windows
+# pandas
