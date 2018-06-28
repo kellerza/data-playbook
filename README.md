@@ -33,8 +33,8 @@ Tasks are implemented as simple Python functions and the modules can be found in
 * drop
 * extend
 * filter
-* fuzzy_match
-* print_table
+* fuzzy_match (`pip install fuzzywuzzy`)
+* print
 * vlookup
 
 ### Module `io_xlsx` (loaded by default)
@@ -46,6 +46,10 @@ Tasks are implemented as simple Python functions and the modules can be found in
 * read_text_regex
 * wget
 * write_csv
+
+### Module `io_pdf`
+* read_pdf_pages
+* read_pdf_files
 
 ### Module `io_xml`
 

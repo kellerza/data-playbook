@@ -9,8 +9,13 @@ import dataplaybook.config_validation as cv
 _LOGGER = logging.getLogger(__name__)
 
 
-RE_DRAFT = re.compile(r"[^-](draft(?:-\w+)+?)(-\d{2})?[^-]")
-RE_RFC = re.compile(r"RFC\s*(\d{3,5})\D")
+RE_DRAFT = re.compile(r"(?:[^-]|^)(draft(?:-\w+)+?)(-\d{2})?(?:[^-]|$)", re.I)
+RE_RFC = re.compile(r"RFC\s*(\d{3,5})(?:\D|$)", re.I)
+RE_OTHER = (
+    re.compile(r"IEEE ?\d{3,4}(?:\.\w+|-\d{4})", re.I),
+    re.compile(r"ITU-T \w\.\d+(?:\.\d+)?", re.I),
+    re.compile(r"GR-\d+-\w+", re.I),
+)
 
 
 @cv.task_schema({
@@ -39,6 +44,11 @@ def task_extract_rfc(table, opt):
                     res = base.copy()
                     res['rfc'] = 'RFC' + match[1]
                     yield res
+                for regex in RE_OTHER:
+                    for match in regex.finditer(val):
+                        res = base.copy()
+                        res['rfc'] = match[0]
+                        yield res
 
 
 @cv.task_schema({

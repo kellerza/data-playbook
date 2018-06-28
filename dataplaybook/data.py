@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 FULL_SCHEMA = vol.Schema({
     vol.Optional("modules", default=[]): vol.All(
         cv.ensure_list, [loader.load_module]),
-    "tasks": vol.All(cv.ensure_list, [loader.validate_tasks]),
+    vol.Required("tasks"): vol.All(cv.ensure_list, [loader.validate_tasks]),
 })
 
 
@@ -54,12 +54,15 @@ class DataPlaybook(object):
         if '_' in yml:
             del yml['_']
 
-        self.config = FULL_SCHEMA(yml)
+        try:
+            self.config = FULL_SCHEMA(yml)
+        except vol.MultipleInvalid as err:
+            _LOGGER.error("Invalid yaml: %s", err)
 
     def print_table(self, table):
         """Print one."""
         task = cv.AttrDict({
-            'task': 'print_table',
+            'task': 'print',
             'tables': [table]
         })
         self._task(task)

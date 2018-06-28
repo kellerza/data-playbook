@@ -77,8 +77,8 @@ def _import(mod_name):
 
     path = Path(mod_name + '.py').resolve(strict=True)
     mod_name = path.stem
-    print(path.parent)
-    print(mod_name)
+    # print(path.parent)
+    # print(mod_name)
 
     sys.path.insert(0, str(path.parent))
     try:
@@ -93,6 +93,9 @@ def load_module(mod_name):
     """Import tasks."""
     try:
         mod_obj = _import(mod_name)
+    except ModuleNotFoundError as err:
+        _LOGGER.error("Could not load module %s: %s", mod_name, err)
+        return
     except FileNotFoundError as err:
         _LOGGER.error("Could not load module %s: %s", mod_name, err)
         return
@@ -106,7 +109,7 @@ def load_module(mod_name):
         if nme.startswith('task_'):
             task = Task(name=nme[5:], function=fun)  # , module=mod_obj)
             if task.name in TASKS:
-                _LOGGER.error(
+                _LOGGER.warning(
                     "Module %s: Skipping task %s. Already loaded from "
                     "%s", mod_name, nme, TASKS[task.name].module)
                 continue

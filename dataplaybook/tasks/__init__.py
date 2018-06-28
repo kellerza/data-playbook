@@ -23,10 +23,7 @@ def _validate_extend(schema):
     return schema
 
 
-@cv.task_schema({
-    # vol.Required('table'): vol.All(cv.ensure_list, [cv.table_use]),
-    # vol.Required('to'): cv.table_use
-}, _validate_extend, tables=(2, 10))
+@cv.task_schema({}, _validate_extend, tables=(2, 10))
 def task_extend(*tables, opt):
     """Extend a table with another table."""
     for tbl in tables[1:]:
@@ -108,7 +105,7 @@ def task_fuzzy_match(table1, table2, opt):
 
 
 @cv.task_schema({}, tables=(1, 10))
-def task_print_table(*tables, opt):
+def task_print(*tables, opt):
     """Prit a table."""
     import shutil
     try:
@@ -138,7 +135,7 @@ def task_print_table(*tables, opt):
 
 @cv.task_schema({}, tables=2, columns=3)
 def task_vlookup(table0, acro, opt):
-    """Filter rows from a table."""
+    """Modify table0[col0], replacing table1[col1] with table1[col2]."""
     _LOGGER.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
     _acro = {}
     for row in acro:

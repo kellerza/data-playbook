@@ -61,7 +61,7 @@ COLS = []
 
 def table_use(value):
     """Check if valid table and already exists."""
-    value = slug(value)
+    # value = slug(value)
     if value not in TABLES:
         raise vol.Invalid("Table {} does not exist".format(value))
     global LASTTABLE
@@ -71,7 +71,7 @@ def table_use(value):
 
 def table_add(value):
     """Check if valid table and add to the list."""
-    value = slug(value)
+    # value = slug(value)
     TABLES.append(value)
     global LASTTABLE
     LASTTABLE = value
