@@ -1,12 +1,13 @@
 """Merge FNB statement."""
 import csv
 import logging
-import re
 import os
+import re
 import traceback
 from datetime import datetime
 
 import voluptuous as vol
+
 import dataplaybook.config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ CHANGE_DAY = 7  # The day at which the months change for budget purposes
 def budget_date(date):
     """Get a budget month date from the actual date."""
     if isinstance(date, datetime):
-        if date.month > 7:
+        if date.day > 7:
             return datetime(date.year, date.month, 1)
         if date.month > 1:  # decrease by 1 month
             return datetime(date.year, date.month-1, 1)
@@ -185,7 +186,7 @@ def task_fnb_process(*tables, opt):
                 yield _clean(row)
 
             # Cheque transaction
-            if 'id' in row:
+            elif 'id' in row:
                 yield _clean(row)
 
             # credit card
@@ -232,19 +233,3 @@ def task_fnb_read_folder(tables, opt):
             _LOGGER.error(
                 "Could not read %s: %s", filename, traceback.print_exc())
     _LOGGER.info("Success with %s lines", retval.get('total', 0))
-
-
-@cv.task_schema({
-    vol.Required('replace'): dict,
-}, tables=1, columns=1)
-def task_replace(table, opt):
-    """Replace word in a column."""
-    col = opt.columns[0]
-    for row in table:
-        if col not in row:
-            continue
-        for _from, _to in opt.replace.items():
-            if not _to:
-                _to = _from + " "
-            if row[col].find(_from) >= 0:
-                row[col] = row[col].replace(_from, _to)

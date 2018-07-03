@@ -1,10 +1,9 @@
 """Data validation helpers for voluptuous."""
+import logging
 import os
 import re
-import logging
 from collections import OrderedDict
-
-from typing import Any, Union, Sequence, TypeVar
+from typing import Any, Sequence, TypeVar, Union
 
 import voluptuous as vol
 
@@ -83,7 +82,7 @@ def _col(value, table=None):
         raise vol.Invalid("Empty column name")
     if table is None and '.' in value:
         table, _, value = value.partition('.')
-    value = slug(value)
+    # value = slug(value)
     if table is None:
         table = LASTTABLE
     fullname = "{}.{}".format(table, value)
@@ -200,7 +199,7 @@ def task_schema(  # pylint: disable=invalid-name
         else:
             _len = vol.Length(min=columns, max=columns)
         base[vol.Required('columns')] = vol.All(
-            ensure_list, _len, [slug])
+            ensure_list, _len, [str])  # was slug
 
     for key, val in new.items():
         base[key] = val

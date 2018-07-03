@@ -35,6 +35,8 @@ Tasks are implemented as simple Python functions and the modules can be found in
 * filter
 * fuzzy_match (`pip install fuzzywuzzy`)
 * print
+* replace
+* unique
 * vlookup
 
 ### Module `io_xlsx` (loaded by default)
@@ -47,7 +49,13 @@ Tasks are implemented as simple Python functions and the modules can be found in
 * wget
 * write_csv
 
-### Module `io_pdf`
+### Module `io_mongo` (uses pymongo)
+* read_mongo
+* write_mongo
+* columns_to_list
+* list_to_columns
+
+### Module `io_pdf` (requires pdftotext)
 * read_pdf_pages
 * read_pdf_files
 
@@ -58,3 +66,9 @@ Tasks are implemented as simple Python functions and the modules can be found in
 ### Module `gis`
 
 ### Module `fnb`
+
+
+## Install development version
+
+1. Clone the repo
+2. `pip install <path> -e`

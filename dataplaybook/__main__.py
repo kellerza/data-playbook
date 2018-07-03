@@ -1,12 +1,13 @@
 """Datatask script."""
-# import argparse
 import argparse
-import sys
 import os
+import sys
 from pathlib import Path
 
-from dataplaybook.data import DataPlaybook, setup_logger, loader
+import voluptuous as vol
+
 from dataplaybook.const import VERSION
+from dataplaybook.data import DataPlaybook, loader, setup_logger
 
 
 def main():
@@ -32,10 +33,17 @@ def main():
     loader.load_module('dataplaybook.tasks.io_xlsx')
     loader.load_module('dataplaybook.tasks.io_misc')
 
+    tasks = []
     for file in files:
         if file.parent:
             os.chdir(file.parent)
-        task = DataPlaybook(yaml_file=file.name)
+        try:
+            tasks.append(DataPlaybook(yaml_file=file.name))
+        except vol.MultipleInvalid:
+            print('Please fix validation errors in {}'.format(file.name))
+            return 1
+
+    for task in tasks:
         task.run()
 
     return 0

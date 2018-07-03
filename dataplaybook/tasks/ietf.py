@@ -11,11 +11,36 @@ _LOGGER = logging.getLogger(__name__)
 
 RE_DRAFT = re.compile(r"(?:[^-]|^)(draft(?:-\w+)+?)(-\d{2})?(?:[^-]|$)", re.I)
 RE_RFC = re.compile(r"RFC\s*(\d{3,5})(?:\D|$)", re.I)
+RE_IEEE = re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)
+RE_ITUT = re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)
 RE_OTHER = (
-    re.compile(r"IEEE ?\d{3,4}(?:\.\w+|-\d{4})", re.I),
-    re.compile(r"ITU-T \w\.\d+(?:\.\d+)?", re.I),
     re.compile(r"GR-\d+-\w+", re.I),
 )
+
+
+class Str(str):
+    """String with attributes."""
+    pass
+
+
+def extract_rfc(val):
+    """Extract standards from a string."""
+    for match in RE_RFC.finditer(val):
+        yield 'RFC' + match[1]
+    for match in RE_IEEE.finditer(val):
+        yield 'IEEE ' + match[1]
+    for match in RE_ITUT.finditer(val):
+        yield 'ITU-T ' + match[1].upper()
+    for match in RE_DRAFT.finditer(val):
+        if match[2]:
+            astr = Str(match[1] + match[2])
+            setattr(astr, 'draft', (match[1], match[2]))
+            yield astr
+        else:
+            yield match[1]
+    for regex in RE_OTHER:
+        for match in regex.finditer(val):
+            yield match[0]
 
 
 @cv.task_schema({
@@ -35,20 +60,15 @@ def task_extract_rfc(table, opt):
         for coln in opt.columns:
             val = row.get(coln, None)
             if val:
-                for match in RE_DRAFT.finditer(val):
+                for match in extract_rfc(val):
                     res = base.copy()
-                    res['rfc'] = match[1]
-                    res['rev'] = match[2]
-                    yield res
-                for match in RE_RFC.finditer(val):
-                    res = base.copy()
-                    res['rfc'] = 'RFC' + match[1]
-                    yield res
-                for regex in RE_OTHER:
-                    for match in regex.finditer(val):
-                        res = base.copy()
-                        res['rfc'] = match[0]
+                    if getattr(match, 'draft', False):
+                        res['rfc'] = getattr(match, "draft")[0]
+                        res['rev'] = getattr(match, "draft")[1]
                         yield res
+                        continue
+                    res['rfc'] = match
+                    yield res
 
 
 @cv.task_schema({
@@ -58,13 +78,6 @@ def task_add_rfc_column(table, opt):
     """Extract all RFCs from a table."""
     for row in table:
         val = row.get(opt.columns[0])
-        new = []
-
-        for match in RE_DRAFT.finditer(val):
-            new.append(match[1])
-
-        for match in RE_RFC.finditer(val):
-            new.append(match[1])
-
+        new = list(extract_rfc(val))
         if new:
             row[opt.rfc_col] = ', '.join(new)

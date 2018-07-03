@@ -133,6 +133,36 @@ def task_print(*tables, opt):
                 print(' ', row)
 
 
+@cv.task_schema({
+    vol.Required('replace'): dict,
+}, tables=1, columns=1)
+def task_replace(table, opt):
+    """Replace word in a column."""
+    col = opt.columns[0]
+    for row in table:
+        if col not in row:
+            continue
+        for _from, _to in opt.replace.items():
+            if not _to:
+                _to = _from + " "
+            if row[col].find(_from) >= 0:
+                row[col] = row[col].replace(_from, _to)
+
+
+@cv.task_schema({
+    vol.Required('key'): cv.col_use
+}, tables=1, kwargs=True)
+def task_unique(table, key):
+    """Unique based on a key."""
+    seen = {}
+    for row in table:
+        key = row[key]
+        if key in seen:
+            continue
+        seen[key] = 1
+        yield row
+
+
 @cv.task_schema({}, tables=2, columns=3)
 def task_vlookup(table0, acro, opt):
     """Modify table0[col0], replacing table1[col1] with table1[col2]."""

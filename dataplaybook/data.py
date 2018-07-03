@@ -58,6 +58,7 @@ class DataPlaybook(object):
             self.config = FULL_SCHEMA(yml)
         except vol.MultipleInvalid as err:
             _LOGGER.error("Invalid yaml: %s", err)
+            raise err
 
     def print_table(self, table):
         """Print one."""
@@ -93,7 +94,7 @@ class DataPlaybook(object):
         try:
             if getattr(task.function, 'kwargs', False):
                 kwargs = {k: v for k, v in opt.items()
-                          if k not in ['task', 'debug*', 'target']}
+                          if k not in ['task', 'debug*', 'target', 'tables']}
                 res = task.function(*tables, **kwargs)
             else:
                 res = task.function(*tables, opt=opt)
@@ -117,6 +118,9 @@ class DataPlaybook(object):
 
     def run(self):
         """Execute a lists of tasks."""
+        if 'tasks' not in self.config:
+            _LOGGER.error('No "tasks". Did validation fail?')
+            return
         len_tasks = len(self.config['tasks'])
         for idx, opt in enumerate(self.config['tasks'], 1):
             _LOGGER.info("Task %s/%s: %s", idx, len_tasks, opt)
