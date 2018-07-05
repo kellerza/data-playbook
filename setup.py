@@ -1,7 +1,22 @@
 #!/usr/bin/env python
 """dataplaybook setup."""
+import re
+
 from setuptools import setup
-from dataplaybook.const import VERSION
+
+
+def find_version():
+    """Retrieve the version."""
+    with open("dataplaybook/const.py") as const_py:
+        version_match = re.search(r"^VERSION = ['\"]([^'\"]+)['\"]",
+                                  const_py.read(), re.M)
+        if version_match:
+            return version_match.group(1)
+        raise RuntimeError("Unable to find version string.")
+
+
+VERSION = find_version()
+print('version', VERSION)
 
 REQUIRES = [
     'attrs>=17.4.0',
