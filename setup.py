@@ -16,7 +16,6 @@ def find_version():
 
 
 VERSION = find_version()
-print('version', VERSION)
 
 REQUIRES = [
     'attrs>=17.4.0',
@@ -27,6 +26,9 @@ REQUIRES = [
 
 MIN_PY_VERSION = '3.5.3'
 REPO = 'https://github.com/kellerza/data-playbook'
+# Get README.md for packaging
+with open('README.md', encoding='utf-8') as _file:
+    DESCRIPTION = _file.read()
 
 setup(
     name='dataplaybook',
@@ -45,5 +47,7 @@ setup(
         'console_scripts': [
             'dataplaybook = dataplaybook.__main__:main'
         ]},
-    zip_safe=True
+    zip_safe=True,
+    long_description=DESCRIPTION,
+    long_description_content_type='text/markdown'
 )

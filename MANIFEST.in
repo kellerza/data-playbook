@@ -1,5 +1,6 @@
 include LICENSE README.md
-recursive-include everything *.py
-recursive-include dataplaybook/tasks *.py
-recursive-exclude * __pycache__
+graft dataplaybook
+graft everything
 recursive-exclude * *.py[co]
+exclude dataplaybook.egg-info
+prune dataplaybook.egg-info
