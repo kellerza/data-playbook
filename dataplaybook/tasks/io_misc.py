@@ -1,5 +1,9 @@
 """CSV IO tasks."""
 import time
+import urllib.request
+from urllib.parse import urlparse
+
+from os import getenv
 from pathlib import Path
 
 import voluptuous as vol
@@ -54,18 +58,29 @@ def task_read_text_regex(_, filename, newline, fields):
 @cv.task_schema({
     vol.Required('file'): str,
     vol.Required('url'): str,
-    vol.Optional('age', default=60*60): int
+    vol.Optional('age', default=48*60*60): int
 }, kwargs=True)
 def task_wget(tables, url, file, age):
     """Download a file."""
-    from urllib.request import urlretrieve
 
     path = Path(file)
     if path.exists():
         if time.time() - path.stat().st_mtime < age:
             return
 
-    urlretrieve(url, file)
+    proxy = getenv('HTTP_PROXY')
+    if proxy:
+        dburl = urlparse(proxy)
+        # create the object, assign it to a variable
+        prx = "{}:{}".format(dburl.hostname, dburl.port)
+        proxy = urllib.request.ProxyHandler(
+            {'http': prx, 'https': prx, 'ftp': prx})
+        # construct a new opener using your proxy settings
+        opener = urllib.request.build_opener(proxy)
+        # install the openen on the module-level
+        urllib.request.install_opener(opener)
+
+    urllib.request.urlretrieve(url, file)
 
 
 @cv.task_schema({

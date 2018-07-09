@@ -139,6 +139,8 @@ TX_IDS = {}
 
 def get_id(acc, month):
     """Return an ID."""
+    if acc is None:
+        acc = '0'
     TX_IDS[(acc, month)] = TX_IDS.get((acc, month), 0) + 1
     return "{:0>16s}.{:04d}.{:04d}".format(
         str(acc), month, TX_IDS[(acc, month)])

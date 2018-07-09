@@ -106,9 +106,10 @@ def get_filename(filename):
 @cv.task_schema({
     vol.Required('file'): cv.endswith('.xlsx'),
     vol.Optional('include'): vol.All(cv.ensure_list, [cv.table_use]),
-    vol.Optional('header', default=[]): vol.All(cv.ensure_list, [str])
+    vol.Optional('header', default=[]): vol.All(cv.ensure_list, [str]),
+    vol.Optional('ensure_string', []): list
 }, kwargs=True)
-def task_write_excel(tables, file, include=None, header=None):
+def task_write_excel(tables, file, ensure_string=[], include=None, header=None):
     """Write an excel file."""
     header = header or []
     wbk = openpyxl.Workbook()
@@ -138,7 +139,9 @@ def task_write_excel(tables, file, include=None, header=None):
         debugs = 2
         for row in tables[table_name]:
             try:
-                wsh.append([row.get(h) for h in hdr])
+                erow = [str(row.get(h, '')) if h in ensure_string
+                        else row.get(h) for h in hdr]
+                wsh.append(erow)
             except ValueError:
                 wsh.append([str(row.get(h, "")) for h in hdr])
                 debugs -= 1

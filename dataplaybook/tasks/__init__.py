@@ -156,7 +156,7 @@ def task_unique(table, key):
     """Unique based on a key."""
     seen = {}
     for row in table:
-        key = row[key]
+        key = row.get(key, None)
         if key in seen:
             continue
         seen[key] = 1

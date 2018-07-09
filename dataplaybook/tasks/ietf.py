@@ -23,9 +23,9 @@ class Str(str):
     pass
 
 
-def extract_rfc(val):
+def extract_standards(val):
     """Extract standards from a string."""
-    for match in RE_RFC.finditer(val):
+    for match in RE_RFC.finditer("RFC" + val):
         yield 'RFC' + match[1]
     for match in RE_IEEE.finditer(val):
         yield 'IEEE ' + match[1]
@@ -34,7 +34,7 @@ def extract_rfc(val):
     for match in RE_DRAFT.finditer(val):
         if match[2]:
             astr = Str(match[1] + match[2])
-            setattr(astr, 'draft', (match[1], match[2]))
+            setattr(astr, 'key', match[1])
             yield astr
         else:
             yield match[1]
@@ -43,12 +43,17 @@ def extract_rfc(val):
             yield match[0]
 
 
+def extract_one_standard(val):
+    """Extract a single standard."""
+    return next(extract_standards(val), None)
+
+
 @cv.task_schema({
     vol.Optional('include_columns', default=[]): vol.All(
         cv.ensure_list, [cv.col_use])
 }, tables=1, columns=(1, 10), target=1)
-def task_extract_rfc(table, opt):
-    """Extract all RFCs from a table."""
+def task_extract_standards(table, opt):
+    """Extract all RFCs from a table, into a new table."""
     header = getattr(table, 'header', 1)
     _LOGGER.debug("Header start at line: %s", header)
     for _no, row in enumerate(table, header):
@@ -60,24 +65,20 @@ def task_extract_rfc(table, opt):
         for coln in opt.columns:
             val = row.get(coln, None)
             if val:
-                for match in extract_rfc(val):
+                for match in extract_standards(val):
                     res = base.copy()
-                    if getattr(match, 'draft', False):
-                        res['rfc'] = getattr(match, "draft")[0]
-                        res['rev'] = getattr(match, "draft")[1]
-                        yield res
-                        continue
-                    res['rfc'] = match
+                    res['name'] = match
+                    res['key'] = getattr(match, 'key', match)
                     yield res
 
 
 @cv.task_schema({
     vol.Required('rfc_col'): cv.col_add
 }, tables=1, columns=(1))
-def task_add_rfc_column(table, opt):
+def task_add_standards_column(table, opt):
     """Extract all RFCs from a table."""
     for row in table:
         val = row.get(opt.columns[0])
-        new = list(extract_rfc(val))
+        new = list(extract_standards(val))
         if new:
             row[opt.rfc_col] = ', '.join(new)
