@@ -4,6 +4,7 @@ import logging
 import os
 import subprocess
 import tempfile
+from pathlib import Path
 
 import voluptuous as vol
 
@@ -54,7 +55,6 @@ def task_read_pdf_pages(tables, opt):
 }, target=1)
 def task_read_pdf_files(tables, opt):
     """Read all files in folder."""
-    from pathlib import Path
     path = Path(opt.folder)
     files = sorted(path.glob(opt.pattern))
     _LOGGER.info("Open %s files", len(files))
@@ -63,5 +63,5 @@ def task_read_pdf_files(tables, opt):
         page_gen = task_read_pdf_pages({}, cv.AttrDict(
             {'filename': str(filename)}))
         for row in page_gen:
-            row['filename'] = str(filename)
+            row['filename'] = str(filename.name)
             yield row
