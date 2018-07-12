@@ -15,24 +15,22 @@ _LOGGER.setLevel(logging.INFO)
 
 
 class AttrDict(dict):
-    """Simple attribute access (i.e. Munch)."""
+    """Simple recursive read-only attribute access (i.e. Munch)."""
 
     def __getattr__(self, key):
-        """Return dict value as attribute."""
-        # try:
         value = self[key]
-        # except KeyError:
-        #     raise KeyError
         return AttrDict(value) if isinstance(value, dict) else value
 
+    def __setattr__(self, key, value):
+        raise NotImplementedError
+
     def __repr__(self):
-        """Represent the Sttrdict."""
         lst = [("{}='{}'" if isinstance(v, str) else "{}={}").format(k, v)
                for k, v in self.items()]
         return '(' + ', '.join(lst) + ')'
 
 
-def DictSchema(value: dict, *more) -> str:  # pylint: disable=invalid-name
+def dict_schema(value: dict, *more) -> str:  # pylint: disable=invalid-name
     """Voluptuous schema that will convert dict to a Munch object."""
     if not isinstance(value, (dict, OrderedDict)):
         raise vol.DictInvalid("Invalid dictonary")
@@ -157,11 +155,6 @@ def util_slugify(text: str) -> str:
     return text
 
 
-# def munch(dictionary: dict) -> dict:
-#     """aa."""
-#     return Munch(dictionary)
-
-
 def endswith(parts):
     """Ensure a string ends with specified part."""
     def _check(_str):
@@ -204,7 +197,7 @@ def task_schema(  # pylint: disable=invalid-name
     for key, val in new.items():
         base[key] = val
 
-    the_schema = DictSchema(base, *more_schema)
+    the_schema = dict_schema(base, *more_schema)
 
     def _deco(func):
         func.schema = the_schema

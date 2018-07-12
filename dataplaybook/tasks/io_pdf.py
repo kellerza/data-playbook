@@ -39,7 +39,8 @@ def task_read_pdf_pages(tables, opt):
     try:
         _fd, to_name = tempfile.mkstemp()
         params = ['pdftotext.cmd', '-layout', opt.filename, to_name]
-        _LOGGER.debug("Calling wit %s", params)
+        _LOGGER.info("Converting %s", opt.filename)
+        _LOGGER.debug("Calling with %s", params)
         subprocess.call(params)
         with open(to_name, 'r') as fle:
             for _no, text in enumerate(myreadlines(fle, chr(12)), 1):

@@ -3,8 +3,14 @@ voluptuous
 openpyxl
 yaml
 
-# Everything hook
+# everything.search
 requests
 
-# Optional, not easy on Windows
-# pandas
+# io_mongo
+pymongo
+
+# fuzzy search
+fuzzywuzzy
+
+# optional
+pandas

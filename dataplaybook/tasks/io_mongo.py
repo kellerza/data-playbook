@@ -1,7 +1,7 @@
 """MongoDB IO tasks."""
 import logging
-from collections import namedtuple
 from urllib.parse import urlparse
+import attr
 
 import voluptuous as vol
 from pymongo import MongoClient
@@ -11,24 +11,45 @@ import dataplaybook.config_validation as cv
 _LOGGER = logging.getLogger(__name__)
 
 
-def validate_uri(uri):
-    """Validate mongodb uri.
-    Additional set_id"""
-    mongo_uri = namedtuple('mongoUri', 'netloc database collection set_id')
-    res = urlparse(uri)
-    if res.scheme != 'db':
-        raise vol.Invalid("db://host:port/database/collection/[set_id]")
-    pth = res.path.split('/')
-    return mongo_uri(
-        res.netloc, pth[1], pth[2], pth[3] if len(pth) == 4 else None)
+@attr.s(slots=True)
+class MongoURI(object):
+    """MongoDB URI."""
+    netloc = attr.ib()
+    database = attr.ib()
+    collection = attr.ib()
+    set_id = attr.ib()
+
+    @staticmethod
+    def from_string(uri):
+        """Validate mongodb uri.
+        Additional set_id"""
+        res = urlparse(uri)
+        if res.scheme != 'db':
+            raise vol.Invalid("db://host:port/database/collection/[set_id]")
+        pth = res.path.split('/')
+        return MongoURI(
+            netloc=res.netloc, database=pth[1], collection=pth[2],
+            set_id=pth[3] if len(pth) == 4 else None)
+
+    @staticmethod
+    def from_dict(opt, db_field='db'):
+        """Validate MongoDB URI. Allow override"""
+        if isinstance(opt.db, str):
+            opt[db_field] = MongoURI.from_string(opt[db_field])
+        if 'set_id' in opt:
+            if opt[db_field].set_id:
+                raise vol.InInvalid("set_id specified, not allowed in db URI")
+            opt[db_field].set_id = opt['set_id']
+            del opt['set_id']
+        return opt
 
 
 @cv.task_schema({
-    vol.Required('db'): validate_uri,
-}, target=1, kwargs=True)
-def task_read_mongo(_, db):  # pylint: disable=invalid-name
+    vol.Required('db'): str,
+    vol.Optional('set_id'): str,
+}, MongoURI.from_dict, target=1, kwargs=True)
+def task_read_mongo(_, db, set_id=None):  # pylint: disable=invalid-name
     """Read data from a MongoDB collection."""
-
     client = MongoClient(db.netloc, connect=True)
     if db.set_id:
         cursor = client[db.database][db.collection].find(
@@ -44,16 +65,17 @@ def task_read_mongo(_, db):  # pylint: disable=invalid-name
 
 
 @cv.task_schema({
-    vol.Required('db'): validate_uri,
-}, tables=1, kwargs=True)
-def task_write_mongo(table, db):  # pylint: disable=invalid-name
+    vol.Required('db'): str,
+    vol.Optional('set_id'): str,
+}, MongoURI.from_dict, tables=1, kwargs=True)
+def task_write_mongo(table, db, set_id=None):  # pylint: disable=invalid-name
     """Write data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
     col = client[db.database][db.collection]
     if db.set_id:
         filtr = {'_sid': db.set_id}
         _LOGGER.info("Replacing %s documents matching %s, %s new",
-                      col.count(filtr), db.set_id, len(table))
+                     col.count(filtr), db.set_id, len(table))
         col.delete_many(filtr)
         client[db.database][db.collection].insert_many(
             [dict(d, _sid=db.set_id) for d in table])
