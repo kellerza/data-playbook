@@ -48,7 +48,7 @@ class MongoURI(object):
     vol.Required('db'): str,
     vol.Optional('set_id'): str,
 }, MongoURI.from_dict, target=1, kwargs=True)
-def task_read_mongo(_, db, set_id=None):  # pylint: disable=invalid-name
+def task_read_mongo(_, db):  # pylint: disable=invalid-name
     """Read data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
     if db.set_id:
@@ -68,7 +68,7 @@ def task_read_mongo(_, db, set_id=None):  # pylint: disable=invalid-name
     vol.Required('db'): str,
     vol.Optional('set_id'): str,
 }, MongoURI.from_dict, tables=1, kwargs=True)
-def task_write_mongo(table, db, set_id=None):  # pylint: disable=invalid-name
+def task_write_mongo(table, db):  # pylint: disable=invalid-name
     """Write data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
     col = client[db.database][db.collection]
