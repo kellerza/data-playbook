@@ -14,33 +14,53 @@ RE_RFC = re.compile(r"RFC\s*(\d{3,5})(?:\D|$)", re.I)
 RE_IEEE = re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)
 RE_ITUT = re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)
 RE_OTHER = (
-    re.compile(r"GR-\d+-\w+", re.I),
+    re.compile(r"(GR-\d+-\w+)", re.I),
+    re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
+    re.compile(r"(3GPP \w+ \d+(\.\d+)+)"),
+    re.compile(r"(\S+-mib)", re.I),
+    re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
+    re.compile(r"(FRF[\.\d]+)"),
+    re.compile(r"(ANSI \S+)"),
 )
 
 
-class Str(str):
-    """String with attributes."""
-    pass
+class KeyStr(str):
+    """Returns string with a key attibute."""
+    @property
+    def key(self):
+        return getattr(self, '__key', self)
+
+    def __new__(cls, text, key=None):
+        """Init the string and the key."""
+        res = super().__new__(cls, text)
+        if key:
+            if not isinstance(key, str):
+                raise TypeError('Key must be a string, not {}'
+                                .format(type(key)))
+            if len(key) > len(text):
+                raise ValueError('Key[{}] should be shorter than value[{}]'
+                                 .format(key, text))
+            setattr(res, '__key', key)
+
+        return res
 
 
 def extract_standards(val):
     """Extract standards from a string."""
     for match in RE_RFC.finditer("RFC" + val):
-        yield 'RFC' + match[1]
-    for match in RE_IEEE.finditer(val):
-        yield 'IEEE ' + match[1]
-    for match in RE_ITUT.finditer(val):
-        yield 'ITU-T ' + match[1].upper()
+        yield KeyStr('RFC' + match[1])
     for match in RE_DRAFT.finditer(val):
         if match[2]:
-            astr = Str(match[1] + match[2])
-            setattr(astr, 'key', match[1])
-            yield astr
+            yield KeyStr(match[1] + match[2], match[1])
         else:
-            yield match[1]
+            yield KeyStr(match[1])
+    for match in RE_IEEE.finditer(val):
+        yield KeyStr('IEEE ' + match[1])
+    for match in RE_ITUT.finditer(val):
+        yield KeyStr('ITU-T ' + match[1])
     for regex in RE_OTHER:
         for match in regex.finditer(val):
-            yield match[0]
+            yield KeyStr(match[1], match[2 if regex.groups > 1 else 1])
 
 
 def extract_one_standard(val):

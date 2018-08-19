@@ -141,6 +141,7 @@ def load_module(mod_name):
 
 def load_yaml(fname: str):
     """Load a YAML file."""
+
     with open(fname, encoding='utf-8') as conf_file:
         # If configuration file is empty YAML returns None
         # We convert that to an empty dict
@@ -189,7 +190,19 @@ def represent_odict(dump, tag, mapping, flow_style=None):
     return node
 
 
+def _find_file(loader, node: yaml.nodes.Node):
+    """Get the full file path using everything."""
+    from dataplaybook.everything import search
+    res = search(node.value)
+    if not res.files:
+        raise FileNotFoundError()
+    path = str(res.files[0].resolve(strict=True))
+    _LOGGER.info(path)
+    return path
+
+
 yaml.SafeDumper.add_representer(
     OrderedDict,
     lambda dumper, value:
     represent_odict(dumper, 'tag:yaml.org,2002:map', value))
+yaml.SafeLoader.add_constructor('!es', _find_file)

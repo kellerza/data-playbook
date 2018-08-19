@@ -1,6 +1,7 @@
 """Requests-OAuthlib sample for Microsoft Graph """
 import logging
 import os
+import uuid
 
 import attr
 import bottle
@@ -18,8 +19,9 @@ class Config(object):
     """Oauth config."""
     client_id = attr.ib()
     client_secret = attr.ib()
-    session = attr.ib(init=False)
-    scopes = attr.ib(default=['User.read'])
+    session = attr.ib(init=False)  # type: requests_oauthlib.OAuth2Session
+    # https://sharepoint.stackexchange.com/a/237202
+    scopes = attr.ib(default=['User.read', 'Sites.Read.All'])
     port = attr.ib(default=5000)
     host = attr.ib(default='localhost')
     authority_url = attr.ib(
@@ -52,8 +54,8 @@ class Config(object):
             authorization_response=auth_response
         )
 
-    def get_schema(self):
-        """Generate the olutios schema with all attrs defaults."""
+    def get_task_schema(self):
+        """Generate the task schema with defaults from Config instance."""
         return {
             vol.Required('client_id'): str,
             vol.Required('client_secret'): str,
@@ -75,54 +77,32 @@ os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
 
 bottle.TEMPLATE_PATH = ['./static/templates']
 
-# @bottle.route('/')
-# @bottle.view('homepage.html')
-# def homepage():
-#     """Render the home page."""
-#     return {'sample': 'Requests-OAuthlib'}
-
 
 @bottle.route('/')
 def login():
     """Prompt user to authenticate."""
-    return SERVER.shutdown()
-    # return bottle.redirect(CONFIG.authorization_url())
+    return bottle.redirect(CONFIG.authorization_url())
 
 
 @bottle.route('/login/authorized')
 def authorized():
     """Handler for the application's Redirect Uri."""
+    # pylint: disable=E1101
     if bottle.request.query.state != CONFIG.session.auth_state:
         raise Exception('state returned to redirect URL does not match!')
     CONFIG.fetch_token(bottle.request.url)
-    return SERVER.shutdown()
-    # return bottle.redirect('/graphcall')
+    return bottle.redirect('/ok')
 
 
-# @bottle.route('/graphcall')
-# @bottle.view('graphcall.html')
-# def graphcall():
-#     """Confirm user authentication by calling Graph and displaying data."""
-#     endpoint = config.RESOURCE + config.API_VERSION + '/me'
-#     headers = {'SdkVersion': 'sample-python-requests-0.1.0',
-#                'x-client-SKU': 'sample-python-requests',
-#                'SdkVersion': 'sample-python-requests',
-#                'client-request-id': str(uuid.uuid4()),
-#                'return-client-request-id': 'true'}
-#     graphdata = MSGRAPH.get(endpoint, headers=headers).json()
-#     return {'graphdata': graphdata, 'endpoint': endpoint,
-#               'sample': 'Requests-OAuthlib'}
+@bottle.route('/ok')
+def graphcall():
+    """Confirm user authentication by calling Graph and displaying data."""
+    res = request_json('https://graph.microsoft.com/v1.0/me')
+
+    return SERVER.shutdown() + str(res)
 
 
-# @bottle.route('/static/<filepath:path>')
-# def server_static(filepath):
-#     """Handler for static files, used with the development server."""
-#     root_folder = os.path.abspath(os.path.dirname(__file__))
-#     return bottle.static_file(filepath, root=os.path.join(
-#       root_folder, 'static'))
-
-
-class MyWSGIRefServer(bottle.WSGIRefServer):  # ServerAdapter):
+class MyWSGIRefServer(bottle.WSGIRefServer):
     """WSGI server with shutdown."""
     server = None
 
@@ -146,7 +126,7 @@ class MyWSGIRefServer(bottle.WSGIRefServer):  # ServerAdapter):
         return "BYE"
 
 
-@cv.task_schema(Config(None, None).get_schema())
+@cv.task_schema(Config(None, None).get_task_schema())
 def task_oauth_authenticate(_, opt):
     """Authenticate.
 
@@ -164,11 +144,33 @@ def task_oauth_authenticate(_, opt):
     CONFIG = Config(**opt)
     CONFIG.init_session()
 
-    # bottle.run(app=bottle.app(), server='wsgiref', host=host, port=port)
-    # Custom server can be shutdown
     app = bottle.app()
-    SERVER = MyWSGIRefServer(host=CONFIG.host, port=CONFIG.port)
     try:
+        SERVER = MyWSGIRefServer(host=CONFIG.host, port=CONFIG.port)
         app.run(server=SERVER)
     except Exception as exc:  # pylint: disable=broad-except
         _LOGGER.error(exc)
+
+
+def request_json(url, params=None):
+    """Request some json from the oauth endpoint."""
+    headers = {
+        'client-request-id': str(uuid.uuid4()),
+        'return-client-request-id': 'true',
+        'Accept': 'application/json'
+    }
+    res = CONFIG.session.get(url, headers=headers, params=params or {})
+    print(res, dir(res))
+    print('json:', res.json())
+    return res.json()
+
+
+@cv.task_schema({
+    vol.Required('url'): str,
+}, kwargs=True, target=True)
+def task_oauth_request(_, url):
+    """Retrieve a URL."""
+    json = request_json(url, {'expand': 'fields'})
+
+    res = [v['fields'] for v in json['value']]
+    return res

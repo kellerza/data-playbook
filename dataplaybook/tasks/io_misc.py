@@ -1,14 +1,37 @@
-"""CSV IO tasks."""
-import time
-import urllib.request
-from urllib.parse import urlparse
-
-from os import getenv
+"""Misc IO tasks."""
 from pathlib import Path
 
 import voluptuous as vol
 
 import dataplaybook.config_validation as cv
+
+
+@cv.task_schema({
+    vol.Required('file'): str,
+    vol.Optional('columns'): vol.Any(None, vol.Schema({
+        str: str
+    })),
+}, target=1, kwargs=True)
+def task_read_csv(tables, file, columns=None):
+    """Read csv file."""
+    from csv import DictReader
+
+    with open(file, 'r', encoding="utf-8") as fle:
+        csvf = DictReader(fle)
+        # header = opt.headers if 'headers' in opt else None
+        for line in csvf:
+            if columns:
+                yield {k: line.get(v) for k, v in columns.items()}
+            else:
+                yield line
+            # if line.startswith('#'):
+            #     continue
+            # if header is None:
+            #     header = line.split('\t')
+            #     continue
+            # line = line.split('\t')
+            # yield {k: v for k, v in zip(header, line)}
+    return
 
 
 @cv.task_schema({
@@ -27,7 +50,6 @@ def task_read_tab_delim(tables, opt):
                 continue
             line = line.split('\t')
             yield {k: v for k, v in zip(header, line)}
-
     return
 
 
@@ -62,6 +84,10 @@ def task_read_text_regex(_, filename, newline, fields):
 }, kwargs=True)
 def task_wget(tables, url, file, age):
     """Download a file."""
+    from os import getenv
+    import time
+    import urllib.request
+    from urllib.parse import urlparse
 
     path = Path(file)
     if path.exists():

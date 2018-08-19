@@ -109,8 +109,10 @@ def get_filename(filename):
     vol.Optional('header', default=[]): vol.All(cv.ensure_list, [str]),
     vol.Optional('ensure_string', []): list
 }, kwargs=True)
-def task_write_excel(tables, file, ensure_string=[], include=None, header=None):
+def task_write_excel(
+        tables, file, ensure_string=None, include=None, header=None):
     """Write an excel file."""
+    ensure_string = ensure_string or []
     header = header or []
     wbk = openpyxl.Workbook()
 
