@@ -30,6 +30,8 @@ tasks:
 Tasks are implemented as simple Python functions and the modules can be found in the dataplaybook/tasks folder.
 
 ### Default tasks
+* build_lookup
+* combine
 * drop
 * extend
 * filter
@@ -44,6 +46,7 @@ Tasks are implemented as simple Python functions and the modules can be found in
 * write_excel
 
 ### Module `io_misc` (loaded by default)
+* read_csv
 * read_tab_delim
 * read_text_regex
 * wget
@@ -66,6 +69,12 @@ Tasks are implemented as simple Python functions and the modules can be found in
 ### Module `gis`
 
 ### Module `fnb`
+
+
+## Yaml Tags
+
+* `!re <expression>` Regular expression
+* `!es <search string>` Search a file using Everything
 
 
 ## Install development version
