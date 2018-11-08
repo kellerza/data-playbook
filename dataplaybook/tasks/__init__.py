@@ -25,7 +25,8 @@ def task_build_lookup(table, key, columns):
 
 
 @cv.task_schema({
-    vol.Required('key'): cv.col_use
+    vol.Required('key'): cv.col_use,
+    vol.Optional('value', default=True): vol.Any(True, str)
 }, target=1, tables=(1, 10), columns=(0, 10))
 def task_combine(*tables, opt):
     """Combine multiple tables on key.
@@ -44,7 +45,7 @@ def task_combine(*tables, opt):
                 _res[key] = {k: row.get(k, "") for k in copy_columns}
             else:
                 pass  # add redundant info...
-            _res[key][table_name] = True
+            _res[key][table_name] = True if opt.value is True else row[opt.value]
     return list(_res.values())
 
 
@@ -197,10 +198,10 @@ def task_unique(table, key):
     """Unique based on a key."""
     seen = {}
     for row in table:
-        key = row.get(key, None)
-        if key in seen:
+        _key = row.get(key, None)
+        if _key in seen:
             continue
-        seen[key] = 1
+        seen[_key] = 1
         yield row
 
 
