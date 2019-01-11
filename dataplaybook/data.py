@@ -5,7 +5,6 @@ from inspect import isgeneratorfunction
 from traceback import extract_tb
 
 import voluptuous as vol
-import yaml
 
 import dataplaybook.config_validation as cv
 from dataplaybook import loader
@@ -46,10 +45,7 @@ class DataPlaybook(object):
 
     def __init__(self, yaml_text=None, yaml_file=None):
         """Process."""
-        if yaml_text:
-            yml = yaml.load(yaml_text)
-        if yaml_file:
-            yml = loader.load_yaml(yaml_file)
+        yml = loader.load_yaml(filename=yaml_file, text=yaml_text)
 
         if '_' in yml:
             del yml['_']

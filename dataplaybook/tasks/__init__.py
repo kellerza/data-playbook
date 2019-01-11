@@ -45,7 +45,8 @@ def task_combine(*tables, opt):
                 _res[key] = {k: row.get(k, "") for k in copy_columns}
             else:
                 pass  # add redundant info...
-            _res[key][table_name] = True if opt.value is True else row[opt.value]
+            _res[key][table_name] = \
+                True if opt.value is True else row[opt.value]
     return list(_res.values())
 
 

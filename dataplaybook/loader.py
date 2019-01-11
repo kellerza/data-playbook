@@ -139,12 +139,13 @@ def load_module(mod_name):
     return mod_name
 
 
-def load_yaml(fname: str):
+def load_yaml(filename=None, text=None):
     """Load a YAML file."""
+    if text:
+        assert filename is None
+        return yaml.load(text, Loader=yaml.SafeLoader) or OrderedDict()
 
-    with open(fname, encoding='utf-8') as conf_file:
-        # If configuration file is empty YAML returns None
-        # We convert that to an empty dict
+    with open(filename, encoding='utf-8') as conf_file:
         return yaml.load(conf_file, Loader=yaml.SafeLoader) or OrderedDict()
     # except yaml.YAMLError as exc:
     #     _LOGGER.error(exc)

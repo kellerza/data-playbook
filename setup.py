@@ -20,7 +20,7 @@ VERSION = find_version()
 REQUIRES = [
     'attrs>=17.4.0',
     'voluptuous>=0.11.1',
-    'pyyaml>=4.2b1,<5',
+    'pyyaml>=3.13,<4',
     'openpyxl>=2.5,<3',
 ]
 
