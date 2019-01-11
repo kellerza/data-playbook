@@ -13,4 +13,4 @@ pymongo
 fuzzywuzzy
 
 # optional
-pandas
+# pandas

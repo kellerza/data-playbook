@@ -1,4 +1,5 @@
 # Data Playbook
+[![Build Status](https://travis-ci.com/kellerza/data-playbook.svg?branch=master)](https://travis-ci.com/kellerza/data-playbook)
 :book: Playbooks for data. Open, process and save table based data.
 
 Automate repetitive tasks on table based data. Include various input and output tasks. Can be extended with custom modules.
