@@ -4,13 +4,16 @@ pyyaml>=3.13,<4
 openpyxl>=2.5,<3
 
 # everything.search
-requests
+requests>=2.0.0
 
 # io_mongo
 pymongo
 
+# io_oauth
+O365>=1.04,<2
+
 # fuzzy search
-fuzzywuzzy
+fuzzywuzzy<1
 
 # optional
 # pandas

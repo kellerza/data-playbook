@@ -8,8 +8,8 @@ import dataplaybook.config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
 
-RE_DRAFT = re.compile(r"(?:[^-]|^)(draft(?:-\w+)+?)(-\d{2})?(?:[^-]|$)", re.I)
 REGEX = (
+    re.compile(r"(?:[^-]|^)((draft(?:-\w+)+?)(?:-\d{2})?)(?:[^-]|$)", re.I),
     (r"RFC\1", re.compile(r"RFC\s*(\d{3,5})(?:\D|$)", re.I)),
     (r"IEEE \1", re.compile(
         r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)),
@@ -78,11 +78,6 @@ def extract_one_standard(val):
 
 def _extract_standards(val):
     """Extract standards from a string."""
-    for match in RE_DRAFT.finditer(val):
-        if match[2]:
-            yield KeyStr(match[1] + match[2], match[1], start=match.start())
-        else:
-            yield KeyStr(match[1], start=match.start())
     for rex in REGEX:
         if isinstance(rex, tuple):
             for match in rex[1].finditer(val):

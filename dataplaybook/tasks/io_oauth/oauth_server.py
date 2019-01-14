@@ -1,11 +1,4 @@
-"""Requests-OAuthlib sample for Microsoft Graph.
-
-Uses Authorization code grant
-
-https://requests-oauthlib.readthedocs.io/en/latest/oauth2_workflow.html#web-application-flow
-
- """
-
+"""Simple bottle server to receive authorization callback."""
 import logging
 import os
 import signal
@@ -13,31 +6,24 @@ import signal
 import bottle
 
 _LOGGER = logging.getLogger(__name__)
-SESSION = None
+CON = None
 SERVER = None
 
 # Enable non-HTTPS redirect URI for development/testing.
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-# Allow token scope to not match requested scope. (Other auth libraries allow
-# this, but Requests-OAuthlib raises exception on scope mismatch by default.)
-os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
-os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
-
-bottle.TEMPLATE_PATH = ['./static/templates']
 
 
-def start(session):
+def start(connection):
     """Start the local websever for auth callbacks."""
-
     # Allow Ctrl-C break
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    global SERVER, SESSION
-    SESSION = session
+    global SERVER, CON
+    CON = connection
 
     app = bottle.app()
     try:
-        SERVER = MyWSGIRefServer(host=session.host, port=session.port)
+        SERVER = MyWSGIRefServer(host='localhost', port=5000)
         app.run(server=SERVER)
     except Exception as exc:  # pylint: disable=broad-except
         _LOGGER.error(exc)
@@ -46,23 +32,20 @@ def start(session):
 @bottle.route('/')
 def login():
     """Prompt user to authenticate."""
-    return bottle.redirect(SESSION.authorization_url)
+    redirect_uri = "http://{}:{}/login/authorized".format(
+        SERVER.host, SERVER.port)
+    return bottle.redirect(
+        CON.get_authorization_url(redirect_uri=redirect_uri))
 
 
 @bottle.route('/login/authorized')
-def authorized():
-    """Handler for the application's Redirect Uri."""
-    # pylint: disable=E1101
-    if bottle.request.query.state != SESSION.session.auth_state:
-        raise Exception('state returned to redirect URL does not match!')
-    SESSION.fetch_token(bottle.request.url)
-    return bottle.redirect('/ok')
+def callback():
+    """Handler for the application's Redirect Uri.
 
+    Request the token, some data to test the token and shutdown the server."""
+    CON.request_token(bottle.request.url)
 
-@bottle.route('/ok')
-def graphcall():
-    """Confirm user authentication by calling Graph and displaying data."""
-    res = SESSION.get('https://graph.microsoft.com/v1.0/me')
+    res = CON.get('https://graph.microsoft.com/v1.0/me').json()
 
     return SERVER.shutdown() + str(res)
 

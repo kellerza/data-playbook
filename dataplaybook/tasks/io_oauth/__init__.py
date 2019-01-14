@@ -4,31 +4,32 @@ import logging
 import voluptuous as vol
 
 import dataplaybook.config_validation as cv
-from dataplaybook.tasks.io_oauth.oauth_session import Session
 from dataplaybook.tasks.io_oauth.oauth_server import start
+from O365 import Account
 
 _LOGGER = logging.getLogger(__name__)
-SES = None
+ACC = None
+
+DEFAULT_SCOPES = ['User.read', 'Sites.Read.All']
 
 
-@cv.task_schema(Session.validation_schema())
-def task_oauth_authenticate(_, opt):
-    """Authenticate.
-
-    AUTHORITY_URL ending determines type of account that can be authenticated:
-        /organizations = organizational accounts only
-        /consumers = MSAs only (Microsoft Accounts: Live.com, Hotmail.com, etc)
-        /common = allow both types of accounts
-    """
-    opt = dict(opt)
-    opt.pop('task')
-
-    global SES
-    SES = Session(**opt)
-    start(SES)
-
-    # from pathlib import Path
-    # home = str(Path.home())
+@cv.task_schema({
+    vol.Required('client_id'): str,
+    vol.Required('client_secret'): str,
+    vol.Required('scopes', default=DEFAULT_SCOPES): vol.All(
+        cv.ensure_list, [str]),
+}, kwargs=True)
+def task_oauth_authenticate(
+        _, client_id, client_secret, scopes=None):
+    """Authenticate if required."""
+    global ACC
+    ACC = Account((client_id, client_secret),
+                  scopes=(scopes or DEFAULT_SCOPES))
+    try:
+        ACC.connection.get_session()
+    except RuntimeError:
+        # Need to get a new token
+        start(ACC.connection)
 
 
 @cv.task_schema({
@@ -36,7 +37,8 @@ def task_oauth_authenticate(_, opt):
 }, kwargs=True, target=True)
 def task_oauth_request(_, url):
     """Retrieve a URL."""
-    json = SES.get(url, {'expand': 'fields'})
+    res = ACC.connection.get(url, {'expand': 'fields'})
+    json = res.json()
 
-    res = [v['fields'] for v in json['value']]
-    return res
+    tres = [v['fields'] for v in json['value']]
+    return tres
