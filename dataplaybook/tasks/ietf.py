@@ -20,7 +20,7 @@ REGEX = (
     re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
     re.compile(r"(3GPP \w+ \d+(\.\d+)*)"),
     re.compile(r"(\S+-mib)", re.I),
-    re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
+    # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
     re.compile(r"(FRF[\.\d]+)"),
     re.compile(r"(ANSI \S+)"),
     re.compile(r"(gnmi(\.\w+)*)", re.I),

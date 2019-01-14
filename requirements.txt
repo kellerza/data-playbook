@@ -10,7 +10,7 @@ requests>=2.0.0
 pymongo
 
 # io_oauth
-O365>=1.04,<2
+O365>=1.0.4,<2
 
 # fuzzy search
 fuzzywuzzy<1
