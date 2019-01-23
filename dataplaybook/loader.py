@@ -145,14 +145,15 @@ def load_yaml(filename=None, text=None):
         assert filename is None
         return yaml.load(text, Loader=yaml.SafeLoader) or OrderedDict()
 
-    with open(filename, encoding='utf-8') as conf_file:
-        return yaml.load(conf_file, Loader=yaml.SafeLoader) or OrderedDict()
-    # except yaml.YAMLError as exc:
-    #     _LOGGER.error(exc)
-    #     raise HomeAssistantError(exc)
-    # except UnicodeDecodeError as exc:
-    #     _LOGGER.error("Unable to read file %s: %s", fname, exc)
-    #     raise HomeAssistantError(exc)
+    try:
+        with open(filename, encoding='utf-8') as conf_file:
+            return yaml.load(conf_file, Loader=yaml.SafeLoader) or OrderedDict()
+    except yaml.YAMLError as exc:
+        _LOGGER.error(exc)
+        raise Exception(exc)
+    except UnicodeDecodeError as exc:
+        _LOGGER.error("Unable to read file %s: %s", fname, exc)
+        raise Exception(exc)
 
 
 # pylint: disable=protected-access

@@ -19,7 +19,7 @@ REGEX = (
     re.compile(r"(GR-\d+-\w+)", re.I),
     re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
     re.compile(r"(3GPP \w+ \d+(\.\d+)*)"),
-    re.compile(r"(\S+-mib)", re.I),
+    re.compile(r"((?:\w+-)+mib)", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
     re.compile(r"(FRF[\.\d]+)"),
     re.compile(r"(ANSI \S+)"),
@@ -73,7 +73,8 @@ def extract_standards_ordered(val):
 
 def extract_one_standard(val):
     """Extract a single standard."""
-    return next(extract_standards_ordered(val), None)
+    lst = extract_standards_ordered(val)
+    return lst[0] if lst else None
 
 
 def _extract_standards(val):
@@ -81,7 +82,7 @@ def _extract_standards(val):
     for rex in REGEX:
         if isinstance(rex, tuple):
             for match in rex[1].finditer(val):
-                _LOGGER.debug("%s groups: %s", rex, match.groups())
+                # _LOGGER.debug("%s groups: %s", rex, match.groups())
                 yield KeyStr(match.expand(rex[0]),
                              match.expand(rex[2]) if len(rex) > 2 else None,
                              start=match.start())
