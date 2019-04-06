@@ -93,7 +93,12 @@ class DataPlaybook(object):
                           if k not in ['task', 'debug*', 'target', 'tables']}
                 res = task.function(*tables, **kwargs)
             else:
-                res = task.function(*tables, opt=opt)
+                try:
+                    res = task.function(*tables, opt=opt)
+                except TypeError as exc:
+                    _LOGGER.warning("Parameter 'opt' missing or 'kwargs'"
+                                    " required in the schema?")
+                    raise exc
 
             if isgeneratorfunction(task.function):
                 res = list(res)

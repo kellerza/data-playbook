@@ -11,6 +11,7 @@ import attr
 from voluptuous import Invalid
 import yaml
 import dataplaybook.config_validation as cv
+from dataplaybook.const import PlaybookError
 
 TASKS = {}
 _LOGGER = logging.getLogger(__name__)
@@ -146,14 +147,15 @@ def load_yaml(filename=None, text=None):
         return yaml.load(text, Loader=yaml.SafeLoader) or OrderedDict()
 
     try:
-        with open(filename, encoding='utf-8') as conf_file:
-            return yaml.load(conf_file, Loader=yaml.SafeLoader) or OrderedDict()
+        with Path(filename).open(encoding='utf-8') as conf_file:
+            return yaml.load(conf_file, Loader=yaml.SafeLoader) \
+                or OrderedDict()
     except yaml.YAMLError as exc:
         _LOGGER.error(exc)
-        raise Exception(exc)
+        raise PlaybookError()
     except UnicodeDecodeError as exc:
-        _LOGGER.error("Unable to read file %s: %s", fname, exc)
-        raise Exception(exc)
+        _LOGGER.error("Unable to read file %s: %s", filename, exc)
+        raise PlaybookError()
 
 
 # pylint: disable=protected-access

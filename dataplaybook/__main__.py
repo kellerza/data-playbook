@@ -6,7 +6,7 @@ from pathlib import Path
 
 import voluptuous as vol
 
-from dataplaybook.const import VERSION
+from dataplaybook.const import VERSION, PlaybookError
 from dataplaybook.data import DataPlaybook, loader, setup_logger
 
 
@@ -17,8 +17,6 @@ def main():
         .format(VERSION))
     parser.add_argument(
         'files', type=str, nargs='+', help='The playbook yaml file')
-    # parser.add_argument(
-    #    '-v', '--version', action='store_true', help="Show version.")
     args = parser.parse_args()
 
     files = [Path(fn) for fn in args.files]
@@ -39,6 +37,8 @@ def main():
             os.chdir(file.parent)
         try:
             tasks.append(DataPlaybook(yaml_file=file.name))
+        except PlaybookError:
+            return 1
         except vol.MultipleInvalid:
             print('Please fix validation errors in {}'.format(file.name))
             return 1

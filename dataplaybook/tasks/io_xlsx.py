@@ -20,21 +20,59 @@ class Mylist(list):
     header = attr.ib()
 
 
+def read_excel_deprecate(conf):
+    """Change schema."""
+    old = [k for k in conf.keys() if k in ('sheet', 'header', 'columns')]
+    if not old:
+        return conf
+    msg = f"read_excel: {old} was deprecated."
+    if 'sheets' in conf:
+        raise vol.Invalid(f"{msg} Replacement key 'sheets' also in config.")
+    new = {}
+    if 'sheet' in old:
+        new['name'] = conf.pop('sheet')
+    for key in ('header', 'columns'):
+        if key in conf:
+            new['key'] = conf.pop(key)
+    conf['sheets'] = [new]
+    _LOGGER.warning("%s Replace with 'sheets: [%s]'", msg, new)
+    return conf
+
+
 @cv.task_schema({
     vol.Required('file'): str,
-    vol.Optional('sheet'): str,
-    vol.Optional('header'): int,
-    vol.Optional('columns'): vol.Schema({
-        cv.col_add: dict
-    }),
-}, target=1, kwargs=True)
-def task_read_excel(_, file, sheet=None, header=0, columns=None):
+    vol.Exclusive('sheets', 'XOR'): [vol.Schema({
+        vol.Optional('name', default=None): vol.Any(str, None),
+        vol.Optional('header', default=0): int,
+        vol.Optional('columns', default=None): vol.Any(None, vol.Schema({
+            cv.col_add: dict
+        })),
+        vol.Required('target'): cv.table_add,
+    })],
+    vol.Exclusive('target', 'XOR'): str,
+}, kwargs=True, deprecate=read_excel_deprecate)
+def task_read_excel(tables, file, target=None, sheets=None):
     """Read excel file using openpyxl."""
     t_start = timer()
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     t_mid = timer()
 
-    _sheet = wbk.active if not sheet else wbk[sheet]
+    if not sheets:
+        tables[target] = read_sheet(wbk, wbk.active, {})
+    else:
+        for s_cfg in sheets:
+            target = s_cfg['target']
+            name = s_cfg.get('name') or target
+            tables[target] = read_sheet(
+                wbk, wbk[name], s_cfg['columns'], s_cfg['header'])
+
+    t_end = timer()
+    _LOGGER.debug("read_excel({}): {:.2f}s convert: {:.2f}s"
+                  .format(file, t_mid-t_start, t_end-t_mid))
+
+
+def read_sheet(wbk, _sheet, columns=None, header=0):
+    """."""
     rows = _sheet.rows
     data = Mylist(header=header+2)
     while header > 0:
@@ -54,18 +92,10 @@ def task_read_excel(_, file, sheet=None, header=0, columns=None):
         # Colclass = attr.make_class(
         #    name, [nme for (_, nme, _) in _map], slots=True)
 
-        # Colclass = namedtuple(  # pylint: disable-invalid-name
-        #    name, [nme for (_, nme, _) in _map])
-
         for row in rows:
             record = {}  # []
             for idx, nme, val in _map:
                 record[nme] = row[idx].value
-                # cell = row[idx]
-                # if cell.data_type == 's':
-                #    # record.append(cell.value.strip())
-                # else:
-                #    # record.append(cell.value)
             # data.append(Colclass(*record))
             data.append(record)
     else:
@@ -77,10 +107,6 @@ def task_read_excel(_, file, sheet=None, header=0, columns=None):
                 else:
                     record[key] = cell.value
             data.append(record)
-
-    t_end = timer()
-    _LOGGER.debug("read_excel({}): {:.2f}s convert: {:.2f}s"
-                  .format(file, t_mid-t_start, t_end-t_mid))
 
     return data
 
@@ -107,12 +133,10 @@ def get_filename(filename):
     vol.Required('file'): cv.endswith('.xlsx'),
     vol.Optional('include'): vol.All(cv.ensure_list, [cv.table_use]),
     vol.Optional('header', default=[]): vol.All(cv.ensure_list, [str]),
-    vol.Optional('ensure_string', []): list
-}, kwargs=True)
+}, kwargs=True, deprecate=cv.deprecate_key('ensure_string', 'write_excel'))
 def task_write_excel(
-        tables, file, ensure_string=None, include=None, header=None):
+        tables, file, include=None, header=None, ensure_string=None):
     """Write an excel file."""
-    ensure_string = ensure_string or []
     header = header or []
     wbk = openpyxl.Workbook()
 
@@ -140,16 +164,16 @@ def task_write_excel(
 
         debugs = 2
         for row in tables[table_name]:
+            erow = [str(v) if isinstance(v, (list, dict, tuple)) else v
+                    for v in map(row.get, hdr)]
             try:
-                erow = [str(row.get(h, '')) if h in ensure_string
-                        else row.get(h) for h in hdr]
                 wsh.append(erow)
-            except ValueError:
+            except ValueError as exc:
                 wsh.append([str(row.get(h, "")) for h in hdr])
                 debugs -= 1
                 if debugs > 0:
-                    _LOGGER.warning("Error writing %s, hdrs: %s",
-                                    list(row.values()), hdr)
+                    _LOGGER.warning("Error writing %s, hdrs: %s - %s",
+                                    list(erow.values()), hdr, exc)
         if debugs < 0:
             _LOGGER.warning("Total %s errors", 2-debugs)
 

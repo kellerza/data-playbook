@@ -74,6 +74,10 @@ def task_write_mongo(table, db):  # pylint: disable=invalid-name
     col = client[db.database][db.collection]
     if db.set_id:
         filtr = {'_sid': db.set_id}
+        existing_count = col.count(filtr)
+        if existing_count > 0 and len(table) == 0:
+            _LOGGER.error("Trying to replace {} documents with an empty set")
+            exit
         _LOGGER.info("Replacing %s documents matching %s, %s new",
                      col.count(filtr), db.set_id, len(table))
         col.delete_many(filtr)

@@ -5,10 +5,11 @@ import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook.tasks.io_oauth.oauth_server import start
+from O365.aio.connection_base import Connection
 from O365 import Account
 
 _LOGGER = logging.getLogger(__name__)
-ACC = None
+CON = None
 
 DEFAULT_SCOPES = ['offline_access', 'User.read', 'Sites.Read.All']
 
@@ -22,14 +23,14 @@ DEFAULT_SCOPES = ['offline_access', 'User.read', 'Sites.Read.All']
 def task_oauth_authenticate(
         _, client_id, client_secret, scopes=None):
     """Authenticate if required."""
-    global ACC
-    ACC = Account((client_id, client_secret),
-                  scopes=(scopes or DEFAULT_SCOPES))
+    global CON
+    CON = Connection(
+        (client_id, client_secret), scopes=(scopes or DEFAULT_SCOPES))
     try:
-        ACC.connection.get_session()
+        CON.get_session()
     except RuntimeError:
         # Need to get a new token
-        start(ACC.connection)
+        start(CON)
 
 
 LIST_SCHEMA = vol.Schema({
@@ -49,7 +50,7 @@ EXCEL_SCHEMA = vol.Schema({
 }, kwargs=True, target=True)
 def task_oauth_request(_, url):
     """Retrieve a URL."""
-    res = ACC.connection.get(url, {'expand': 'fields'})
+    res = CON.get(url, {'expand': 'fields'})
     json = res.json()
 
     schema_errors = []
@@ -102,7 +103,7 @@ def task_spo_find_file(_, filename):
     #             "id": file.object_id,
     #         }
 
-    spo = ACC.sharepoint()
+    spo = Account(con=CON).sharepoint()
     sites = []
     # sites = spo.search_site('emea-ion-tech')
     sites.append(spo.get_site('nokia.sharepoint.com', '/sites/emea-ion-tech'))
@@ -135,7 +136,8 @@ def task_spo_find_file(_, filename):
 }, kwargs=True, target=True)
 def task_spo_read_excel(_, url):
     """Retrieve a URL."""
-    res = ACC.get_drive() .get(url, {'expand': 'fields'})
+    res = Account(con=CON).get_drive()
+    # .get(url, {'expand': 'fields'})
     json = res.json()
 
     tres = [v['fields'] for v in json['value']]

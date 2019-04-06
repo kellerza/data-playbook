@@ -74,8 +74,8 @@ def task_extend(*tables, opt):
 
 
 @cv.task_schema({
-    vol.Optional('include', default={}): vol.Schema({cv.slug: object}),
-    vol.Optional('exclude', default={}): vol.Schema({cv.slug: object})
+    vol.Optional('include', default={}): vol.Schema({cv.col_use: object}),
+    vol.Optional('exclude', default={}): vol.Schema({cv.col_use: object})
 }, tables=1, target=1)
 def task_filter(table, opt):
     """Filter rows from a table."""

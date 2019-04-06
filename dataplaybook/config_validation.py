@@ -8,7 +8,7 @@ from typing import Any, Sequence, TypeVar, Union
 import voluptuous as vol
 
 # typing typevar
-T = TypeVar('T')
+T = TypeVar('T')  # pylint: disable=invalid-name
 RE_SLUGIFY = re.compile(r'[^a-z0-9_]+')
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
@@ -30,11 +30,13 @@ class AttrDict(dict):
         return '(' + ', '.join(lst) + ')'
 
 
-def dict_schema(value: dict, *more) -> str:  # pylint: disable=invalid-name
+def dict_schema(  # pylint: disable=invalid-name
+        value: dict, *more, prepend=None) -> str:
     """Voluptuous schema that will convert dict to a Munch object."""
     if not isinstance(value, (dict, OrderedDict)):
-        raise vol.DictInvalid("Invalid dictonary")
-    return vol.All(vol.Schema(value),
+        raise vol.DictInvalid("Invalid dictionary")
+    prepend = ensure_list(prepend)
+    return vol.All(*prepend, vol.Schema(value),
                    lambda a: AttrDict(a), *more)  # pylint: disable=W0108
 
 
@@ -165,10 +167,30 @@ def endswith(parts):
     return _check
 
 
+def deprecate_key(key, msg, renamed=None):
+    """Indicate a key is deprecated: dropped or renamed."""
+    def _validator(conf):
+        if key not in conf:
+            return conf
+        old_val = conf.pop(key)
+        if renamed:
+            nonlocal msg
+            msg = f"{msg}: {key} was renamed to f{renamed}."
+            if conf[renamed] in conf:
+                raise vol.Invalid("{msg} {renamed} is also in the config.")
+            conf[renamed] = old_val
+            _LOGGER.warning(msg)
+        else:
+            _LOGGER.warning(
+                "%s: %s was deprecated and can be removed.", msg, key)
+        return conf
+    return _validator
+
+
 def task_schema(  # pylint: disable=invalid-name
         new: dict, *more_schema: dict,
         tables: int = 0, target: bool = False, columns: int = 0,
-        kwargs=False):
+        kwargs=False, deprecate=None):
     """Return a schema based on the base task schame."""
     base = OrderedDict({
         vol.Required('task'): slug,
@@ -197,7 +219,7 @@ def task_schema(  # pylint: disable=invalid-name
     for key, val in new.items():
         base[key] = val
 
-    the_schema = dict_schema(base, *more_schema)
+    the_schema = dict_schema(base, *more_schema, prepend=deprecate)
 
     def _deco(func):
         func.schema = the_schema
