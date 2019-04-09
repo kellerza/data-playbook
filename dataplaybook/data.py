@@ -8,6 +8,8 @@ import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook import loader
+from dataplaybook.utils import DataEnvironment
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,29 +20,10 @@ FULL_SCHEMA = vol.Schema({
 })
 
 
-def _print_exception(task_name, mod_name):
-    mod_name = mod_name.replace('.', '/')
-    _, exc, traceback = sys.exc_info()
-    tb_all = extract_tb(traceback)
-    tb_show = list((fs for fs in tb_all
-                    if fs.filename and mod_name in fs.filename))
-    if not tb_show:
-        tb_show = tb_all
-
-    res = ["Exception in task {}: {}: {}".format(
-        task_name, exc.__class__.__name__, exc)]
-
-    for frame in tb_show:
-        res.append(" File {} line {} in method {}".format(
-            frame.filename, frame.lineno, frame.name))
-
-    _LOGGER.error(',\n '.join(res))
-
-
-class DataPlaybook(object):
+class DataPlaybook():
     """Data table task class."""
 
-    tables = {}
+    tables = DataEnvironment()
     config = {}
 
     def __init__(self, yaml_text=None, yaml_file=None):
@@ -85,7 +68,7 @@ class DataPlaybook(object):
         else:
             tables = [self.tables]
             if debug:
-                print("***************Calling with all tables")
+                print("***************Calling with all tables/environment")
 
         try:
             if getattr(task.function, 'kwargs', False):
@@ -108,7 +91,7 @@ class DataPlaybook(object):
                         opt.task)
 
         except Exception:  # pylint: disable=broad-except
-            _print_exception(opt.task, task.module.__name__)
+            _print_exception(opt.task, task.module)
             res = []
 
         if 'target' in opt:
@@ -128,29 +111,20 @@ class DataPlaybook(object):
             self._task(opt)
 
 
-def setup_logger():
-    """Configure the color log handler."""
-    logging.basicConfig(level=logging.DEBUG)
-    # fmt = ("%(asctime)s %(levelname)s (%(threadName)s) "
-    #        "[%(name)s] %(message)s")
-    fmt = ("%(asctime)s %(levelname)s [%(name)s] %(message)s")
-    colorfmt = "%(log_color)s{}%(reset)s".format(fmt)
-    # datefmt = '%Y-%m-%d %H:%M:%S'
-    datefmt = "%H:%M:%S"
+def _print_exception(task_name, mod_name):
+    mod_name = mod_name.replace('.', '/')
+    _, exc, traceback = sys.exc_info()
+    tb_all = extract_tb(traceback)
+    tb_show = list((fs for fs in tb_all
+                    if fs.filename and mod_name in fs.filename))
+    if not tb_show:
+        tb_show = tb_all
 
-    try:
-        from colorlog import ColoredFormatter
-        logging.getLogger().handlers[0].setFormatter(ColoredFormatter(
-            colorfmt,
-            datefmt=datefmt,
-            reset=True,
-            log_colors={
-                'DEBUG': 'cyan',
-                'INFO': 'green,bold',
-                'WARNING': 'yellow',
-                'ERROR': 'red',
-                'CRITICAL': 'red',
-            }
-        ))
-    except ImportError:
-        pass
+    res = ["Exception in task {}: {}: {}".format(
+        task_name, exc.__class__.__name__, exc)]
+
+    for frame in tb_show:
+        res.append(" File {} line {} in method {}".format(
+            frame.filename, frame.lineno, frame.name))
+
+    _LOGGER.error(',\n '.join(res))

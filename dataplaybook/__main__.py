@@ -7,7 +7,8 @@ from pathlib import Path
 import voluptuous as vol
 
 from dataplaybook.const import VERSION, PlaybookError
-from dataplaybook.data import DataPlaybook, loader, setup_logger
+from dataplaybook.data import DataPlaybook, loader
+from dataplaybook.utils import setup_logger
 
 
 def main():

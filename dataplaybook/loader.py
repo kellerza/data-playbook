@@ -23,9 +23,8 @@ class Task():
 
     name = attr.ib()
     function = attr.ib()
-    # module = attr.ib()
-    # schema = attr.ib(default=None)
-    type = attr.ib(default=0)
+    module = attr.ib()
+    # type = attr.ib(default=0)
 
     @property
     def schema(self):
@@ -35,10 +34,10 @@ class Task():
         _LOGGER.warning("No schema for %s", self.name)
         return dict
 
-    @property
-    def module(self):
-        """Return the source module."""
-        return sys.modules[self.function.__module__]
+    # @property
+    # def module(self):
+    #     """Return the source module."""
+    #     return sys.modules[self.function.__module__].__name__
 
 
 def validate_tasks(config: dict) -> dict:
@@ -61,11 +60,17 @@ def validate_tasks(config: dict) -> dict:
 
 def remove_module(mod_name):
     """Remove module from tasks."""
-    tasks = {k: v for k, v in TASKS.items() if v.module == mod_name}
-    for key in tasks:
+    sys.modules.pop(mod_name, None)  # Ensure it will be reloaded...
+
+    pop = []
+    for key, val in TASKS.items():
+        # _LOGGER.debug("k %s v '%s' '%s'", key, val.module, mod_name)
+        if mod_name == val.module:
+            pop.append(key)
+
+    for key in pop:
         TASKS.pop(key, None)
-    # Ensure it will be reloaded...
-    sys.modules.pop(mod_name, None)
+    return pop
 
 
 def _import(mod_name):
@@ -108,7 +113,7 @@ def load_module(mod_name):
     # collect task functions
     for nme, fun in members:
         if nme.startswith('task_'):
-            task = Task(name=nme[5:], function=fun)  # , module=mod_obj)
+            task = Task(name=nme[5:], function=fun, module=mod_name)
             if task.name in TASKS:
                 _LOGGER.warning(
                     "Module %s: Skipping task %s. Already loaded from "
