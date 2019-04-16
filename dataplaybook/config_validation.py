@@ -188,7 +188,7 @@ def deprecate_key(key, msg, renamed=None):
 
 
 def task_schema(  # pylint: disable=invalid-name
-        new: dict, *more_schema: dict,
+        new: dict, *more_schema: callable, runtime_schema: callable = None,
         tables: int = 0, target: bool = False, columns: int = 0,
         kwargs=False, deprecate=None):
     """Return a schema based on the base task schame."""
@@ -199,11 +199,14 @@ def task_schema(  # pylint: disable=invalid-name
     })
 
     if tables is not 0:
+        volReqOpt = vol.Required
         if isinstance(tables, (tuple, list)):
             _len = vol.Length(min=tables[0], max=tables[1])
+            if tables[0] == 0:
+                volReqOpt = vol.Optional
         else:
             _len = vol.Length(min=tables, max=tables)
-        base[vol.Required('tables')] = vol.All(ensure_list, _len, [table_use])
+        base[volReqOpt('tables')] = vol.All(ensure_list, _len, [table_use])
 
     if target:
         base[vol.Required('target')] = table_add
@@ -223,6 +226,7 @@ def task_schema(  # pylint: disable=invalid-name
 
     def _deco(func):
         func.schema = the_schema
+        func.runtime_schema = runtime_schema
         func.kwargs = kwargs
         return func
 

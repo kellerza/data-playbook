@@ -32,21 +32,21 @@ def test_load_and_run():
             target: tab1
     """
     load_module(__file__)
-    _dt = DataPlaybook(yaml_text=txt)
-    assert '_' not in _dt.config, "alias subkey '_' not removed"
-    assert list(_dt.config.keys()) == ['tasks', 'modules']
-    assert _dt.config['tasks'] == [{
+    dpb = DataPlaybook(yaml_text=txt)
+    assert '_' not in dpb.config, "alias subkey '_' not removed"
+    assert list(dpb.config.keys()) == ['tasks', 'modules']
+    assert dpb.config['tasks'] == [{
         'task': 'test_data',
         'data': [{'a': 111}],
         'target': 'tab1'
     }]
 
-    assert 'tab1' not in _dt.tables
-    _dt.run()
-    assert 'tab1' in _dt.tables
+    assert 'tab1' not in dpb.tables
+    dpb.run()
+    assert 'tab1' in dpb.tables
 
-    _LOGGER.debug(list(_dt.tables.items()))
-    assert _dt.tables['tab1'] == [{'a': 111}]
+    _LOGGER.debug(list(dpb.tables.items()))
+    assert dpb.tables['tab1'] == [{'a': 111}]
 
 
 @cv.task_schema({
@@ -72,9 +72,9 @@ def test_env_to_function():
 
     """
     load_module(__file__)
-    _dt = DataPlaybook(yaml_text=txt)
-    _dt.run()
-    assert _dt.tables['tab2'] == ['tab2 data']
+    dpb = DataPlaybook(yaml_text=txt)
+    dpb.run()
+    assert dpb.tables['tab2'] == ['tab2 data']
 
 
 def test_bad_alias():
@@ -107,19 +107,40 @@ def test_target_fail():
     """Test target fail."""
     load_module(__file__)
 
-    _dt = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(yaml_text="""
         tasks:
           - task: target_fail
             target: tab1
 
     """)
-    _dt.run()
+    dpb.run()
 
-    _dt = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(yaml_text="""
         tasks:
           - task: target_fail_bad_params
             target: tab1
 
     """)
-    _dt.run()
+    dpb.run()
     # TODO: imporve failures
+
+
+@cv.task_schema({
+}, target=1, kwargs=True)
+def task_target_var(env):
+    """Test target fail."""
+    return {'a': 'var'}
+
+
+def test_variables():
+    """Test target fail."""
+    load_module(__file__)
+
+    dpb = DataPlaybook(yaml_text="""
+        tasks:
+          - task: target_var
+            target: tab1
+    """)
+    dpb.run()
+
+    assert dpb.tables.var == {'tab1': {'a': 'var'}}

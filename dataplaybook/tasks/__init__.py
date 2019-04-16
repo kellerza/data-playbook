@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
     vol.Required('key'): cv.col_use,
 }, target=1, tables=1, columns=(1, 10), kwargs=True)
 def task_build_lookup(table, key, columns):
-    """Build lookup tables by removing common columns and a key."""
+    """Build a lookup table (unique key & columns) and removing the columns."""
     lookup = {}
     all_cols = list(columns)
     all_cols.insert(0, key)
@@ -22,6 +22,18 @@ def task_build_lookup(table, key, columns):
             lookup[row[key]] = True
         for col in columns:
             row.pop(col)
+
+
+@cv.task_schema({
+    vol.Required('key'): cv.col_use,
+}, target=1, tables=1, columns=(1, 10), kwargs=True)
+def task_build_lookup_var(table, key, columns):
+    """Build lookup tables {key: columns}."""
+    lookup = {}
+    for row in table:
+        if not lookup.get(row[key]):
+            lookup[row[key]] = {c: row.get(c) for c in columns}
+    return lookup
 
 
 @cv.task_schema({
@@ -202,7 +214,7 @@ def task_unique(table, key):
         _key = row.get(key, None)
         if _key in seen:
             continue
-        seen[_key] = 1
+        seen[_key] = True
         yield row
 
 

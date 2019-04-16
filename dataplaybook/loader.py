@@ -149,11 +149,11 @@ def load_yaml(filename=None, text=None):
     """Load a YAML file."""
     if text:
         assert filename is None
-        return yaml.load(text, Loader=yaml.SafeLoader) or OrderedDict()
+        return yaml.safe_load(text) or OrderedDict()
 
     try:
         with Path(filename).open(encoding='utf-8') as conf_file:
-            return yaml.load(conf_file, Loader=yaml.SafeLoader) \
+            return yaml.safe_load(conf_file) \
                 or OrderedDict()
     except yaml.YAMLError as exc:
         _LOGGER.error(exc)

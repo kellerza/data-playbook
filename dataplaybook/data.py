@@ -23,11 +23,10 @@ FULL_SCHEMA = vol.Schema({
 class DataPlaybook():
     """Data table task class."""
 
-    tables = DataEnvironment()
-    config = {}
-
     def __init__(self, yaml_text=None, yaml_file=None):
         """Process."""
+        self.tables = DataEnvironment()
+        self.config = {}
         yml = loader.load_yaml(filename=yaml_file, text=yaml_text)
 
         if '_' in yml:
@@ -58,6 +57,10 @@ class DataPlaybook():
             task.module._LOGGER.setLevel(loglevel)  # pylint: disable=W0212
         except AttributeError:
             pass
+
+        runtime_schema = getattr(task.function, 'runtime_schema', None)
+        if runtime_schema:
+            opt = runtime_schema(opt)
 
         if 'tables' in opt:
             tables = [self.tables.get(src, {}) for src in opt.tables]
@@ -95,10 +98,16 @@ class DataPlaybook():
             res = []
 
         if 'target' in opt:
-            self.tables[opt.target] = res
             if debug:
-                print("**************TARGET (after)")
-                self.print_table(opt.target)
+                print(f"**************TARGET ({opt.target}")
+            if isinstance(res, list):
+                self.tables[opt.target] = res
+                if debug:
+                    self.print_table(opt.target)
+            else:
+                self.tables.var[opt.target] = res
+                if debug:
+                    self.print_table(opt.target)
 
     def run(self):
         """Execute a lists of tasks."""
