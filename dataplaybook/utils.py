@@ -79,4 +79,3 @@ class DataEnvironment(dict):
         if key == 'var':
             raise Exception("Cannot set vaiables directly. Use .var.")
         dict.__setitem__(self, key, val)
-

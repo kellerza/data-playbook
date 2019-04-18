@@ -50,7 +50,7 @@ def read_excel_deprecate(conf):
         vol.Required('target'): cv.table_add,
     })],
     vol.Exclusive('target', 'XOR'): str,
-}, kwargs=True, deprecate=read_excel_deprecate)
+}, kwargs=True, pre_validator=read_excel_deprecate)
 def task_read_excel(tables, file, target=None, sheets=None):
     """Read excel file using openpyxl."""
     t_start = timer()
@@ -133,7 +133,7 @@ def get_filename(filename):
     vol.Required('file'): cv.endswith('.xlsx'),
     vol.Optional('include'): vol.All(cv.ensure_list, [cv.table_use]),
     vol.Optional('header', default=[]): vol.All(cv.ensure_list, [str]),
-}, kwargs=True, deprecate=cv.deprecate_key('ensure_string', 'write_excel'))
+}, kwargs=True, pre_validator=cv.deprecate_key('ensure_string', 'write_excel'))
 def task_write_excel(
         tables, file, include=None, header=None, ensure_string=None):
     """Write an excel file."""
@@ -164,8 +164,9 @@ def task_write_excel(
 
         debugs = 2
         for row in tables[table_name]:
-            erow = [str(v) if isinstance(v, (list, dict, tuple)) else v
-                    for v in map(row.get, hdr)]
+            erow = [
+                str(v) if isinstance(v, (list, dict, tuple)) or callable(v)
+                else v for v in map(row.get, hdr)]
             try:
                 wsh.append(erow)
             except ValueError as exc:
@@ -173,7 +174,7 @@ def task_write_excel(
                 debugs -= 1
                 if debugs > 0:
                     _LOGGER.warning("Error writing %s, hdrs: %s - %s",
-                                    list(erow.values()), hdr, exc)
+                                    list(erow), hdr, exc)
         if debugs < 0:
             _LOGGER.warning("Total %s errors", 2-debugs)
 

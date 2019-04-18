@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
-class MongoURI(object):
+class MongoURI():
     """MongoDB URI."""
     netloc = attr.ib()
     database = attr.ib()
@@ -75,9 +75,9 @@ def task_write_mongo(table, db):  # pylint: disable=invalid-name
     if db.set_id:
         filtr = {'_sid': db.set_id}
         existing_count = col.count(filtr)
-        if existing_count > 0 and len(table) == 0:
+        if existing_count > 0 and not table:
             _LOGGER.error("Trying to replace {} documents with an empty set")
-            exit
+            return
         _LOGGER.info("Replacing %s documents matching %s, %s new",
                      col.count(filtr), db.set_id, len(table))
         col.delete_many(filtr)

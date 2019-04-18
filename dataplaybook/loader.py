@@ -24,7 +24,7 @@ class Task():
     name = attr.ib()
     function = attr.ib()
     module = attr.ib()
-    # type = attr.ib(default=0)
+    task_type = attr.ib(default=0)
 
     @property
     def schema(self):
@@ -83,8 +83,6 @@ def _import(mod_name):
 
     path = Path(mod_name + '.py').resolve(strict=True)
     mod_name = path.stem
-    # print(path.parent)
-    # print(mod_name)
 
     sys.path.insert(0, str(path.parent))
     try:
@@ -122,7 +120,7 @@ def load_module(mod_name):
 
             # Type
             sig = inspect.signature(fun)
-            task.type = len(sig.parameters) - 1
+            task.task_type = len(sig.parameters) - 1
             # if len(sig.parameters) == 1 and sig.parameters[0] == 'tables':
             #    task.type = -1  # All tables
 

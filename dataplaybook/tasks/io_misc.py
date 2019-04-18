@@ -31,7 +31,6 @@ def task_read_csv(tables, file, columns=None):
             #     continue
             # line = line.split('\t')
             # yield {k: v for k, v in zip(header, line)}
-    return
 
 
 @cv.task_schema({
@@ -50,7 +49,6 @@ def task_read_tab_delim(tables, opt):
                 continue
             line = line.split('\t')
             yield {k: v for k, v in zip(header, line)}
-    return
 
 
 @cv.task_schema({

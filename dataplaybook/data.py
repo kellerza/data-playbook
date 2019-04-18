@@ -58,9 +58,11 @@ class DataPlaybook():
         except AttributeError:
             pass
 
-        runtime_schema = getattr(task.function, 'runtime_schema', None)
-        if runtime_schema:
-            opt = runtime_schema(opt)
+        # Allows 'nested' runtime schema, like template
+        schema = getattr(task.function, 'schema')
+        if schema:
+            with cv.ENV.environment(self.tables):
+                opt = schema(opt)
 
         if 'tables' in opt:
             tables = [self.tables.get(src, {}) for src in opt.tables]
@@ -90,7 +92,7 @@ class DataPlaybook():
                 res = list(res)
                 if 'target' not in opt:
                     _LOGGER.warning(
-                        "Task %s is a generator wiithout any target table",
+                        "Task %s is a generator without any target table",
                         opt.task)
 
         except Exception:  # pylint: disable=broad-except
@@ -116,7 +118,7 @@ class DataPlaybook():
             return
         len_tasks = len(self.config['tasks'])
         for idx, opt in enumerate(self.config['tasks'], 1):
-            _LOGGER.info("Task %s/%s: %s", idx, len_tasks, opt)
+            _LOGGER.info("TASK %s/%s: %s", idx, len_tasks, opt)
             self._task(opt)
 
 

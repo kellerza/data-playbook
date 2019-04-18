@@ -4,14 +4,45 @@ import os
 import re
 from collections import OrderedDict
 from typing import Any, Sequence, TypeVar, Union
+from contextlib import contextmanager
 
+import attr
 import voluptuous as vol
+
+from dataplaybook.templates import (  # noqa pylint:disable=unused-import
+    isjmespath, process_templates)
 
 # typing typevar
 T = TypeVar('T')  # pylint: disable=invalid-name
 RE_SLUGIFY = re.compile(r'[^a-z0-9_]+')
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
+
+
+@attr.s(slots=True)
+class Env():
+    """Environment global variable."""
+    tables = attr.ib(default=[])
+    cols = attr.ib(default=[])
+    lasttable = attr.ib(default='')
+    env = attr.ib(default=None)
+
+    @contextmanager
+    def environment(self, env):
+        """Context manager to set the environment."""
+        self.env = env
+        try:
+            yield env
+        finally:
+            self.env = None
+
+    @property
+    def runtime(self):
+        """Is environment set?"""
+        return self.env is not None
+
+
+ENV = Env()
 
 
 class AttrDict(dict):
@@ -22,7 +53,7 @@ class AttrDict(dict):
         return AttrDict(value) if isinstance(value, dict) else value
 
     def __setattr__(self, key, value):
-        raise NotImplementedError
+        raise IOError('Read only')
 
     def __repr__(self):
         lst = [("{}='{}'" if isinstance(v, str) else "{}={}").format(k, v)
@@ -30,14 +61,18 @@ class AttrDict(dict):
         return '(' + ', '.join(lst) + ')'
 
 
-def dict_schema(  # pylint: disable=invalid-name
-        value: dict, *more, prepend=None) -> str:
-    """Voluptuous schema that will convert dict to a Munch object."""
-    if not isinstance(value, (dict, OrderedDict)):
-        raise vol.DictInvalid("Invalid dictionary")
-    prepend = ensure_list(prepend)
-    return vol.All(*prepend, vol.Schema(value),
-                   lambda a: AttrDict(a), *more)  # pylint: disable=W0108
+def AttrDictSchema(  # pylint: disable=invalid-name
+        schema: dict, *post, pre=None) -> str:
+    """Voluptuous schema that will convert dict to an AttrDict object.
+
+    Append/pre and prepend/post validators for the complete dictionary:
+    - pre: can be used for deprecation.
+    - post: can be used for validators involving multiple keys."""
+    if not isinstance(schema, (dict, OrderedDict)):
+        raise TypeError(f"Invalid dictionary: {schema}")
+    pre = ensure_list(pre)
+    return vol.All(*pre, vol.Schema(schema),
+                   lambda d: AttrDict(d), *post)  # pylint: disable=W0108
 
 
 def isfile(value: Any) -> str:
@@ -53,27 +88,20 @@ def isfile(value: Any) -> str:
     return file_in
 
 
-TABLES = []
-LASTTABLE = ""
-COLS = []
-
-
 def table_use(value):
     """Check if valid table and already exists."""
     # value = slug(value)
-    if value not in TABLES:
+    if value not in ENV.tables:
         raise vol.Invalid("Table {} does not exist".format(value))
-    global LASTTABLE
-    LASTTABLE = value
+    ENV.lasttable = value
     return value
 
 
 def table_add(value):
     """Check if valid table and add to the list."""
     # value = slug(value)
-    TABLES.append(value)
-    global LASTTABLE
-    LASTTABLE = value
+    ENV.tables.append(value)
+    ENV.lasttable = value
     return value
 
 
@@ -84,7 +112,7 @@ def _col(value, table=None):
         table, _, value = value.partition('.')
     # value = slug(value)
     if table is None:
-        table = LASTTABLE
+        table = ENV.lasttable
     fullname = "{}.{}".format(table, value)
     return fullname
 
@@ -92,7 +120,7 @@ def _col(value, table=None):
 def col_add(value, table=None):
     """Check if valid table and add to the list."""
     fullname = _col(value, table)
-    COLS.append(fullname)
+    ENV.cols.append(fullname)
     _LOGGER.debug('Added col %s', fullname)
     return value
 
@@ -101,15 +129,15 @@ def col_copy(table_from, table_to):
     """Copy olumns from one table to another."""
     table_from = table_from + '.'
     table_to = table_to + '.'
-    for col in list(COLS):
+    for col in list(ENV.cols):
         if col.startswith(table_from):
-            COLS.append(col.replace(table_from, table_to))
+            ENV.cols.append(col.replace(table_from, table_to))
 
 
 def col_use(value, table=None):
     """Ensure a column is available for use."""
     fullname = _col(value, table)
-    if fullname not in COLS:
+    if fullname not in ENV.cols:
         _LOGGER.warning("Column %s might not exist", fullname)
     return value
 
@@ -117,7 +145,7 @@ def col_use(value, table=None):
 def table_remove(value):
     """Check if valid&existing table and remove from the list."""
     value = table_use(value)
-    TABLES.remove(value)
+    ENV.tables.remove(value)
     return value
 
 
@@ -187,18 +215,44 @@ def deprecate_key(key, msg, renamed=None):
     return _validator
 
 
+def templateSchema(  # pylint: disable=invalid-name
+        *schema, pre=None, runtime_only=None):
+    """Template schema validator using vol.All.
+
+    Templates are validated during startup and expanded during runtime."""
+    pre = ensure_list(pre)
+    runtime_only = ensure_list(runtime_only)
+
+    def _validator(value):
+        if ENV.runtime:
+            return vol.All(*pre,
+                           lambda t: process_templates(t, ENV.env),
+                           *schema, *runtime_only)(value)
+        return vol.All(*pre, process_templates, *schema)(value)
+
+    return _validator
+
+
 def task_schema(  # pylint: disable=invalid-name
-        new: dict, *more_schema: callable, runtime_schema: callable = None,
+        schema: dict, *additional_validators: callable,
         tables: int = 0, target: bool = False, columns: int = 0,
-        kwargs=False, deprecate=None):
-    """Return a schema based on the base task schame."""
+        kwargs=False, pre_validator=None):
+    """Decorate a task_ function and add schema and kwargs.
+
+    schema: user define schema
+    additional_validators: Use to validate the entire dictionary
+    tables: The count of tables sent to the function, can be tuple (min, max)
+    columns: The count of columns, typically of the first table. Tuple allowed
+    target: The target key/table name in the environment (Dataplaybook.tables)
+    kwargs: send the options dict to the function as kwargs (**) instead of opt
+    """
     base = OrderedDict({
         vol.Required('task'): slug,
         vol.Optional('debug*'): vol.Coerce(str),
         vol.Optional('tasks*'): vol.All(ensure_list, [dict])
     })
 
-    if tables is not 0:
+    if tables != 0:
         volReqOpt = vol.Required
         if isinstance(tables, (tuple, list)):
             _len = vol.Length(min=tables[0], max=tables[1])
@@ -211,7 +265,7 @@ def task_schema(  # pylint: disable=invalid-name
     if target:
         base[vol.Required('target')] = table_add
 
-    if columns is not 0:
+    if columns != 0:
         if isinstance(columns, (tuple, list)):
             _len = vol.Length(min=columns[0], max=columns[1])
         else:
@@ -219,14 +273,14 @@ def task_schema(  # pylint: disable=invalid-name
         base[vol.Required('columns')] = vol.All(
             ensure_list, _len, [str])  # was slug
 
-    for key, val in new.items():
+    for key, val in schema.items():
         base[key] = val
 
-    the_schema = dict_schema(base, *more_schema, prepend=deprecate)
+    the_schema = AttrDictSchema(
+        base, *additional_validators, pre=pre_validator)
 
     def _deco(func):
         func.schema = the_schema
-        func.runtime_schema = runtime_schema
         func.kwargs = kwargs
         return func
 
