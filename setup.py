@@ -22,7 +22,7 @@ REQUIRES = [
     'voluptuous>=0.11.5',
     'pyyaml>=3.13,<4',
     'jinja2>=2.9,<3',
-    'jmespath>=0.94<1',
+    'jmespath>=0.94,<1',
     'openpyxl>=2.6,<3',
 ]
 
