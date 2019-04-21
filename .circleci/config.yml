@@ -1,7 +1,7 @@
 version: 2.0
 
 jobs:
-  Python_3.6:
+  build:
       docker:
         - image: circleci/python:3.6
       steps:
@@ -20,9 +20,3 @@ jobs:
             path: test-reports
         - store_artifacts:
             path: test-reports
-
-workflows:
-  version: 2
-  build:
-    jobs:
-      - Python_3.6
