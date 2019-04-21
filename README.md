@@ -1,5 +1,6 @@
 # Data Playbook
-[![Build Status](https://travis-ci.com/kellerza/data-playbook.svg?branch=master)](https://travis-ci.com/kellerza/data-playbook)
+[![CircleCI](https://circleci.com/gh/kellerza/data-playbook/tree/master.svg?style=svg)](https://circleci.com/gh/kellerza/data-playbook/tree/master)
+[![codecov](https://codecov.io/gh/kellerza/data-playbook/branch/master/graph/badge.svg)](https://codecov.io/gh/kellerza/data-playbook)
 :book: Playbooks for data. Open, process and save table based data.
 
 Automate repetitive tasks on table based data. Include various input and output tasks. Can be extended with custom modules.
