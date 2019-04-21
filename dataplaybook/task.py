@@ -1,0 +1,139 @@
+"""Task definition and validators."""
+import logging
+from inspect import isgeneratorfunction, signature
+
+import attr
+import voluptuous as vol
+
+import dataplaybook.config_validation as cv
+
+_LOGGER = logging.getLogger(__name__)
+
+KEY_DEBUG = 'debug'
+KEY_TASKS = 'tasks'
+KEY_TABLES = 'tables'
+KEY_TARGET = 'target'
+STANDARD_KEYS = (KEY_DEBUG, KEY_TASKS, KEY_TABLES, KEY_TARGET)
+
+
+@attr.s
+class TaskDef():
+    """Task Definition."""
+
+    name = attr.ib()
+    function = attr.ib()
+    module = attr.ib()
+    parameter_len = attr.ib(init=False)
+
+    opt_schema = attr.ib(init=False)
+    target = attr.ib(init=False)
+    tables = attr.ib(init=False)
+    kwargs = attr.ib(init=False)
+
+    @property
+    def isgenerator(self):
+        """Generator funciton."""
+        return isgeneratorfunction(self.function)
+
+    def __attrs_post_init__(self):
+        """Init fron function task_schema."""
+        props = getattr(self.function, 'task_schema', None)
+        if props is not None:
+            (self.opt_schema, self.target, self.tables, self.kwargs) = props
+        else:
+            _LOGGER.warning("Module %s: No schema attached to function %s",
+                            self.module, self.name)
+            self.target = True
+            self.tables = (0, 0)
+            self.kwargs = False
+            self.opt_schema = {}
+
+        # Type
+        # if len(sig.parameters) == 1 and sig.parameters[0] == 'tables':
+        #    task.type = -1  # All tables
+        sig = signature(self.function)
+        self.parameter_len = len(sig.parameters)
+
+        # Build full schema
+    def validate(self, config, check_in=True, check_out=True):
+        """Validate the task config."""
+        config = BASE_SCHEMA(config)
+        fschema = {vol.Required(self.name): self.opt_schema}
+
+        if check_in:
+            if self.tables[1] == 0 and config.get('tables', None):
+                raise vol.Invalid(
+                    "No input expected. Please remove 'tables'")
+            _len = vol.Length(min=self.tables[0], max=self.tables[1])
+            if self.tables[0]:
+                fschema[vol.Required(KEY_TABLES)] = _len
+            else:
+                fschema[vol.Optional(KEY_TABLES)] = _len
+
+        if check_out:
+            if self.target:
+                fschema[vol.Required(KEY_TARGET)] = cv.table_add
+            elif config.get('target', None):
+                raise vol.Invalid(
+                    "No output expected. Please remove `target`")
+
+        return cv.AttrDict(vol.Schema(fschema, extra=vol.ALLOW_EXTRA)(config))
+
+
+def resolve_task(config: dict, all_tasks) -> tuple:
+    """Validate tasks using."""
+    config = BASE_SCHEMA(config)
+    name = get_task_name(config)
+    try:
+        taskdef = all_tasks[name]
+    except IndexError:
+        _LOGGER.error("Task %s not in %s", name, all_tasks.keys())
+        raise vol.Invalid("Task {} not found".format(name))
+
+    # Copy column definitions from first input to target. This is a estimate.
+    if config.get('target', None) and config.get('tables', None):
+        tables0 = cv.ensure_list(config['tables'])[0]
+        cv.col_copy(tables0, config['target'])
+
+    return taskdef, taskdef.validate(config)
+
+
+def get_task_name(value):
+    """Ensure we have 1 thing to do."""
+    _LOGGER.debug("Value %s keys: %s", value, value.keys())
+    extras = set(list(value.keys())) - set(STANDARD_KEYS)
+    _LOGGER.debug("Task name %s orig %s", next(iter(extras)), value)
+    if not extras:
+        raise vol.Invalid("One task expected")
+    if len(extras) > 1:
+        # pylint: disable=raising-format-tuple
+        raise vol.Invalid("Multiple tasks: %s", str(extras))
+    return next(iter(extras))
+
+
+def _migrate_task(task):
+    """Migrate task format."""
+    if 'task' not in task:
+        return task
+
+    if not task['task']:
+        _LOGGER.error('Empty `task:` found, cannot migrate')
+        return task
+
+    # old format
+    _LOGGER.warning("Migrating `task:` format to `taskname: options`")
+    opt = {k: v for k, v in task.items()
+           if k not in ('task', 'tables', 'target', 'debug*')}
+    newtask = {task['task']: opt}
+    for key in ('tables', 'target', 'debug*'):
+        if key in task:
+            newtask[key.replace('*', '')] = task[key]
+    _LOGGER.debug("New task format %s, from old format: %s", newtask, task)
+    return newtask
+
+
+BASE_SCHEMA = vol.All(_migrate_task, vol.Schema({
+    vol.Optional(KEY_DEBUG): vol.Coerce(str),
+    vol.Optional(KEY_TABLES): vol.All(cv.ensure_list, [cv.table_use]),
+    vol.Optional(KEY_TARGET): cv.table_add,
+}, extra=vol.ALLOW_EXTRA))

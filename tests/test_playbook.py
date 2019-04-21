@@ -8,8 +8,7 @@ import yaml
 import dataplaybook.config_validation as cv
 from dataplaybook import DataPlaybook
 from dataplaybook.const import PlaybookError
-from dataplaybook.data import DataEnvironment
-from tests.common import load_module
+from dataplaybook.utils import DataEnvironment
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,20 +23,19 @@ def task_test_data(_, data):
 
 def test_load_and_run():
     """Test starting from string, alias key('_') and target."""
-    txt = """
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         _: &v 111
         tasks:
           - task: test_data
             data: [{a: *v}]
             target: tab1
-    """
-    load_module(__file__)
-    dpb = DataPlaybook(yaml_text=txt)
+    """)
     assert '_' not in dpb.config, "alias subkey '_' not removed"
-    assert list(dpb.config.keys()) == ['tasks', 'modules']
+    assert sorted(dpb.config.keys()) == ['modules', 'tasks', 'version']
     assert dpb.config['tasks'] == [{
-        'task': 'test_data',
-        'data': [{'a': 111}],
+        'test_data': {
+            'data': [{'a': 111}],
+        },
         'target': 'tab1'
     }]
 
@@ -62,7 +60,7 @@ def task_test_env(env, data):
 
 def test_env_to_function():
     """Test starting from string."""
-    txt = """
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         tasks:
           - task: test_data
             data: [{'a': 5}]
@@ -70,9 +68,7 @@ def test_env_to_function():
           - task: test_env
             data: ['tab2 data']
 
-    """
-    load_module(__file__)
-    dpb = DataPlaybook(yaml_text=txt)
+    """)
     dpb.run()
     assert dpb.tables['tab2'] == ['tab2 data']
 
@@ -85,7 +81,7 @@ def test_bad_alias():
           - *not_v
     """
     with pytest.raises(yaml.composer.ComposerError):
-        DataPlaybook(yaml_text=txt)
+        DataPlaybook(modules=__name__, yaml_text=txt)
     # TODO: raise PlaybookError and handle correctly
 
 
@@ -105,23 +101,23 @@ def task_target_fail_bad_params(_, bad, bad2):
 
 def test_target_fail():
     """Test target fail."""
-    load_module(__file__)
-
-    dpb = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         tasks:
           - task: target_fail
             target: tab1
 
     """)
-    dpb.run()
+    with pytest.raises(PlaybookError):
+        dpb.run()
 
-    dpb = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         tasks:
           - task: target_fail_bad_params
             target: tab1
 
     """)
-    dpb.run()
+    with pytest.raises(PlaybookError):
+        dpb.run()
     # TODO: imporve failures
 
 
@@ -134,9 +130,7 @@ def task_target_var(env):
 
 def test_variables():
     """Test target fail."""
-    load_module(__file__)
-
-    dpb = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         tasks:
           - task: target_var
             target: tab1

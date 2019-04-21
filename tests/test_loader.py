@@ -1,28 +1,14 @@
+"""Test loader functions."""
 import logging
-from pathlib import Path
 from unittest.mock import patch
-
-import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook import loader
-from dataplaybook.loader import TASKS
-from dataplaybook.tasks import task_print
-from tests.common import load_module
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def test_task():
-    """Test the Tasks class."""
-    tsk = loader.Task('print', task_print, module='test_loader')
-    assert tsk.schema  # propoerty
-    assert isinstance(tsk.schema, vol.All)
-    # TODO: assert "tasks" in str(tsk.module)
-
-
 def test_load_yaml():
-
     yaml = "a: 1"
     res = loader.load_yaml(text=yaml)
     assert res['a'] == 1
@@ -40,12 +26,13 @@ def task_test_empty_task(env):
 
 
 def test_remove():
-    start_l = len(TASKS.keys())
-    load_module(__file__)
-    assert len(TASKS) > start_l
-    _LOGGER.debug(len(TASKS))
-    loader.remove_module(Path(__file__).stem)
-    assert len(TASKS) == start_l
+    """Remove modules."""
+    all_tasks = loader.TaskDefs()
+    all_tasks.load_module(__name__)
+    assert all_tasks, f"Nothing loaded from {__name__}"
+    _LOGGER.debug(len(all_tasks))
+    all_tasks.remove_module(__name__)
+    assert not all_tasks
 
 
 # def test__find_file():

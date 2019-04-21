@@ -1,7 +1,6 @@
 """Tests for jmespath.py"""
 import dataplaybook.config_validation as cv
 from dataplaybook import DataPlaybook
-from tests.common import load_module
 
 
 @cv.task_schema({}, target=1)
@@ -16,9 +15,7 @@ def task_load_test_data(env, opt):
 
 def test_jmespath_task():
     """Test basic jmespath to variable."""
-    load_module(__file__)
-
-    dpb = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         modules: [dataplaybook.tasks.templates]
         tasks:
           - task: load_test_data
@@ -54,21 +51,15 @@ def test_jmespath_task():
 
 def test_templateSchema_jmespath():  # pylint: disable=invalid-name
     """Test basic jmespath to variable."""
-    load_module(__file__)
-
-    dpb = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         modules: [dataplaybook.tasks.templates]
         tasks:
           - task: load_test_data
             target: test
 
-          - task: set
-            value: Normal return value
-            target: test1
-
-          - task: set
-            value: jmespath test[?k==`2`].v | [0]
-            target: test2
+          - set:
+              test1: Normal return value
+              test2: jmespath test[?k==`2`].v | [0]
     """)
     dpb.run()
     assert dpb.tables['test'][0] == {'k': 1, 'v': 'one'}
@@ -78,25 +69,16 @@ def test_templateSchema_jmespath():  # pylint: disable=invalid-name
 
 def test_templateSchema_jinja():  # pylint: disable=invalid-name
     """Test basic jinja to variable."""
-    load_module(__file__)
-
-    dpb = DataPlaybook(yaml_text="""
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
         modules: [dataplaybook.tasks.templates]
         tasks:
           - task: load_test_data
             target: test
 
-          - task: set
-            value: Normal return value
-            target: test1
-
-          - task: set
-            value: '{{ test[0].v }}'
-            target: test0
-
-          - task: set
-            value: '{{ test[1].v }}'
-            target: test2
+          - set:
+              test1: Normal return value
+              test0: '{{ test[0].v }}'
+              test2: '{{ test[1].v }}'
     """)
     dpb.run()
     assert dpb.tables['test'][0] == {'k': 1, 'v': 'one'}

@@ -1,76 +1,70 @@
 """Dynamically load additional modules."""
 from importlib import import_module
-import inspect
+from inspect import getmembers
 import logging
 import re
 import sys
 from collections import OrderedDict
 from pathlib import Path
 
-import attr
-from voluptuous import Invalid
 import yaml
-import dataplaybook.config_validation as cv
 from dataplaybook.const import PlaybookError
+from dataplaybook.task import TaskDef
 
-TASKS = {}
 _LOGGER = logging.getLogger(__name__)
 
 
-@attr.s
-class Task():
-    """Representation of a task."""
+class TaskDefs(dict):
 
-    name = attr.ib()
-    function = attr.ib()
-    module = attr.ib()
-    task_type = attr.ib(default=0)
+    def remove_module(self, mod_name):
+        """Remove module from tasks."""
+        sys.modules.pop(mod_name, None)  # Ensure it will be reloaded...
 
-    @property
-    def schema(self):
-        """Return the schema."""
-        if self.function.schema:
-            return self.function.schema
-        _LOGGER.warning("No schema for %s", self.name)
-        return dict
+        pop = []
+        for key, val in self.items():
+            # _LOGGER.debug("k %s v '%s' '%s'", key, val.module, mod_name)
+            if mod_name == val.module:
+                pop.append(key)
 
-    # @property
-    # def module(self):
-    #     """Return the source module."""
-    #     return sys.modules[self.function.__module__].__name__
+        for key in pop:
+            self.pop(key, None)
+        return pop
 
+    def load_module(self, mod_name):
+        """Import tasks."""
+        try:
+            mod_obj = _import(mod_name)
+        except ModuleNotFoundError as err:
+            _LOGGER.error("Could not load module %s: %s", mod_name, err)
+            return
+        except FileNotFoundError as err:
+            _LOGGER.error("Could not load module %s: %s", mod_name, err)
+            return
+        mod_name = mod_obj.__name__
 
-def validate_tasks(config: dict) -> dict:
-    """Validate tasks using."""
-    task_name = config['task']
-    if task_name not in TASKS:
-        _LOGGER.error("%s not in %s", task_name, TASKS.keys())
-        raise Invalid("Transform function {} not found".format(task_name))
+        loaded = []
+        members = getmembers(mod_obj)
 
-    if 'target' in config and 'tables' in config:
-        # Schema not yet executed on 'tables'
-        tables0 = cv.ensure_list(config['tables'])[0]
-        cv.col_copy(tables0, config['target'])
+        # collect task functions
+        for nme, fun in members:
+            if nme.startswith('task_'):
+                task = TaskDef(name=nme[5:], function=fun, module=mod_name)
+                if task.name in self:
+                    _LOGGER.warning(
+                        "Module %s: Skipping task %s. Already loaded from "
+                        "%s", mod_name, nme, self[task.name].module)
+                    continue
 
-    task = TASKS[task_name]
-    config = task.schema(config)
+                # Success
+                loaded.append(task.name)
+                self[task.name] = task
 
-    return cv.AttrDict(config)
+        _LOGGER.debug(
+            "Module %s: Loaded %s tasks: %s", mod_name, len(loaded),
+            ', '.join(loaded)
+        )
 
-
-def remove_module(mod_name):
-    """Remove module from tasks."""
-    sys.modules.pop(mod_name, None)  # Ensure it will be reloaded...
-
-    pop = []
-    for key, val in TASKS.items():
-        # _LOGGER.debug("k %s v '%s' '%s'", key, val.module, mod_name)
-        if mod_name == val.module:
-            pop.append(key)
-
-    for key in pop:
-        TASKS.pop(key, None)
-    return pop
+        return mod_name
 
 
 def _import(mod_name):
@@ -91,56 +85,6 @@ def _import(mod_name):
     finally:
         if sys.path[0] == path.parent:
             sys.path.pop(0)
-
-
-def load_module(mod_name):
-    """Import tasks."""
-    try:
-        mod_obj = _import(mod_name)
-    except ModuleNotFoundError as err:
-        _LOGGER.error("Could not load module %s: %s", mod_name, err)
-        return
-    except FileNotFoundError as err:
-        _LOGGER.error("Could not load module %s: %s", mod_name, err)
-        return
-    mod_name = mod_obj.__name__
-
-    loaded = []
-    members = inspect.getmembers(mod_obj)
-
-    # collect task functions
-    for nme, fun in members:
-        if nme.startswith('task_'):
-            task = Task(name=nme[5:], function=fun, module=mod_name)
-            if task.name in TASKS:
-                _LOGGER.warning(
-                    "Module %s: Skipping task %s. Already loaded from "
-                    "%s", mod_name, nme, TASKS[task.name].module)
-                continue
-
-            # Type
-            sig = inspect.signature(fun)
-            task.task_type = len(sig.parameters) - 1
-            # if len(sig.parameters) == 1 and sig.parameters[0] == 'tables':
-            #    task.type = -1  # All tables
-
-            # Validator
-            if not hasattr(task.function, 'schema'):
-                _LOGGER.error("Module %s: No schema attached to function %s",
-                              mod_name, nme)
-                continue
-            # task.schema = task.function.schema
-
-            # Success
-            loaded.append(task.name)
-            TASKS[task.name] = task
-
-    _LOGGER.debug(
-        "Module %s: Loaded %s tasks: %s", mod_name, len(loaded),
-        ', '.join(loaded)
-    )
-
-    return mod_name
 
 
 def load_yaml(filename=None, text=None):

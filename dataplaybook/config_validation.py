@@ -62,7 +62,7 @@ class AttrDict(dict):
 
 
 def AttrDictSchema(  # pylint: disable=invalid-name
-        schema: dict, *post, pre=None) -> str:
+        schema: dict, *post, pre=None, extra=vol.PREVENT_EXTRA) -> str:
     """Voluptuous schema that will convert dict to an AttrDict object.
 
     Append/pre and prepend/post validators for the complete dictionary:
@@ -71,7 +71,7 @@ def AttrDictSchema(  # pylint: disable=invalid-name
     if not isinstance(schema, (dict, OrderedDict)):
         raise TypeError(f"Invalid dictionary: {schema}")
     pre = ensure_list(pre)
-    return vol.All(*pre, vol.Schema(schema),
+    return vol.All(*pre, vol.Schema(schema, extra=extra),
                    lambda d: AttrDict(d), *post)  # pylint: disable=W0108
 
 
@@ -246,42 +246,26 @@ def task_schema(  # pylint: disable=invalid-name
     target: The target key/table name in the environment (Dataplaybook.tables)
     kwargs: send the options dict to the function as kwargs (**) instead of opt
     """
-    base = OrderedDict({
-        vol.Required('task'): slug,
-        vol.Optional('debug*'): vol.Coerce(str),
-        vol.Optional('tasks*'): vol.All(ensure_list, [dict])
-    })
-
-    if tables != 0:
-        volReqOpt = vol.Required
-        if isinstance(tables, (tuple, list)):
-            _len = vol.Length(min=tables[0], max=tables[1])
-            if tables[0] == 0:
-                volReqOpt = vol.Optional
-        else:
-            _len = vol.Length(min=tables, max=tables)
-        base[volReqOpt('tables')] = vol.All(ensure_list, _len, [table_use])
-
-    if target:
-        base[vol.Required('target')] = table_add
+    if isinstance(tables, (tuple, list)):
+        assert len(tables) == 2
+    else:
+        tables = (tables, tables)
 
     if columns != 0:
         if isinstance(columns, (tuple, list)):
-            _len = vol.Length(min=columns[0], max=columns[1])
+            assert len(columns) == 2
         else:
-            _len = vol.Length(min=columns, max=columns)
-        base[vol.Required('columns')] = vol.All(
-            ensure_list, _len, [str])  # was slug
-
-    for key, val in schema.items():
-        base[key] = val
+            columns = (columns, columns)
+        schema[vol.Required('columns')] = vol.All(
+            ensure_list, vol.Length(min=columns[0], max=columns[1]), [str])
 
     the_schema = AttrDictSchema(
-        base, *additional_validators, pre=pre_validator)
+        schema, *additional_validators, pre=pre_validator,
+        extra=vol.ALLOW_EXTRA)
 
     def _deco(func):
-        func.schema = the_schema
-        func.kwargs = kwargs
+        """Add decorator to function, used by Task()."""
+        setattr(func, 'task_schema', (the_schema, target, tables, kwargs))
         return func
 
     return _deco
