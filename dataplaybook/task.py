@@ -25,10 +25,13 @@ class TaskDef():
     module = attr.ib()
     parameter_len = attr.ib(init=False)
 
-    opt_schema = attr.ib(init=False)
-    target = attr.ib(init=False)
-    tables = attr.ib(init=False)
-    kwargs = attr.ib(init=False)
+    opt_schema = attr.ib(init=False, default=dict())
+    target = attr.ib(init=False, default=True)
+    tables = attr.ib(init=False, default=(0, 0))
+    kwargs = attr.ib(init=False, default=False)
+
+    pre_validators = attr.ib(init=False, default=None)
+    post_validators = attr.ib(init=False, default=tuple())
 
     @property
     def isgenerator(self):
@@ -39,14 +42,13 @@ class TaskDef():
         """Init fron function task_schema."""
         props = getattr(self.function, 'task_schema', None)
         if props is not None:
-            (self.opt_schema, self.target, self.tables, self.kwargs) = props
+            (self.opt_schema, self.target, self.tables, self.kwargs,
+             self.pre_validators, self.post_validators) = props
+            self.pre_validators = tuple(cv.ensure_list(self.pre_validators))
+            self.post_validators = tuple(cv.ensure_list(self.post_validators))
         else:
             _LOGGER.warning("Module %s: No schema attached to function %s",
                             self.module, self.name)
-            self.target = True
-            self.tables = (0, 0)
-            self.kwargs = False
-            self.opt_schema = {}
 
         # Type
         # if len(sig.parameters) == 1 and sig.parameters[0] == 'tables':
@@ -58,7 +60,15 @@ class TaskDef():
     def validate(self, config, check_in=True, check_out=True):
         """Validate the task config."""
         config = BASE_SCHEMA(config)
-        fschema = {vol.Required(self.name): self.opt_schema}
+
+        for p_v in self.pre_validators:
+            config = p_v(config)
+        print(config)
+
+        fschema = {
+            vol.Required(self.name): vol.All(
+                vol.Schema(self.opt_schema), lambda d: cv.AttrDict(d))
+        }
 
         if check_in:
             if self.tables[1] == 0 and config.get('tables', None):
@@ -77,7 +87,8 @@ class TaskDef():
                 raise vol.Invalid(
                     "No output expected. Please remove `target`")
 
-        return cv.AttrDict(vol.Schema(fschema, extra=vol.ALLOW_EXTRA)(config))
+        return cv.AttrDictSchema(
+            fschema,  extra=vol.ALLOW_EXTRA)(config)
 
 
 def resolve_task(config: dict, all_tasks) -> tuple:
@@ -133,6 +144,7 @@ def _migrate_task(task):
 
 
 BASE_SCHEMA = vol.All(_migrate_task, vol.Schema({
+    vol.Optional('name'): vol.Coerce(str),
     vol.Optional(KEY_DEBUG): vol.Coerce(str),
     vol.Optional(KEY_TABLES): vol.All(cv.ensure_list, [cv.table_use]),
     vol.Optional(KEY_TARGET): cv.table_add,

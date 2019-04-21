@@ -2,7 +2,7 @@
 import logging
 import os
 from collections import OrderedDict
-from timeit import default_timer as timer
+
 
 import attr
 import openpyxl
@@ -22,26 +22,30 @@ class Mylist(list):
 
 def read_excel_deprecate(conf):
     """Change schema."""
-    old = [k for k in conf.keys() if k in ('sheet', 'header', 'columns')]
+    msg = "read_excel: Deprecated config. "
+    conf_re = conf['read_excel']
+    old = [k for k in conf_re if k in ('sheet', 'header', 'columns', 'target')]
     if not old:
+        if 'target' in conf:
+            _LOGGER.warning(
+                "%s Moving 'target:' to 'read_excel.default_sheet:'", msg)
+            conf_re['default_sheet'] = conf.pop('target')
         return conf
-    msg = f"read_excel: {old} was deprecated."
-    if 'sheets' in conf:
+    if 'sheets' in conf_re:
         raise vol.Invalid(f"{msg} Replacement key 'sheets' also in config.")
-    new = {}
-    if 'sheet' in old:
-        new['name'] = conf.pop('sheet')
-    for key in ('header', 'columns'):
-        if key in conf:
-            new['key'] = conf.pop(key)
-    conf['sheets'] = [new]
-    _LOGGER.warning("%s Replace with 'sheets: [%s]'", msg, new)
+    new = {'target': conf.pop('target', None)}
+    new['name'] = conf_re.pop('sheet', None)
+    new['header'] = conf_re.pop('header', 0)
+    new['columns'] = conf_re.pop('columns', None)
+    conf_re['sheets'] = [new]
+    _LOGGER.warning(
+        "%s Old keys: %s. Replace with 'sheets: [%s]'", msg, old, new)
     return conf
 
 
 @cv.task_schema({
     vol.Required('file'): str,
-    vol.Exclusive('sheets', 'XOR'): [vol.Schema({
+    vol.Optional('sheets', default=[]): [vol.Schema({
         vol.Optional('name', default=None): vol.Any(str, None),
         vol.Optional('header', default=0): int,
         vol.Optional('columns', default=None): vol.Any(None, vol.Schema({
@@ -49,29 +53,21 @@ def read_excel_deprecate(conf):
         })),
         vol.Required('target'): cv.table_add,
     })],
-    vol.Exclusive('target', 'XOR'): str,
+    vol.Optional('default_sheet'): str,
 }, kwargs=True, pre_validator=read_excel_deprecate)
-def task_read_excel(tables, file, target=None, sheets=None):
+def task_read_excel(tables, file, sheets, default_sheet=None):
     """Read excel file using openpyxl."""
-    t_start = timer()
+
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
-    t_mid = timer()
 
-    if not sheets:
-        tables[target] = read_sheet(wbk, wbk.active, {})
-    else:
-        for s_cfg in sheets:
-            target = s_cfg['target']
-            name = s_cfg.get('name') or target
-            tables[target] = read_sheet(
-                wbk, wbk[name], s_cfg['columns'], s_cfg['header'])
-
-    t_end = timer()
-    _LOGGER.debug("read_excel({}): {:.2f}s convert: {:.2f}s"
-                  .format(file, t_mid-t_start, t_end-t_mid))
+    if default_sheet:
+        tables[default_sheet] = read_sheet(wbk.active, {})
+    for sht in sheets:
+        name = sht.name or sht.target
+        tables[sht.target] = read_sheet(wbk[name], sht.columns, sht.header)
 
 
-def read_sheet(wbk, _sheet, columns=None, header=0):
+def read_sheet(_sheet, columns=None, header=0):
     """."""
     rows = _sheet.rows
     data = Mylist(header=header+2)
@@ -133,7 +129,8 @@ def get_filename(filename):
     vol.Required('file'): cv.endswith('.xlsx'),
     vol.Optional('include'): vol.All(cv.ensure_list, [cv.table_use]),
     vol.Optional('header', default=[]): vol.All(cv.ensure_list, [str]),
-}, kwargs=True, pre_validator=cv.deprecate_key('ensure_string', 'write_excel'))
+}, kwargs=True, pre_validator=cv.deprecate_key(
+    ('write_excel', 'ensure_string'), 'In function write_excel'))
 def task_write_excel(
         tables, file, include=None, header=None, ensure_string=None):
     """Write an excel file."""

@@ -197,9 +197,17 @@ def endswith(parts):
 
 def deprecate_key(key, msg, renamed=None):
     """Indicate a key is deprecated: dropped or renamed."""
-    def _validator(conf):
+    def _validator(config):
+        nonlocal key
+        if isinstance(key, tuple):
+            conf = config[key[0]]
+            key = key[1]
+        else:
+            conf = config
+
         if key not in conf:
-            return conf
+            return config
+
         old_val = conf.pop(key)
         if renamed:
             nonlocal msg
@@ -211,7 +219,7 @@ def deprecate_key(key, msg, renamed=None):
         else:
             _LOGGER.warning(
                 "%s: %s was deprecated and can be removed.", msg, key)
-        return conf
+        return config
     return _validator
 
 
@@ -259,13 +267,13 @@ def task_schema(  # pylint: disable=invalid-name
         schema[vol.Required('columns')] = vol.All(
             ensure_list, vol.Length(min=columns[0], max=columns[1]), [str])
 
-    the_schema = AttrDictSchema(
-        schema, *additional_validators, pre=pre_validator,
-        extra=vol.ALLOW_EXTRA)
+    the_schema = AttrDictSchema(schema)
 
     def _deco(func):
         """Add decorator to function, used by Task()."""
-        setattr(func, 'task_schema', (the_schema, target, tables, kwargs))
+        setattr(func, 'task_schema', (
+            the_schema, target, tables, kwargs,
+            pre_validator, additional_validators))
         return func
 
     return _deco
