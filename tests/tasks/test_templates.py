@@ -21,23 +21,26 @@ def test_jmespath_task():
           - task: load_test_data
             target: test
 
-          - task: jmespath
-            jmespath: "[?k==`2`].v | [0]"
-            tables: test
+          - task: template
+            jmespath: "test[?k==`2`].v | [0]"
             target: test2
 
-          - task: jmespath
+          - task: template
             jmespath: "test[?k==`2`].v"
             target: test3
 
-          - task: jmespath
+          - task: template
             jmespath: "test[?k=='2'].v"
             target: test_str
 
-          - task: jmespath
+          - task: template
             jmespath: "test[?k=='2'].v"
             target: test_str2
-    """)
+
+          - template:
+              jmespath: "test[?k=='2'].v"
+            target: test_str3
+        """)
     dpb.run()
     assert dpb.tables['test'][0] == {'k': 1, 'v': 'one'}
     assert dpb.tables.var == {'test2': 'two'}
@@ -47,6 +50,7 @@ def test_jmespath_task():
 
     assert dpb.tables['test_str'] == ['two string']
     assert dpb.tables['test_str2'] == ['two string']
+    assert dpb.tables['test_str3'] == ['two string']
 
 
 def test_templateSchema_jmespath():  # pylint: disable=invalid-name
@@ -57,7 +61,7 @@ def test_templateSchema_jmespath():  # pylint: disable=invalid-name
           - task: load_test_data
             target: test
 
-          - set:
+          - vars:
               test1: Normal return value
               test2: jmespath test[?k==`2`].v | [0]
     """)
@@ -75,7 +79,7 @@ def test_templateSchema_jinja():  # pylint: disable=invalid-name
           - task: load_test_data
             target: test
 
-          - set:
+          - vars:
               test1: Normal return value
               test0: '{{ test[0].v }}'
               test2: '{{ test[1].v }}'
@@ -85,3 +89,36 @@ def test_templateSchema_jinja():  # pylint: disable=invalid-name
     assert dpb.tables.var.test1 == 'Normal return value'
     assert dpb.tables.var.test0 == 'one'
     assert dpb.tables.var.test2 == 'two'
+
+
+def test_templateSchema_readme_example():  # pylint: disable=invalid-name
+    dpb = DataPlaybook(modules=__name__, yaml_text="""
+        modules: [dataplaybook.tasks, dataplaybook.tasks.templates]
+        tasks:
+          - load_test_data: {}
+            target: test
+
+          - template:
+              jmespath: "test[?k=='2'].v | [0]"
+            target: task_1_result
+
+          - vars:
+              task_2_result: "{{ test | selectattr('k', 'equalto', '2') | map(attribute='v') | first }}"
+
+          - build_lookup_var:
+              key: k
+              columns: [v]
+            tables: test
+            target: lookup1
+
+          - vars:
+              task_3_result: "{{ var['lookup1']['2'].v }}"
+
+
+    """)  # noqa
+    dpb.run()
+
+    twos = 'two string'
+    assert dpb.tables.var.task_1_result == twos
+    assert dpb.tables.var.task_2_result == twos
+    assert dpb.tables.var.task_3_result == twos

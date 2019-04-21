@@ -29,6 +29,7 @@ def main():
 
     setup_logger()
     loader.load_module('dataplaybook.tasks')
+    loader.load_module('dataplaybook.tasks.templates')
     loader.load_module('dataplaybook.tasks.io_xlsx')
     loader.load_module('dataplaybook.tasks.io_misc')
 

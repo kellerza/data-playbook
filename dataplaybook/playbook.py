@@ -57,7 +57,7 @@ class DataPlaybook():
         """Print one."""
         task = cv.AttrDict({
             'print': {},
-            'tables': [table]
+            'tables': [table],
         })
         self.execute_task(task)
 

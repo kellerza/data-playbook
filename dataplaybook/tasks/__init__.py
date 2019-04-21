@@ -159,7 +159,13 @@ def task_fuzzy_match(table1, table2, opt):
         row[opt.target_column + '_'] = str(res[:10])
 
 
-@cv.task_schema({}, tables=(1, 10))
+def _copytables(conf):
+    conf['print']['tables'] = conf.get('tables', None)
+    return conf
+
+@cv.task_schema({
+    vol.Required('tables'): [str]  # copied from the outer validator
+}, tables=(1, 10), pre_validator=_copytables)
 def task_print(*tables, opt):
     """Prit a table."""
     import shutil
