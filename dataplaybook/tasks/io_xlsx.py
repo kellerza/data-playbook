@@ -45,7 +45,7 @@ def read_excel_deprecate(conf):
 
 @cv.task_schema({
     vol.Required('file'): str,
-    vol.Optional('sheets', default=[]): [vol.Schema({
+    vol.Exclusive('sheets', 'XOR'): [vol.Schema({
         vol.Optional('name', default=None): vol.Any(str, None),
         vol.Optional('header', default=0): int,
         vol.Optional('columns', default=None): vol.Any(None, vol.Schema({
@@ -53,29 +53,38 @@ def read_excel_deprecate(conf):
         })),
         vol.Required('target'): cv.table_add,
     })],
-    vol.Optional('default_sheet'): str,
+    vol.Exclusive('default_sheet', 'XOR'): str,
 }, kwargs=True, pre_validator=read_excel_deprecate)
 def task_read_excel(tables, file, sheets, default_sheet=None):
     """Read excel file using openpyxl."""
 
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
+    _LOGGER.debug("Loaded workbook %s.", file)
 
     if default_sheet:
-        tables[default_sheet] = read_sheet(wbk.active, {})
+        tables[default_sheet] = _sheet_read(wbk.active)
     for sht in sheets:
-        name = sht.name or sht.target
-        tables[sht.target] = read_sheet(wbk[name], sht.columns, sht.header)
+        name = sht.get('name', None) or sht['target']
+        tables[sht['target']] = _sheet_read(
+            wbk[name], sht.get('columns', None), sht.get('header', None))
 
 
-def read_sheet(_sheet, columns=None, header=0):
-    """."""
+def _sheet_read(_sheet, columns=None, header=0):
+    """Read a sheet and return a table."""
+    res = Mylist(header=header+2)
+    res.extend(_sheet_yield_rows(_sheet, columns, header))
+    _LOGGER.debug("Read %s rows from sheet %s", len(res), _sheet.title)
+    return res
+
+
+def _sheet_yield_rows(_sheet, columns=None, header=0):
+    """Read the sheet and yield the rows."""
     rows = _sheet.rows
-    data = Mylist(header=header+2)
     while header > 0:
         next(rows)
         header -= 1
     header_row = [cell.value for cell in next(rows)]
-    # print(header_row)
+    _LOGGER.debug("Header row: %s", header_row)
     if columns:
         _map = []  # idx, nme, val
         for nme, val in columns.items():
@@ -85,26 +94,19 @@ def read_sheet(_sheet, columns=None, header=0):
                     fromc, list(header_row)))
             _map.append((list(header_row).index(fromc), nme, val))
 
-        # Colclass = attr.make_class(
-        #    name, [nme for (_, nme, _) in _map], slots=True)
+        def _map_on_row(row):
+            for idx, key, _ in _map:
+                yield key, row[idx]
 
-        for row in rows:
-            record = {}  # []
-            for idx, nme, val in _map:
-                record[nme] = row[idx].value
-            # data.append(Colclass(*record))
-            data.append(record)
-    else:
-        for row in rows:
-            record = {}
-            for key, cell in zip(header_row, row):
-                if cell.data_type == 's':
-                    record[key] = cell.value.strip()
-                else:
-                    record[key] = cell.value
-            data.append(record)
-
-    return data
+    for row in rows:
+        record = {}
+        gen = _map_on_row(row) if columns else zip(header_row, row)
+        for key, cell in gen:
+            if cell.data_type == 's':
+                record[key] = cell.value.strip()
+            else:
+                record[key] = cell.value
+        yield record
 
 
 def get_filename(filename):

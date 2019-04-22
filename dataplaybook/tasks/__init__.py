@@ -64,11 +64,17 @@ def task_combine(*tables, opt):
 
 @cv.task_schema({
     vol.Required('drop'): vol.All(cv.ensure_list, [cv.table_remove])
-})
-def task_drop(tables, opt):
+}, kwargs=True)
+def task_drop(tables, drop):
     """Drop tables from the active set."""
-    for tbl in opt.drop:
+    _LOGGER.warning(
+        "Tables: %s Vars: %s", list(tables.keys()), list(tables.var.keys()))
+    drop = set(drop)
+    bad = set([t for t in drop if t not in tables])
+    for tbl in drop-bad:
         del tables[tbl]
+    if bad:
+        _LOGGER.warning('Task drop: The tables did not exist %s', bad)
 
 
 def _validate_extend(schema):
@@ -136,7 +142,6 @@ def task_fuzzy_match(table1, table2, opt):
                          for r in table2 if r.get(t2_colname)]))
     t2_namesl = list(map(str.lower, t2_names))
 
-    # print("cols:", opt.columns[0], opt.columns[1])
     for row in table1:
         col1 = row.get(opt.columns[0])
         if not col1:
@@ -162,6 +167,7 @@ def task_fuzzy_match(table1, table2, opt):
 def _copytables(conf):
     conf['print']['tables'] = conf.get('tables', None)
     return conf
+
 
 @cv.task_schema({
     vol.Required('tables'): [str]  # copied from the outer validator

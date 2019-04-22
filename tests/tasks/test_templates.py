@@ -1,4 +1,7 @@
 """Tests for jmespath.py"""
+import pytest
+import voluptuous as vol
+
 import dataplaybook.config_validation as cv
 from dataplaybook import DataPlaybook
 
@@ -82,7 +85,10 @@ def test_templateSchema_jinja():  # pylint: disable=invalid-name
           - vars:
               test1: Normal return value
               test0: '{{ test[0].v }}'
-              test2: '{{ test[1].v }}'
+
+          - template:
+              template: '{{ test[1].v }}'
+            target: test2
     """)
     dpb.run()
     assert dpb.tables['test'][0] == {'k': 1, 'v': 'one'}
@@ -90,8 +96,14 @@ def test_templateSchema_jinja():  # pylint: disable=invalid-name
     assert dpb.tables.var.test0 == 'one'
     assert dpb.tables.var.test2 == 'two'
 
+    with pytest.raises(vol.Invalid):
+        dpb.execute_task(
+            {'template': {'template': 'a', 'jmespath': 'test[1]'}}
+        )
+
 
 def test_templateSchema_readme_example():  # pylint: disable=invalid-name
+    """Tests for readme examples."""
     dpb = DataPlaybook(modules=__name__, yaml_text="""
         modules: [dataplaybook.tasks, dataplaybook.tasks.templates]
         tasks:

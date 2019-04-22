@@ -7,7 +7,7 @@ from pathlib import Path
 import voluptuous as vol
 
 from dataplaybook.const import VERSION, PlaybookError
-from dataplaybook.data import DataPlaybook, loader
+from dataplaybook import DataPlaybook
 from dataplaybook.utils import setup_logger
 
 
@@ -28,21 +28,26 @@ def main():
             return 1
 
     setup_logger()
-    loader.load_module('dataplaybook.tasks')
-    loader.load_module('dataplaybook.tasks.templates')
-    loader.load_module('dataplaybook.tasks.io_xlsx')
-    loader.load_module('dataplaybook.tasks.io_misc')
+
+    extra_modules = [
+        'dataplaybook.tasks',
+        'dataplaybook.tasks.templates',
+        'dataplaybook.tasks.io_xlsx',
+        'dataplaybook.tasks.io_misc'
+    ]
 
     tasks = []
     for file in files:
         if file.parent:
             os.chdir(file.parent)
         try:
-            tasks.append(DataPlaybook(yaml_file=file.name))
+            tasks.append(DataPlaybook(
+                modules=extra_modules, yaml_file=file.name))
         except PlaybookError:
             return 1
-        except vol.MultipleInvalid:
-            print('Please fix validation errors in {}'.format(file.name))
+        except vol.MultipleInvalid as exc:
+            print('Please fix validation errors in {} - {}'.format(
+                file.name, str(exc)))
             return 1
 
     for task in tasks:

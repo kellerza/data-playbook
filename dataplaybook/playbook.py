@@ -91,10 +91,10 @@ class DataPlaybook():
                 try:
                     res = taskdef.function(*fn_args, **fn_kwargs)
                 except TypeError as exc:
-                    msg = (f"Bad parameters: Task {name} "
-                           f"({fn_args}, {fn_kwargs})")
+                    msg = (f"TypeError in/calling task {name}: {exc}: Called "
+                           f"(with {len(fn_args)} * args, kwargs={fn_kwargs})")
                     _LOGGER.warning(msg)
-                    raise PlaybookError(f"{msg} - exc")
+                    raise PlaybookError(msg)
 
                 if taskdef.isgenerator:
                     res = list(res)

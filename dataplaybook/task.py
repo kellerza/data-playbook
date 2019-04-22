@@ -13,7 +13,7 @@ KEY_DEBUG = 'debug'
 KEY_TASKS = 'tasks'
 KEY_TABLES = 'tables'
 KEY_TARGET = 'target'
-STANDARD_KEYS = (KEY_DEBUG, KEY_TASKS, KEY_TABLES, KEY_TARGET)
+STANDARD_KEYS = (KEY_DEBUG, KEY_TASKS, KEY_TABLES, KEY_TARGET, 'name')
 
 
 @attr.s
@@ -56,18 +56,17 @@ class TaskDef():
         sig = signature(self.function)
         self.parameter_len = len(sig.parameters)
 
-        # Build full schema
     def validate(self, config, check_in=True, check_out=True):
         """Validate the task config."""
         config = BASE_SCHEMA(config)
 
         for p_v in self.pre_validators:
             config = p_v(config)
-        print(config)
 
         fschema = {
             vol.Required(self.name): vol.All(
-                vol.Schema(self.opt_schema), lambda d: cv.AttrDict(d))
+                vol.Schema(self.opt_schema),
+                lambda d: cv.AttrDict(d))  # pylint: disable=unnecessary-lambda
         }
 
         if check_in:
@@ -88,7 +87,7 @@ class TaskDef():
                     "No output expected. Please remove `target`")
 
         return cv.AttrDictSchema(
-            fschema,  extra=vol.ALLOW_EXTRA)(config)
+            fschema, extra=vol.ALLOW_EXTRA)(config)
 
 
 def resolve_task(config: dict, all_tasks) -> tuple:
@@ -117,8 +116,9 @@ def get_task_name(value):
     if not extras:
         raise vol.Invalid("One task expected")
     if len(extras) > 1:
+        print(extras)
         # pylint: disable=raising-format-tuple
-        raise vol.Invalid("Multiple tasks: %s", str(extras))
+        raise vol.Invalid("Multiple tasks: %s", extras)
     return next(iter(extras))
 
 
