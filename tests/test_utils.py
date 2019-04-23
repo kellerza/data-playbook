@@ -2,13 +2,13 @@
 import pytest
 
 from dataplaybook.const import PlaybookError
-from dataplaybook.utils import DataEnvironment
+import dataplaybook.utils as utils
 
 
 def test_dataenvironment():
     """Test dataenvironment."""
 
-    env = DataEnvironment()
+    env = utils.DataEnvironment()
     env['tab'] = [1]
     assert env['tab'] == [1]
 
@@ -18,6 +18,8 @@ def test_dataenvironment():
 
     env.var.zz = 1
     assert env.var.zz == 1  # pylint: disable=no-member
+    assert isinstance(env['var'], list)
+    assert isinstance(env.var, dict)
 
     with pytest.raises(PlaybookError):
         env.var['non slug'] = 1
@@ -34,7 +36,7 @@ def test_dataenvironment():
 def test_env():
     """Test DataEnv."""
     # pylint: disable=no-member
-    dataenv = DataEnvironment()
+    dataenv = utils.DataEnvironment()
     assert isinstance(dataenv.var, dict)
     assert dataenv.var == {}
     assert isinstance(dataenv.var.env, dict)
@@ -45,3 +47,21 @@ def test_env():
 
     with pytest.raises(PlaybookError):
         dataenv.var['env'] = 1
+
+
+def test_dataenv():
+    """Test DataEnv loading."""
+
+    env = utils.DataEnv()
+    env._load('a=1\nb="2"')
+    assert env.a == '1'  # pylint: disable=no-member
+    assert env.b == '"2"'  # pylint: disable=no-member
+
+    env._load('a: 3\nb: "4"')
+    assert env.a == '3'  # pylint: disable=no-member
+    assert env.b == '"4"'  # pylint: disable=no-member
+
+def test_logger():
+    """Test logger."""
+    utils.setup_logger()
+    utils.set_logger_level({'dataplaybook':'debug'})

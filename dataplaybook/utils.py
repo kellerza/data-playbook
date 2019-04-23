@@ -43,13 +43,17 @@ class DataEnv(dict):
     def __init__(self):
         """Read .env."""
         dict.__init__(self)
-        env = Path('.env')
-        if env.exists():
-            conf_str = '[env]\n' + env.read_text()
-            config = ConfigParser()
-            config.read_string(conf_str)
-            for key in config['env']:
-                self[key] = config['env'][key]
+        try:
+            self._load(Path('.env').read_text())
+        except FileNotFoundError:
+            pass
+
+    def _load(self, text):
+        conf_str = '[env]\n' + text
+        config = ConfigParser()
+        config.read_string(conf_str)
+        for key in config['env']:
+            self[key] = config['env'][key]
 
     def __getitem__(self, key):
         res = self.get(key, None)

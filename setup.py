@@ -18,6 +18,7 @@ def find_version():
 VERSION = find_version()
 
 REQUIRES = [
+    'colorlog',
     'attrs>=17.4.0',
     'voluptuous>=0.11.5',
     'pyyaml>=3.13,<4',
