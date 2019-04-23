@@ -2,15 +2,14 @@
 import logging
 import sys
 from traceback import extract_tb
-from contextlib import contextmanager
-from timeit import default_timer
+
 
 import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook import loader
 from dataplaybook.task import resolve_task
-from dataplaybook.utils import DataEnvironment
+from dataplaybook.utils import DataEnvironment, time_it, set_logger_level
 from dataplaybook.const import PlaybookError
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,15 +47,18 @@ class DataPlaybook():
 
         # Ensure config is ok before we start running
         tasks = []
+        # TODO: use validator here...
         for task in self.config['tasks']:
             _, opt = resolve_task(task, self.all_tasks)
             tasks.append(opt)
         self.config['tasks'] = tasks
 
-    def print_table(self, table):
+    def print_table(self, table, title=''):
         """Print one."""
         task = cv.AttrDict({
-            'print': {},
+            'print': {
+                'title': title,
+            },
             'tables': [table],
         })
         self.execute_task(task)
@@ -65,34 +67,30 @@ class DataPlaybook():
         """Execute the task."""
         debug = config.get('debug', False)
 
-        _loglevel(debug)
+        set_logger_level(debug)
 
         # Enable runtime schema, like template
         with cv.ENV.environment(self.tables):
             taskdef, opt = resolve_task(config, self.all_tasks)
         name = taskdef.name
 
-        _loglevel(debug, taskdef.module)
+        set_logger_level(debug, taskdef.module)
 
+        fn_args_str = ', '.join(opt.get('tables', ['tables']))
         if 'tables' in opt:
             fn_args = [self.tables.get(t, []) for t in opt.tables]
-            if debug:
-                print("***************tables len =", len(opt.tables))
-                for src in opt.tables:
-                    self.print_table(src)
         else:
             fn_args = [self.tables]
-            if debug:
-                print("***************Calling with all tables/environment")
 
         with time_it(name):
             try:
                 fn_kwargs = opt[name] if taskdef.kwargs else {'opt': opt[name]}
                 try:
+                    info = f"{name}({fn_args_str}, **{fn_kwargs})"
+                    _LOGGER.debug("Calling task: %s", info)
                     res = taskdef.function(*fn_args, **fn_kwargs)
                 except TypeError as exc:
-                    msg = (f"TypeError in/calling task {name}: {exc}: Called "
-                           f"(with {len(fn_args)} * args, kwargs={fn_kwargs})")
+                    msg = f"TypeError in/calling task {info}: {exc}"
                     _LOGGER.warning(msg)
                     raise PlaybookError(msg)
 
@@ -108,16 +106,14 @@ class DataPlaybook():
                 raise exc
 
             if 'target' in opt:
-                if debug:
-                    print(f"**************TARGET ({opt.target}")
                 if isinstance(res, list):
                     self.tables[opt.target] = res
                     if debug:
-                        self.print_table(opt.target)
+                        self.print_table(opt.target, 'TARGET')
                 else:
                     self.tables.var[opt.target] = res
                     if debug:
-                        self.print_table(opt.target)
+                        self.print_table(opt.target, 'TARGET')
             return True
 
     def run(self):
@@ -150,25 +146,3 @@ def _print_exception(task_name, mod_name):
 
     _LOGGER.error(',\n '.join(res))
 
-
-def _loglevel(debug, module=None):
-    """Set the log level."""
-    loglevel = logging.DEBUG if debug else logging.INFO
-    if module:
-        try:
-            module._LOGGER.setLevel(loglevel)  # pylint: disable=W0212
-        except AttributeError:
-            pass
-    else:
-        cv._LOGGER.setLevel(loglevel)  # pylint: disable=W0212
-        _LOGGER.setLevel(loglevel)
-
-
-@contextmanager
-def time_it(name=None, delta=0.5, logger=_LOGGER):
-    """Context manager to time execution and report if too high."""
-    t_start = default_timer()
-    yield
-    total = default_timer() - t_start
-    if total > 0.5:
-        logger.warning("Execution time for %s: %.2fs", name, total)

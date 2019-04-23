@@ -8,7 +8,7 @@ import voluptuous as vol
 
 from dataplaybook.const import VERSION, PlaybookError
 from dataplaybook import DataPlaybook
-from dataplaybook.utils import setup_logger
+from dataplaybook.utils import setup_logger, set_logger_level
 
 
 def main():
@@ -28,6 +28,9 @@ def main():
             return 1
 
     setup_logger()
+    set_logger_level({
+        'dataplaybook.loader': 'info',
+    })
 
     extra_modules = [
         'dataplaybook.tasks',

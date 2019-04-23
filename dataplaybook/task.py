@@ -4,6 +4,7 @@ from inspect import isgeneratorfunction, signature
 
 import attr
 import voluptuous as vol
+from yaml import safe_dump
 
 import dataplaybook.config_validation as cv
 
@@ -64,7 +65,7 @@ class TaskDef():
             config = p_v(config)
 
         fschema = {
-            vol.Required(self.name): vol.All(
+            vol.Required(self.name): cv.templateSchema(  # Expand templates
                 vol.Schema(self.opt_schema),
                 lambda d: cv.AttrDict(d))  # pylint: disable=unnecessary-lambda
         }
@@ -110,15 +111,15 @@ def resolve_task(config: dict, all_tasks) -> tuple:
 
 def get_task_name(value):
     """Ensure we have 1 thing to do."""
-    _LOGGER.debug("Value %s keys: %s", value, value.keys())
+    # _LOGGER.debug("Value %s keys: %s", value, value.keys())
     extras = set(list(value.keys())) - set(STANDARD_KEYS)
-    _LOGGER.debug("Task name %s orig %s", next(iter(extras)), value)
+    # _LOGGER.debug("Task name %s orig %s", next(iter(extras)), value)
     if not extras:
         raise vol.Invalid("One task expected")
     if len(extras) > 1:
-        print(extras)
-        # pylint: disable=raising-format-tuple
-        raise vol.Invalid("Multiple tasks: %s", extras)
+        msg = "Multiple tasks: {}".format(str(extras))
+        _LOGGER.error(msg)
+        raise vol.Invalid(msg)
     return next(iter(extras))
 
 
@@ -132,14 +133,15 @@ def _migrate_task(task):
         return task
 
     # old format
-    _LOGGER.warning("Migrating `task:` format to `taskname: options`")
     opt = {k: v for k, v in task.items()
            if k not in ('task', 'tables', 'target', 'debug*')}
     newtask = {task['task']: opt}
     for key in ('tables', 'target', 'debug*'):
         if key in task:
             newtask[key.replace('*', '')] = task[key]
-    _LOGGER.debug("New task format %s, from old format: %s", newtask, task)
+    _LOGGER.debug("Migrate task format. New format %s, from old format: %s",
+                  newtask, task)
+    print(safe_dump({'new task format': [newtask]}, default_flow_style=False))
     return newtask
 
 

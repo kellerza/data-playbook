@@ -170,7 +170,8 @@ def _copytables(conf):
 
 
 @cv.task_schema({
-    vol.Required('tables'): [str]  # copied from the outer validator
+    vol.Required('tables'): [str],  # copied from the outer validator
+    vol.Optional('title', default=''): str,
 }, tables=(1, 10), pre_validator=_copytables)
 def task_print(*tables, opt):
     """Prit a table."""
@@ -186,12 +187,12 @@ def task_print(*tables, opt):
 
         for tbl, nme in zip(tables, opt.tables):
             dframe = pd.DataFrame(tbl)
-            print("TABLE {}".format(nme))
+            print(f"{opt.title} Table {nme}".strip())
             print(dframe)
         return
 
     for tbl, nme in zip(tables, opt.tables):
-        print("TABLE {} first 10 rows".format(nme))
+        print(f"{opt.title} Table {nme} first 10 rows".strip())
         for row in tbl[:10]:
             print(' ', row)
         if len(tbl) > 10:
