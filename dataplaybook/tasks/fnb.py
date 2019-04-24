@@ -5,6 +5,7 @@ import os
 import re
 import traceback
 from datetime import datetime
+from calendar import monthrange
 
 import voluptuous as vol
 
@@ -48,24 +49,28 @@ def str_to_date(text, year_month=None):
         match = RE_DATE2.match(text)
         if match is None:
             raise ValueError("Could not parse date '{}'".format(text))
-        return [int(match.group(1)), int(match.group(2)), int(match.group(3))]
+        return datetime(
+            int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
-    res = [match.group(3), match.group(2).lower(), int(match.group(1))]
+    (year, month, day) = (match.group(3),
+                          match.group(2).lower(),
+                          int(match.group(1)))
 
-    if res[1] in MONTH_MAP:
-        res[1] = MONTH_MAP[res[1]]
-    if isinstance(res[1], str):
-        _LOGGER.error("Invalid text date: %s", res[1])
+    month = MONTH_MAP.get(month, month)
+    if isinstance(month, str):
+        raise ValueError("Invalid text month: {}".format(month))
 
     # If no year, add from year_month
-    if res[0] is None and year_month is not None:
-        res[0] = year_month.year
-        if res[1] == 1 and year_month.month == 12:
-            res[0] += 1
-    if res[0] is not None:
-        res[0] = int(res[0])
+    if year is None and year_month is not None:
+        year = year_month.year
+        if month == 1 and year_month.month == 12:
+            year += 1
+    if year is not None:
+        year = int(year)
 
-    return datetime(res[0], res[1], res[2])
+    day = min(day, monthrange(year, month)[1])
+
+    return datetime(year, month, day)
 
 
 class InvalidFile(Exception):
@@ -195,7 +200,10 @@ def task_fnb_process(*tables, opt):
             else:
                 row['id'] = get_id(row.pop('card', ''), row['month'].month)
                 row['extras'] = row.pop('place', '')
-                row['amount'] = -float(str(row['amount']).replace(',', ''))
+                try:
+                    row['amount'] = -float(str(row['amount']).replace(',', ''))
+                except ValueError as exc:
+                    raise ValueError("Error in {}: {}".format(row['id'], exc))
                 yield _clean(row)
 
 
