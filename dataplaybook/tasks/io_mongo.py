@@ -34,7 +34,7 @@ class MongoURI():
     @staticmethod
     def from_dict(opt, db_field='db'):
         """Validate MongoDB URI. Allow override"""
-        if isinstance(opt.db, str):
+        if not isinstance(opt.db, MongoURI):
             opt[db_field] = MongoURI.from_string(opt[db_field])
         if 'set_id' in opt:
             if opt[db_field].set_id:
@@ -45,9 +45,9 @@ class MongoURI():
 
 
 @cv.task_schema({
-    vol.Required('db'): str,
+    vol.Required('db'): object,
     vol.Optional('set_id'): str,
-}, MongoURI.from_dict, target=1, kwargs=True)
+}, cv.on_key('read_mongo', MongoURI.from_dict), target=1, kwargs=True)
 def task_read_mongo(_, db):  # pylint: disable=invalid-name
     """Read data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
@@ -65,24 +65,27 @@ def task_read_mongo(_, db):  # pylint: disable=invalid-name
 
 
 @cv.task_schema({
-    vol.Required('db'): str,
+    vol.Required('db'): object,
     vol.Optional('set_id'): str,
-}, MongoURI.from_dict, tables=1, kwargs=True)
-def task_write_mongo(table, db):  # pylint: disable=invalid-name
+    vol.Optional('force'): bool,
+}, cv.on_key('write_mongo', MongoURI.from_dict), tables=1, kwargs=True)
+def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
     """Write data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
     col = client[db.database][db.collection]
     if db.set_id:
         filtr = {'_sid': db.set_id}
         existing_count = col.count(filtr)
-        if existing_count > 0 and not table:
-            _LOGGER.error("Trying to replace {} documents with an empty set")
+        if not force and existing_count > 0 and not table:
+            _LOGGER.error("Trying to replace %s documents with an empty set",
+                          existing_count)
             return
         _LOGGER.info("Replacing %s documents matching %s, %s new",
                      col.count(filtr), db.set_id, len(table))
         col.delete_many(filtr)
-        client[db.database][db.collection].insert_many(
-            [dict(d, _sid=db.set_id) for d in table])
+        if table:
+            client[db.database][db.collection].insert_many(
+                [dict(d, _sid=db.set_id) for d in table])
         return
 
     _LOGGER.info("Writing %s documents", len(table))

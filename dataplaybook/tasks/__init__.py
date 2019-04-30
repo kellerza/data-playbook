@@ -15,7 +15,7 @@ def task_build_lookup(table, key, columns):
     lookup = {}
     all_cols = list(columns)
     all_cols.insert(0, key)
-    _LOGGER.warning(all_cols)
+    # _LOGGER.warning(all_cols)
     for row in table:
         if not lookup.get(row[key]):
             yield {c: row.get(c) for c in all_cols}
@@ -67,10 +67,10 @@ def task_combine(*tables, opt):
 }, kwargs=True)
 def task_drop(tables, drop):
     """Drop tables from the active set."""
-    _LOGGER.warning(
+    _LOGGER.debug(
         "Tables: %s Vars: %s", list(tables.keys()), list(tables.var.keys()))
     drop = set(drop)
-    bad = set([t for t in drop if t not in tables])
+    bad = {t for t in drop if t not in tables}
     for tbl in drop-bad:
         del tables[tbl]
     if bad:
@@ -138,8 +138,7 @@ def task_fuzzy_match(table1, table2, opt):
     from fuzzywuzzy import fuzz  # process
 
     t2_colname = opt.columns[1]
-    t2_names = list(set([str(r[t2_colname])
-                         for r in table2 if r.get(t2_colname)]))
+    t2_names = list({str(r[t2_colname]) for r in table2 if r.get(t2_colname)})
     t2_namesl = list(map(str.lower, t2_names))
 
     for row in table1:
@@ -219,7 +218,7 @@ def task_replace(table, opt):
 
 @cv.task_schema({
     vol.Required('key'): cv.col_use
-}, tables=1, kwargs=True)
+}, tables=1, target=1, kwargs=True)
 def task_unique(table, key):
     """Unique based on a key."""
     seen = {}

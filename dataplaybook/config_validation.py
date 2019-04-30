@@ -2,7 +2,6 @@
 import logging
 import os
 import re
-from collections import OrderedDict
 from typing import Any, Sequence, TypeVar, Union
 from contextlib import contextmanager
 
@@ -59,20 +58,6 @@ class AttrDict(dict):
         lst = [("{}='{}'" if isinstance(v, str) else "{}={}").format(k, v)
                for k, v in self.items()]
         return '(' + ', '.join(lst) + ')'
-
-
-def AttrDictSchema(  # pylint: disable=invalid-name
-        schema: dict, *post, pre=None, extra=vol.PREVENT_EXTRA) -> str:
-    """Voluptuous schema that will convert dict to an AttrDict object.
-
-    Append/pre and prepend/post validators for the complete dictionary:
-    - pre: can be used for deprecation.
-    - post: can be used for validators involving multiple keys."""
-    if not isinstance(schema, (dict, OrderedDict)):
-        raise TypeError(f"Invalid dictionary: {schema}")
-    pre = ensure_list(pre)
-    return vol.All(*pre, vol.Schema(schema, extra=extra),
-                   lambda d: AttrDict(d), *post)  # pylint: disable=W0108
 
 
 def isfile(value: Any) -> str:
@@ -241,6 +226,18 @@ def templateSchema(  # pylint: disable=invalid-name
     return _validator
 
 
+def on_key(key, validator, *validators, vol_any=False):
+    """Execute a validator on a key."""
+    if validators:
+        if vol_any:
+            validator = vol.Any(validator, *validators)
+        else:
+            validator = vol.All(validator, *validators)
+
+    return vol.Schema({vol.Required(key): validator},
+                      extra=vol.ALLOW_EXTRA)
+
+
 def task_schema(  # pylint: disable=invalid-name
         schema: dict, *additional_validators: callable,
         tables: int = 0, target: bool = False, columns: int = 0,
@@ -267,12 +264,10 @@ def task_schema(  # pylint: disable=invalid-name
         schema[vol.Required('columns')] = vol.All(
             ensure_list, vol.Length(min=columns[0], max=columns[1]), [str])
 
-    the_schema = AttrDictSchema(schema)
-
     def _deco(func):
         """Add decorator to function, used by Task()."""
         setattr(func, 'task_schema', (
-            the_schema, target, tables, kwargs,
+            schema, target, tables, kwargs,
             pre_validator, additional_validators))
         return func
 

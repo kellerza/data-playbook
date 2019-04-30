@@ -1,6 +1,4 @@
 """Config Validaiton Tests."""
-import voluptuous as vol
-
 from dataplaybook.task import TaskDef, _migrate_task
 from dataplaybook.tasks import task_print
 
@@ -9,7 +7,7 @@ def test_task():
     """Test the TasksDef class."""
     tsk = TaskDef('print', task_print, module='test_loader')
     assert tsk.opt_schema
-    assert isinstance(tsk.opt_schema, vol.All)
+    assert isinstance(tsk.opt_schema, dict)
     # TODO: assert "tasks" in str(tsk.module)
 
 

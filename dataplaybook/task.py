@@ -46,7 +46,6 @@ class TaskDef():
             (self.opt_schema, self.target, self.tables, self.kwargs,
              self.pre_validators, self.post_validators) = props
             self.pre_validators = tuple(cv.ensure_list(self.pre_validators))
-            self.post_validators = tuple(cv.ensure_list(self.post_validators))
         else:
             _LOGGER.warning("Module %s: No schema attached to function %s",
                             self.module, self.name)
@@ -87,8 +86,12 @@ class TaskDef():
                 raise vol.Invalid(
                     "No output expected. Please remove `target`")
 
-        return cv.AttrDictSchema(
-            fschema, extra=vol.ALLOW_EXTRA)(config)
+        config = vol.Schema(fschema, extra=vol.ALLOW_EXTRA)(config)
+
+        for p_v in self.post_validators:
+            config = p_v(config)
+
+        return cv.AttrDict(config)  # pylint: disable=W0108
 
 
 def resolve_task(config: dict, all_tasks) -> tuple:
@@ -118,6 +121,12 @@ def get_task_name(value):
         raise vol.Invalid("One task expected")
     if len(extras) > 1:
         msg = "Multiple tasks: {}".format(str(extras))
+        add = [
+            f". Did you mean {n}?" for e, n in
+            (('table', 'tables'), ('columns', 'column'))
+            if e in extras
+        ]
+        msg += ''.join(add)
         _LOGGER.error(msg)
         raise vol.Invalid(msg)
     return next(iter(extras))

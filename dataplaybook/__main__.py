@@ -6,9 +6,9 @@ from pathlib import Path
 
 import voluptuous as vol
 
-from dataplaybook.const import VERSION, PlaybookError
 from dataplaybook import DataPlaybook
-from dataplaybook.utils import setup_logger, set_logger_level
+from dataplaybook.const import VERSION, PlaybookError
+from dataplaybook.utils import print_exception, set_logger_level, setup_logger
 
 
 def main():
@@ -51,6 +51,7 @@ def main():
         except vol.MultipleInvalid as exc:
             print('Please fix validation errors in {} - {}'.format(
                 file.name, str(exc)))
+            print_exception()
             return 1
 
     for task in tasks:

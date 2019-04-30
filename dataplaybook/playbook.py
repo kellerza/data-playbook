@@ -1,15 +1,13 @@
 """Table tasks."""
 import logging
-import sys
-from traceback import extract_tb
-
 
 import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook import loader
 from dataplaybook.task import resolve_task
-from dataplaybook.utils import DataEnvironment, time_it, set_logger_level
+from dataplaybook.utils import (
+    DataEnvironment, time_it, set_logger_level, print_exception)
 from dataplaybook.const import PlaybookError
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,6 +17,7 @@ PLAYBOOK_SCHEMA = vol.Schema({
     vol.Optional("modules", default=[]): vol.All(
         cv.ensure_list, [str]),
     vol.Required("tasks"): vol.All(cv.ensure_list, [dict]),
+    vol.Remove('_'): object,
 })
 
 
@@ -31,14 +30,7 @@ class DataPlaybook():
         self.config = {}
         yml = loader.load_yaml(filename=yaml_file, text=yaml_text)
 
-        if '_' in yml:
-            del yml['_']
-
-        try:
-            self.config = PLAYBOOK_SCHEMA(yml)
-        except vol.MultipleInvalid as err:
-            _LOGGER.error("Invalid yaml: %s", err)
-            raise err
+        self.config = PLAYBOOK_SCHEMA(yml)
 
         self.all_tasks = loader.TaskDefs()
         modules = set(cv.ensure_list(modules)) | set(self.config['modules'])
@@ -46,12 +38,9 @@ class DataPlaybook():
             self.all_tasks.load_module(mod)
 
         # Ensure config is ok before we start running
-        tasks = []
-        # TODO: use validator here...
-        for task in self.config['tasks']:
-            _, opt = resolve_task(task, self.all_tasks)
-            tasks.append(opt)
-        self.config['tasks'] = tasks
+        self.config = cv.on_key(
+            'tasks',
+            [lambda t: resolve_task(t, self.all_tasks)[1]])(self.config)
 
     def print_table(self, table, title=''):
         """Print one."""
@@ -99,10 +88,10 @@ class DataPlaybook():
                     if 'target' not in opt:
                         _LOGGER.warning(
                             "Task %s is a generator without any target table",
-                            opt.task)
+                            name)
 
             except Exception as exc:  # pylint: disable=broad-except
-                _print_exception(name, taskdef.module)
+                print_exception(name, taskdef.module, _LOGGER)
                 raise exc
 
             if 'target' in opt:
@@ -126,23 +115,3 @@ class DataPlaybook():
             _LOGGER.info("========== TASK %s/%s - %s ==========",
                          idx, len_tasks, opt.get('name', ''))
             self.execute_task(opt)
-
-
-def _print_exception(task_name, mod_name):
-    mod_name = mod_name.replace('.', '/')
-    _, exc, traceback = sys.exc_info()
-    tb_all = extract_tb(traceback)
-    tb_show = list((fs for fs in tb_all
-                    if fs.filename and mod_name in fs.filename))
-    if not tb_show:
-        tb_show = tb_all
-
-    res = ["Exception in task {}: {}: {}".format(
-        task_name, exc.__class__.__name__, exc)]
-
-    for frame in tb_show:
-        res.append(" File {} line {} in method {}".format(
-            frame.filename, frame.lineno, frame.name))
-
-    _LOGGER.error(',\n '.join(res))
-

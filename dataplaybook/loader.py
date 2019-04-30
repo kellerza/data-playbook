@@ -15,6 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class TaskDefs(dict):
+    """Dictionary of Task definitions."""
 
     def remove_module(self, mod_name):
         """Remove module from tasks."""
@@ -92,6 +93,9 @@ def load_yaml(filename=None, text=None):
     if text:
         assert filename is None
         return yaml.safe_load(text) or OrderedDict()
+
+    if filename is None:
+        return OrderedDict(tasks=[])
 
     try:
         with Path(filename).open(encoding='utf-8') as conf_file:

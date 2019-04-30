@@ -80,10 +80,13 @@ def _sheet_read(_sheet, columns=None, header=0):
 def _sheet_yield_rows(_sheet, columns=None, header=0):
     """Read the sheet and yield the rows."""
     rows = _sheet.rows
-    while header > 0:
-        next(rows)
-        header -= 1
-    header_row = [cell.value for cell in next(rows)]
+    try:
+        while header > 0:
+            next(rows)
+            header -= 1
+        header_row = [cell.value for cell in next(rows)]
+    except StopIteration:
+        header_row = []
     _LOGGER.debug("Header row: %s", header_row)
     if columns:
         _map = []  # idx, nme, val

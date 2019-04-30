@@ -61,7 +61,7 @@ def format_as_table(data,
         # width, value format
         for pair in key_width_pair:
             data_to_format.append((pair[1],
-                                  element[pair[0]]))
+                                   element[pair[0]]))
         print(fmt)
         print(data_to_format)
         if data_to_format:

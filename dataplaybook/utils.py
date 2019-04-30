@@ -1,10 +1,12 @@
 """DataEnvironment class."""
 import logging
+import sys
 from configparser import ConfigParser
 from contextlib import contextmanager
 from os import getenv
 from pathlib import Path
 from timeit import default_timer
+from traceback import extract_tb
 
 from dataplaybook.config_validation import util_slugify
 from dataplaybook.const import PlaybookError
@@ -153,6 +155,32 @@ def setup_logger():
         ))
     except ImportError:
         pass
+
+
+def print_exception(task_name=None, mod_name=None, logger='dataplaybook'):
+    """Print last exception."""
+    _, exc, traceback = sys.exc_info()
+    tb_all = extract_tb(traceback)
+
+    if mod_name:
+        mod_name = mod_name.replace('.', '/')
+        tb_show = list((fs for fs in tb_all
+                        if fs.filename and mod_name in fs.filename))
+        if tb_show:
+            tb_all = tb_show
+
+    if task_name:
+        res = ["Exception in task {}: {}: {}".format(
+            task_name, exc.__class__.__name__, exc)]
+    else:
+        res = ["Exception {}: {}".format(
+            exc.__class__.__name__, exc)]
+
+    for frame in tb_all:
+        res.append(" File {} line {} in method {}".format(
+            frame.filename, frame.lineno, frame.name))
+
+    get_logger(logger).error(',\n '.join(res))
 
 
 @contextmanager
