@@ -173,7 +173,7 @@ def _copytables(conf):
     vol.Optional('title', default=''): str,
 }, tables=(1, 10), pre_validator=_copytables)
 def task_print(*tables, opt):
-    """Prit a table."""
+    """Print a table."""
     import shutil
     try:
         import pandas as pd
@@ -242,7 +242,7 @@ def task_vlookup(table0, acro, opt):
             _LOGGER.debug("duplicate %s=%s (used: %s)", key, val, _acro[key])
             continue
         if key == '' or val == '':
-            # _LOGGER.debug("bad acro: key=%s  val=%s", key, val)
+            # _LOGGER.debug("bad key/val: key=%s  val=%s", key, val)
             continue
         _acro[key] = val
     _LOGGER.debug("Expand %s", str(_acro))

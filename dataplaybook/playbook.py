@@ -1,14 +1,15 @@
 """Table tasks."""
 import logging
+from typing import Any, Dict
 
 import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook import loader
-from dataplaybook.task import resolve_task
-from dataplaybook.utils import (
-    DataEnvironment, time_it, set_logger_level, print_exception)
 from dataplaybook.const import PlaybookError
+from dataplaybook.task import resolve_task
+from dataplaybook.utils import (DataEnvironment, print_exception,
+                                set_logger_level, time_it)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class DataPlaybook():
 
     def __init__(self, yaml_text=None, yaml_file=None, modules=None):
         """Process."""
-        self.tables = DataEnvironment()
+        self.tables: Dict[str, Any] = DataEnvironment()
         self.config = {}
         yml = loader.load_yaml(filename=yaml_file, text=yaml_text)
 

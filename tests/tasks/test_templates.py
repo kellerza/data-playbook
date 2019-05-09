@@ -5,6 +5,8 @@ import voluptuous as vol
 import dataplaybook.config_validation as cv
 from dataplaybook import DataPlaybook
 
+# pylint: disable=no-member
+
 
 @cv.task_schema({}, target=1)
 def task_load_test_data(env, opt):

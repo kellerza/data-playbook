@@ -7,6 +7,7 @@ from os import getenv
 from pathlib import Path
 from timeit import default_timer
 from traceback import extract_tb
+from typing import Any, Dict, List
 
 from dataplaybook.config_validation import util_slugify
 from dataplaybook.const import PlaybookError
@@ -35,7 +36,7 @@ class DataVars(dict):
                 f"Invalid variable name '{key}' use '{util_slugify(key)}")
         dict.__setitem__(self, key, val)
 
-    def as_table(self):
+    def as_table(self) -> List[Dict[str, Any]]:
         """Return as a table."""
         return [{'name': k, 'value': v} for k, v in self.items()]
 
@@ -50,14 +51,14 @@ class DataEnv(dict):
         except FileNotFoundError:
             pass
 
-    def _load(self, text):
+    def _load(self, text: str):
         conf_str = '[env]\n' + text
         config = ConfigParser()
         config.read_string(conf_str)
         for key in config['env']:
             self[key] = config['env'][key]
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         res = self.get(key, None)
         if not res:
             res = getenv(key, None)
@@ -65,7 +66,7 @@ class DataEnv(dict):
             print(res)
         return self.get(key)
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str):
         return self[key]
 
 
@@ -77,22 +78,22 @@ class DataEnvironment(dict):
         super().__init__()
 
     @property
-    def var(self):
+    def var(self) -> Dict[str, Any]:
         """Return variables class."""
         return self._var
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> Any:
         return self[key]
 
-    def __setattr__(self, key, val):
+    def __setattr__(self, key: str, val: Any):
         raise Exception(f'use [{key}]')
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         if key == 'var':
             return self._var.as_table()
         return dict.__getitem__(self, key)
 
-    def __setitem__(self, key, val):
+    def __setitem__(self, key: str, val: Any):
         if key == 'var':
             raise Exception("Cannot set vaiables directly. Use .var.")
         dict.__setitem__(self, key, val)
@@ -136,7 +137,6 @@ def setup_logger():
     #        "[%(name)s] %(message)s")
     fmt = ("%(asctime)s %(levelname)s [%(name)s] %(message)s")
     colorfmt = "%(log_color)s{}%(reset)s".format(fmt)
-    # datefmt = '%Y-%m-%d %H:%M:%S'
     datefmt = "%H:%M:%S"
 
     try:

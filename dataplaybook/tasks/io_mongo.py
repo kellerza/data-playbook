@@ -96,7 +96,7 @@ def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
     vol.Required('list'): str,
 }, tables=1, columns=(1, 10))
 def task_columns_to_list(table, opt):
-    """Convert columns with bools to a list in a single column.
+    """Convert columns with booleans to a list in a single column.
 
     Useful to store columns with true/false in a single list with the columns
     names.

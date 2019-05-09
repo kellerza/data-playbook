@@ -111,7 +111,7 @@ def col_add(value, table=None):
 
 
 def col_copy(table_from, table_to):
-    """Copy olumns from one table to another."""
+    """Copy columns from one table to another."""
     table_from = table_from + '.'
     table_to = table_to + '.'
     for col in list(ENV.cols):

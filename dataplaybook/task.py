@@ -36,11 +36,11 @@ class TaskDef():
 
     @property
     def isgenerator(self):
-        """Generator funciton."""
+        """Generator function."""
         return isgeneratorfunction(self.function)
 
     def __attrs_post_init__(self):
-        """Init fron function task_schema."""
+        """Init from function task_schema."""
         props = getattr(self.function, 'task_schema', None)
         if props is not None:
             (self.opt_schema, self.target, self.tables, self.kwargs,
