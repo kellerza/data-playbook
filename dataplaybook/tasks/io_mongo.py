@@ -5,8 +5,10 @@ import attr
 
 import voluptuous as vol
 from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 
 import dataplaybook.config_validation as cv
+from dataplaybook.const import PlaybookError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +25,13 @@ class MongoURI():
     def from_string(uri):
         """Validate mongodb uri.
         Additional set_id"""
-        res = urlparse(uri)
+        if isinstance(uri, MongoURI):
+            return uri
+        try:
+            res = urlparse(uri)
+        except AttributeError as err:
+            _LOGGER.error("could not parse URL: %s: %s", uri, err)
+            raise err
         if res.scheme != 'db':
             raise vol.Invalid("db://host:port/database/collection/[set_id]")
         pth = res.path.split('/')
@@ -42,6 +50,9 @@ class MongoURI():
             opt[db_field].set_id = opt['set_id']
             del opt['set_id']
         return opt
+
+    def __str__(self):
+        return f"{self.netloc}/{self.database}/{self.collection}/{self.set_id}"
 
 
 @cv.task_schema({
@@ -71,9 +82,14 @@ def task_read_mongo(_, db):  # pylint: disable=invalid-name
 }, cv.on_key('write_mongo', MongoURI.from_dict), tables=1, kwargs=True)
 def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
     """Write data from a MongoDB collection."""
-    client = MongoClient(db.netloc, connect=True)
-    col = client[db.database][db.collection]
-    if db.set_id:
+    try:
+        client = MongoClient(db.netloc, connect=True)
+        col = client[db.database][db.collection]
+        if not db.set_id:
+            _LOGGER.info("Writing %s documents", len(table))
+            client[db.database][db.collection].insert_many(table)
+            return
+
         filtr = {'_sid': db.set_id}
         existing_count = col.count(filtr)
         if not force and existing_count > 0 and not table:
@@ -86,10 +102,8 @@ def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
         if table:
             client[db.database][db.collection].insert_many(
                 [dict(d, _sid=db.set_id) for d in table])
-        return
-
-    _LOGGER.info("Writing %s documents", len(table))
-    client[db.database][db.collection].insert_many(table)
+    except ServerSelectionTimeoutError:
+        raise PlaybookError(f"Could not open connection to DB {db}")
 
 
 @cv.task_schema({

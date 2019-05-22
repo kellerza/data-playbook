@@ -54,8 +54,12 @@ def main():
             print_exception()
             return 1
 
-    for task in tasks:
-        task.run()
+    try:
+        for task in tasks:
+            task.run()
+    except PlaybookError as exc:
+        print("Playbook failed.", str(exc))
+        return 1
 
     return 0
 

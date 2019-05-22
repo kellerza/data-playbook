@@ -2,7 +2,7 @@
 import logging
 import os
 from collections import OrderedDict
-
+from json import dumps
 
 import attr
 import openpyxl
@@ -130,6 +130,23 @@ def get_filename(filename):
         raise
 
 
+def _fmt(obj):
+    """Format an object for Excel."""
+    if callable(obj):
+        return str(obj)
+    try:
+        if isinstance(obj, (list, dict, tuple)):
+            return dumps(obj)
+    except TypeError:
+        return str(obj)
+
+    # openpyxl's _bind_value in cell.py doesn't use isinstance
+    if isinstance(obj, str) and type(obj) != str:
+        return str(obj)
+
+    return obj
+
+
 @cv.task_schema({
     vol.Required('file'): cv.endswith('.xlsx'),
     vol.Optional('include'): vol.All(cv.ensure_list, [cv.table_use]),
@@ -164,19 +181,17 @@ def task_write_excel(
         hdr = list(hdr.keys())
         wsh.append(hdr)
 
-        debugs = 2
+        debugs = 4
         for row in tables[table_name]:
-            erow = [
-                str(v) if isinstance(v, (list, dict, tuple)) or callable(v)
-                else v for v in map(row.get, hdr)]
+            erow = [_fmt(row.get(h)) for h in hdr]
             try:
                 wsh.append(erow)
             except ValueError as exc:
-                wsh.append([str(row.get(h, "")) for h in hdr])
                 debugs -= 1
                 if debugs > 0:
                     _LOGGER.warning("Error writing %s, hdrs: %s - %s",
                                     list(erow), hdr, exc)
+                wsh.append([str(row.get(h, "")) for h in hdr])
         if debugs < 0:
             _LOGGER.warning("Total %s errors", 2-debugs)
 

@@ -1,4 +1,5 @@
 """Misc IO tasks."""
+from json import dump, load
 from pathlib import Path
 
 import voluptuous as vol
@@ -31,6 +32,25 @@ def task_read_csv(tables, file, columns=None):
             #     continue
             # line = line.split('\t')
             # yield {k: v for k, v in zip(header, line)}
+
+
+@cv.task_schema({
+    vol.Required('file'): str,
+}, target=(0, 1), kwargs=True)
+def task_read_json(tables, file):
+    with Path(file).open('r', encoding='utf-8') as __f:
+        res = load(__f)
+        print(str(res)[:100])
+        return res
+
+
+@cv.task_schema({
+    vol.Required('file'): str,
+    vol.Optional('only_var'): bool,
+}, tables=(0, 1), kwargs=True)
+def task_write_json(tables, file, only_var=False):
+    with Path(file).open('w') as __f:
+        dump(tables.var if only_var else tables, __f, indent="  ")
 
 
 @cv.task_schema({

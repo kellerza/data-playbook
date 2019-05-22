@@ -91,6 +91,10 @@ class DataPlaybook():
                             "Task %s is a generator without any target table",
                             name)
 
+            except PlaybookError as exc:
+                _LOGGER.error(exc)
+                raise exc
+
             except Exception as exc:  # pylint: disable=broad-except
                 print_exception(name, taskdef.module, _LOGGER)
                 raise exc
@@ -109,8 +113,7 @@ class DataPlaybook():
     def run(self):
         """Execute a lists of tasks."""
         if 'tasks' not in self.config:
-            _LOGGER.error('No "tasks". Did validation fail?')
-            return
+            raise PlaybookError('No "tasks". Did validation fail?')
         len_tasks = len(self.config['tasks'])
         for idx, opt in enumerate(self.config['tasks'], 1):
             _LOGGER.info("========== TASK %s/%s - %s ==========",

@@ -7,6 +7,17 @@ import dataplaybook.config_validation as cv
 _LOGGER = logging.getLogger(__name__)
 
 
+def pre_copy_tables(task):
+    """Copy table names into the task."""
+    def _copy(conf):
+        if 'tables' in conf[task] and (
+                conf[task]['tables'] != conf.get('tables')):
+            raise vol.Invalid("Conflicting values for ['tables']")
+        conf[task]['tables'] = conf.get('tables')
+        return conf
+    return _copy
+
+
 @cv.task_schema({
     vol.Required('key'): cv.col_use,
 }, target=1, tables=1, columns=(1, 10), kwargs=True)
@@ -38,8 +49,10 @@ def task_build_lookup_var(table, key, columns):
 
 @cv.task_schema({
     vol.Required('key'): cv.col_use,
-    vol.Optional('value', default=True): vol.Any(True, str)
-}, target=1, tables=(1, 10), columns=(0, 10))
+    vol.Optional('value', default=True): vol.Any(True, str),
+    vol.Required('tables'): [str],  # copied from the outer validator
+}, target=1, tables=(1, 10), columns=(0, 10),
+                pre_validator=pre_copy_tables('combine'))
 def task_combine(*tables, opt):
     """Combine multiple tables on key.
 
@@ -79,7 +92,7 @@ def task_drop(tables, drop):
 
 def _validate_extend(schema):
     """Additional validate schema for extend."""
-    for table in schema.tables:
+    for table in schema['tables']:
         cv.table_use(table)
     return schema
 
@@ -129,7 +142,7 @@ def _validate_fuzzy(val):
 
 @cv.task_schema({
     vol.Required('target_column'): cv.slug
-}, _validate_fuzzy, tables=2, columns=2)
+}, cv.on_key('fuzzy', _validate_fuzzy), tables=2, columns=2)
 def task_fuzzy_match(table1, table2, opt):
     """Fuzzy matching.
 
@@ -163,16 +176,11 @@ def task_fuzzy_match(table1, table2, opt):
         row[opt.target_column + '_'] = str(res[:10])
 
 
-def _copytables(conf):
-    conf['print']['tables'] = conf.get('tables', None)
-    return conf
-
-
 @cv.task_schema({
     vol.Required('tables'): [str],  # copied from the outer validator
     vol.Optional('title', default=''): str,
-}, tables=(1, 10), pre_validator=_copytables)
-def task_print(*tables, opt):
+}, tables=(1, 10), pre_validator=pre_copy_tables('print'), kwargs=True)
+def task_print(*table_data, tables, title):
     """Print a table."""
     import shutil
     try:
@@ -184,14 +192,14 @@ def task_print(*tables, opt):
         size = shutil.get_terminal_size()
         pd.set_option('display.width', size.columns)
 
-        for tbl, nme in zip(tables, opt.tables):
+        for tbl, nme in zip(table_data, tables):
             dframe = pd.DataFrame(tbl)
-            print(f"{opt.title} Table {nme}".strip())
+            print(f"{title} Table {nme}".strip())
             print(dframe)
         return
 
-    for tbl, nme in zip(tables, opt.tables):
-        print(f"{opt.title} Table {nme} first 10 rows".strip())
+    for tbl, nme in zip(table_data, tables):
+        print(f"{title} Table {nme} first 10 rows".strip())
         for row in tbl[:10]:
             print(' ', row)
         if len(tbl) > 10:
@@ -202,14 +210,14 @@ def task_print(*tables, opt):
 
 @cv.task_schema({
     vol.Required('replace'): dict,
-}, tables=1, columns=1)
-def task_replace(table, opt):
+}, tables=1, columns=1, kwargs=True)
+def task_replace(table, replace, columns):
     """Replace word in a column."""
-    col = opt.columns[0]
+    col = columns[0]
     for row in table:
         if col not in row:
             continue
-        for _from, _to in opt.replace.items():
+        for _from, _to in replace.items():
             if not _to:
                 _to = _from + " "
             if row[col].find(_from) >= 0:
