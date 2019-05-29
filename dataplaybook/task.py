@@ -100,8 +100,8 @@ def resolve_task(config: dict, all_tasks) -> tuple:
     name = get_task_name(config)
     try:
         taskdef = all_tasks[name]
-    except IndexError:
-        _LOGGER.error("Task %s not in %s", name, all_tasks.keys())
+    except (IndexError, KeyError) as err:
+        _LOGGER.error("Task %s not in %s: %s", name, all_tasks.keys(), err)
         raise vol.Invalid("Task {} not found".format(name))
 
     # Copy column definitions from first input to target. This is a estimate.

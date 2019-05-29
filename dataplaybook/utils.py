@@ -60,10 +60,12 @@ class DataEnv(dict):
 
     def __getitem__(self, key: str):
         res = self.get(key, None)
-        if not res:
+        if res is None:
             res = getenv(key, None)
+            if res is None:
+                raise PlaybookError(
+                    f"Could not resolve '{key}' from .env or environment")
             self[key] = res
-            print(res)
         return self.get(key)
 
     def __getattr__(self, key: str):

@@ -35,7 +35,8 @@ def read_excel_deprecate(conf):
         raise vol.Invalid(f"{msg} Replacement key 'sheets' also in config.")
     new = {'target': conf.pop('target', None)}
     new['name'] = conf_re.pop('sheet', None)
-    new['header'] = conf_re.pop('header', 0)
+    if 'header' in conf_re:
+        new['header'] = conf_re['header']
     new['columns'] = conf_re.pop('columns', None)
     conf_re['sheets'] = [new]
     _LOGGER.warning(
@@ -47,7 +48,7 @@ def read_excel_deprecate(conf):
     vol.Required('file'): str,
     vol.Exclusive('sheets', 'XOR'): [vol.Schema({
         vol.Optional('name', default=None): vol.Any(str, None),
-        vol.Optional('header', default=0): int,
+        vol.Optional('header'): int,
         vol.Optional('columns', default=None): vol.Any(None, vol.Schema({
             cv.col_add: dict
         })),
@@ -66,7 +67,7 @@ def task_read_excel(tables, file, sheets, default_sheet=None):
     for sht in sheets:
         name = sht.get('name', None) or sht['target']
         tables[sht['target']] = _sheet_read(
-            wbk[name], sht.get('columns', None), sht.get('header', None))
+            wbk[name], sht.get('columns', None), sht.get('header', 0))
 
 
 def _sheet_read(_sheet, columns=None, header=0):
@@ -141,7 +142,8 @@ def _fmt(obj):
         return str(obj)
 
     # openpyxl's _bind_value in cell.py doesn't use isinstance
-    if isinstance(obj, str) and type(obj) != str:
+    if isinstance(obj, str) and \
+            type(obj) != str:  # pylint: disable=unidiomatic-typecheck
         return str(obj)
 
     return obj
@@ -186,7 +188,8 @@ def task_write_excel(
             erow = [_fmt(row.get(h)) for h in hdr]
             try:
                 wsh.append(erow)
-            except ValueError as exc:
+            except (ValueError,
+                    openpyxl.utils.exceptions.IllegalCharacterError) as exc:
                 debugs -= 1
                 if debugs > 0:
                     _LOGGER.warning("Error writing %s, hdrs: %s - %s",
