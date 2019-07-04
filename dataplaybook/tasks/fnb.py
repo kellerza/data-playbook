@@ -21,7 +21,7 @@ MONTH_MAP = {
     'jan': 1, 'feb': 2, 'mrt': 3, 'apr': 4, 'mei': 5, 'jun': 6,
     'jul': 7, 'aug': 8, 'sep': 9, 'okt': 10, 'nov': 11, 'des': 12,
     # Eng
-    'mar': 2, 'maa': 2, 'oct': 10, 'dec': 11, 'may': 5
+    'mar': 3, 'maa': 3, 'oct': 10, 'dec': 12, 'may': 5
 }
 CHANGE_DAY = 7  # The day at which the months change for budget purposes
 
