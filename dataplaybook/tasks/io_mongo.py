@@ -81,7 +81,7 @@ def task_read_mongo(_, db):  # pylint: disable=invalid-name
     vol.Optional('force'): bool,
 }, cv.on_key('write_mongo', MongoURI.from_dict), tables=1, kwargs=True)
 def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
-    """Write data from a MongoDB collection."""
+    """Write data to a MongoDB collection."""
     try:
         client = MongoClient(db.netloc, connect=True)
         col = client[db.database][db.collection]
@@ -97,10 +97,10 @@ def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
                           existing_count)
             return
         _LOGGER.info("Replacing %s documents matching %s, %s new",
-                     col.count(filtr), db.set_id, len(table))
+                     existing_count, db.set_id, len(table))
         col.delete_many(filtr)
         if table:
-            client[db.database][db.collection].insert_many(
+            col.insert_many(
                 [dict(d, _sid=db.set_id) for d in table])
     except ServerSelectionTimeoutError:
         raise PlaybookError(f"Could not open connection to DB {db}")

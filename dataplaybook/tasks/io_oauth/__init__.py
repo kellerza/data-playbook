@@ -45,13 +45,8 @@ EXCEL_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 
-@cv.task_schema({
-    vol.Required('url'): str,
-}, kwargs=True, target=True)
-def task_oauth_request(_, url):
-    """Retrieve a URL."""
-    res = CON.get(url, {'expand': 'fields'})
-    json = res.json()
+def async_oauth_request(json):
+    """Non I/O logic of task_oauth_request. Pass in json, yields rows"""
 
     schema_errors = []
 
@@ -86,6 +81,15 @@ def task_oauth_request(_, url):
     _LOGGER.error("No schema matched: %s --- on text: %s",
                   schema_errors, str(json)[:500])
 
+
+@cv.task_schema({
+    vol.Required('url'): str,
+}, kwargs=True, target=True)
+def task_oauth_request(_, url):
+    """Retrieve a URL."""
+    res = CON.get(url, {'expand': 'fields'})
+    json = res.json()
+    yield from async_oauth_request(json)
     yield {'response': str(json)}
 
 
