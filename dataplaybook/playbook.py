@@ -8,21 +8,26 @@ import dataplaybook.config_validation as cv
 from dataplaybook import loader
 from dataplaybook.const import PlaybookError
 from dataplaybook.task import resolve_task
-from dataplaybook.utils import (DataEnvironment, print_exception,
-                                set_logger_level, time_it)
+from dataplaybook.utils import (
+    DataEnvironment,
+    print_exception,
+    set_logger_level,
+    time_it,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-PLAYBOOK_SCHEMA = vol.Schema({
-    vol.Optional("version", default="0.4"): vol.Coerce(str),
-    vol.Optional("modules", default=[]): vol.All(
-        cv.ensure_list, [str]),
-    vol.Required("tasks"): vol.All(cv.ensure_list, [dict]),
-    vol.Remove('_'): object,
-})
+PLAYBOOK_SCHEMA = vol.Schema(
+    {
+        vol.Optional("version", default="0.4"): vol.Coerce(str),
+        vol.Optional("modules", default=[]): vol.All(cv.ensure_list, [str]),
+        vol.Required("tasks"): vol.All(cv.ensure_list, [dict]),
+        vol.Remove("_"): object,
+    }
+)
 
 
-class DataPlaybook():
+class DataPlaybook:
     """Data table task class."""
 
     def __init__(self, yaml_text=None, yaml_file=None, modules=None):
@@ -34,28 +39,23 @@ class DataPlaybook():
         self.config = PLAYBOOK_SCHEMA(yml)
 
         self.all_tasks = loader.TaskDefs()
-        modules = set(cv.ensure_list(modules)) | set(self.config['modules'])
+        modules = set(cv.ensure_list(modules)) | set(self.config["modules"])
         for mod in modules:
             self.all_tasks.load_module(mod)
 
         # Ensure config is ok before we start running
         self.config = cv.on_key(
-            'tasks',
-            [lambda t: resolve_task(t, self.all_tasks)[1]])(self.config)
+            "tasks", [lambda t: resolve_task(t, self.all_tasks)[1]]
+        )(self.config)
 
-    def print_table(self, table, title=''):
+    def print_table(self, table, title=""):
         """Print one."""
-        task = cv.AttrDict({
-            'print': {
-                'title': title,
-            },
-            'tables': [table],
-        })
+        task = cv.AttrDict({"print": {"title": title}, "tables": [table]})
         self.execute_task(task)
 
     def execute_task(self, config):
         """Execute the task."""
-        debug = config.get('debug', False)
+        debug = config.get("debug", False)
 
         set_logger_level(debug)
 
@@ -66,15 +66,15 @@ class DataPlaybook():
 
         set_logger_level(debug, taskdef.module)
 
-        fn_args_str = ', '.join(opt.get('tables', ['tables']))
-        if 'tables' in opt:
+        fn_args_str = ", ".join(opt.get("tables", ["tables"]))
+        if "tables" in opt:
             fn_args = [self.tables.get(t, []) for t in opt.tables]
         else:
             fn_args = [self.tables]
 
         with time_it(name):
             try:
-                fn_kwargs = opt[name] if taskdef.kwargs else {'opt': opt[name]}
+                fn_kwargs = opt[name] if taskdef.kwargs else {"opt": opt[name]}
                 try:
                     info = f"{name}({fn_args_str}, **{fn_kwargs})"
                     _LOGGER.debug("Calling task: %s", info)
@@ -86,10 +86,10 @@ class DataPlaybook():
 
                 if taskdef.isgenerator:
                     res = list(res)
-                    if 'target' not in opt:
+                    if "target" not in opt:
                         _LOGGER.warning(
-                            "Task %s is a generator without any target table",
-                            name)
+                            "Task %s is a generator without any target table", name
+                        )
 
             except PlaybookError as exc:
                 _LOGGER.error(exc)
@@ -99,23 +99,27 @@ class DataPlaybook():
                 print_exception(name, taskdef.module, _LOGGER)
                 raise exc
 
-            if 'target' in opt:
+            if "target" in opt:
                 if isinstance(res, list):
                     self.tables[opt.target] = res
                     if debug:
-                        self.print_table(opt.target, 'TARGET')
+                        self.print_table(opt.target, "TARGET")
                 else:
                     self.tables.var[opt.target] = res
                     if debug:
-                        self.print_table(opt.target, 'TARGET')
+                        self.print_table(opt.target, "TARGET")
             return True
 
     def run(self):
         """Execute a lists of tasks."""
-        if 'tasks' not in self.config:
+        if "tasks" not in self.config:
             raise PlaybookError('No "tasks". Did validation fail?')
-        len_tasks = len(self.config['tasks'])
-        for idx, opt in enumerate(self.config['tasks'], 1):
-            _LOGGER.info("========== TASK %s/%s - %s ==========",
-                         idx, len_tasks, opt.get('name', ''))
+        len_tasks = len(self.config["tasks"])
+        for idx, opt in enumerate(self.config["tasks"], 1):
+            _LOGGER.info(
+                "========== TASK %s/%s - %s ==========",
+                idx,
+                len_tasks,
+                opt.get("name", ""),
+            )
             self.execute_task(opt)

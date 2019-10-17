@@ -10,24 +10,26 @@ import voluptuous as vol
 from dataplaybook import config_validation as cv
 
 
-@cv.task_schema({
-    vol.Required('from_addr'): str,
-    vol.Required('to_addrs'): vol.All(cv.ensure_list, [str]),
-    vol.Required('files'): vol.All(cv.ensure_list, [str]),
-    vol.Required('body'): str,
-    vol.Required('subject'): str,
-    vol.Optional('priority'): str,
-    vol.Optional('server'): str,
-}, kwargs=True)
-def task_mail(_, to_addrs, from_addr, files, body, subject,
-              priority=4, server=None):
+@cv.task_schema(
+    {
+        vol.Required("from_addr"): str,
+        vol.Required("to_addrs"): vol.All(cv.ensure_list, [str]),
+        vol.Required("files"): vol.All(cv.ensure_list, [str]),
+        vol.Required("body"): str,
+        vol.Required("subject"): str,
+        vol.Optional("priority"): str,
+        vol.Optional("server"): str,
+    },
+    kwargs=True,
+)
+def task_mail(_, to_addrs, from_addr, files, body, subject, priority=4, server=None):
     """Send a mail."""
     # Create a multipart message and set headers
     message = MIMEMultipart()
-    message['From'] = from_addr
-    message['To'] = '; '.join(to_addrs)
-    message['X-Priority'] = str(priority)
-    message['Subject'] = subject
+    message["From"] = from_addr
+    message["To"] = "; ".join(to_addrs)
+    message["X-Priority"] = str(priority)
+    message["Subject"] = subject
 
     for file_path in list(files):
         _fp = Path(file_path)
@@ -36,7 +38,7 @@ def task_mail(_, to_addrs, from_addr, files, body, subject,
             body = "Attachment not found: {file_path}\n{body}"
 
     # Add body to email
-    message.attach(MIMEText(body, 'plain'))
+    message.attach(MIMEText(body, "plain"))
 
     for file_path in files:
         attach(message, Path(file_path))
@@ -69,10 +71,7 @@ def attach(message, path):
     encoders.encode_base64(part)
 
     # Add header as key/value pair to attachment part
-    part.add_header(
-        "Content-Disposition",
-        f"attachment; filename= {path.name}",
-    )
+    part.add_header("Content-Disposition", f"attachment; filename= {path.name}")
 
     # Add attachment to message and convert message to string
     message.attach(part)

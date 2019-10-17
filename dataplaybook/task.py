@@ -5,20 +5,21 @@ from inspect import isgeneratorfunction, signature
 import attr
 import voluptuous as vol
 from yaml import safe_dump
+from yaml.representer import RepresenterError
 
 import dataplaybook.config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
 
-KEY_DEBUG = 'debug'
-KEY_TASKS = 'tasks'
-KEY_TABLES = 'tables'
-KEY_TARGET = 'target'
-STANDARD_KEYS = (KEY_DEBUG, KEY_TASKS, KEY_TABLES, KEY_TARGET, 'name')
+KEY_DEBUG = "debug"
+KEY_TASKS = "tasks"
+KEY_TABLES = "tables"
+KEY_TARGET = "target"
+STANDARD_KEYS = (KEY_DEBUG, KEY_TASKS, KEY_TABLES, KEY_TARGET, "name")
 
 
 @attr.s
-class TaskDef():
+class TaskDef:
     """Task Definition."""
 
     name = attr.ib()
@@ -41,14 +42,21 @@ class TaskDef():
 
     def __attrs_post_init__(self):
         """Init from function task_schema."""
-        props = getattr(self.function, 'task_schema', None)
+        props = getattr(self.function, "task_schema", None)
         if props is not None:
-            (self.opt_schema, self.target, self.tables, self.kwargs,
-             self.pre_validators, self.post_validators) = props
+            (
+                self.opt_schema,
+                self.target,
+                self.tables,
+                self.kwargs,
+                self.pre_validators,
+                self.post_validators,
+            ) = props
             self.pre_validators = tuple(cv.ensure_list(self.pre_validators))
         else:
-            _LOGGER.warning("Module %s: No schema attached to function %s",
-                            self.module, self.name)
+            _LOGGER.warning(
+                "Module %s: No schema attached to function %s", self.module, self.name
+            )
 
         # Type
         # if len(sig.parameters) == 1 and sig.parameters[0] == 'tables':
@@ -65,14 +73,13 @@ class TaskDef():
 
         fschema = {
             vol.Required(self.name): cv.templateSchema(  # Expand templates
-                vol.Schema(self.opt_schema),
-                lambda d: cv.AttrDict(d))  # pylint: disable=unnecessary-lambda
+                vol.Schema(self.opt_schema), lambda d: cv.AttrDict(d)
+            )  # pylint: disable=unnecessary-lambda
         }
 
         if check_in:
-            if self.tables[1] == 0 and config.get('tables', None):
-                raise vol.Invalid(
-                    "No input expected. Please remove 'tables'")
+            if self.tables[1] == 0 and config.get("tables", None):
+                raise vol.Invalid("No input expected. Please remove 'tables'")
             _len = vol.Length(min=self.tables[0], max=self.tables[1])
             if self.tables[0]:
                 fschema[vol.Required(KEY_TABLES)] = _len
@@ -82,9 +89,8 @@ class TaskDef():
         if check_out:
             if self.target:
                 fschema[vol.Required(KEY_TARGET)] = cv.table_add
-            elif config.get('target', None):
-                raise vol.Invalid(
-                    "No output expected. Please remove `target`")
+            elif config.get("target", None):
+                raise vol.Invalid("No output expected. Please remove `target`")
 
         config = vol.Schema(fschema, extra=vol.ALLOW_EXTRA)(config)
 
@@ -105,9 +111,9 @@ def resolve_task(config: dict, all_tasks) -> tuple:
         raise vol.Invalid("Task {} not found".format(name))
 
     # Copy column definitions from first input to target. This is a estimate.
-    if config.get('target', None) and config.get('tables', None):
-        tables0 = cv.ensure_list(config['tables'])[0]
-        cv.col_copy(tables0, config['target'])
+    if config.get("target", None) and config.get("tables", None):
+        tables0 = cv.ensure_list(config["tables"])[0]
+        cv.col_copy(tables0, config["target"])
 
     return taskdef, taskdef.validate(config)
 
@@ -122,11 +128,11 @@ def get_task_name(value):
     if len(extras) > 1:
         msg = "Multiple tasks: {}".format(str(extras))
         add = [
-            f". Did you mean {n}?" for e, n in
-            (('table', 'tables'), ('columns', 'column'))
+            f". Did you mean {n}?"
+            for e, n in (("table", "tables"), ("columns", "column"))
             if e in extras
         ]
-        msg += ''.join(add)
+        msg += "".join(add)
         _LOGGER.error(msg)
         raise vol.Invalid(msg)
     return next(iter(extras))
@@ -134,29 +140,40 @@ def get_task_name(value):
 
 def _migrate_task(task):
     """Migrate task format."""
-    if 'task' not in task:
+    if "task" not in task:
         return task
 
-    if not task['task']:
-        _LOGGER.error('Empty `task:` found, cannot migrate')
+    if not task["task"]:
+        _LOGGER.error("Empty `task:` found, cannot migrate")
         return task
 
     # old format
-    opt = {k: v for k, v in task.items()
-           if k not in ('task', 'tables', 'target', 'debug*')}
-    newtask = {task['task']: opt}
-    for key in ('tables', 'target', 'debug*'):
+    opt = {
+        k: v for k, v in task.items() if k not in ("task", "tables", "target", "debug*")
+    }
+    newtask = {task["task"]: opt}
+    for key in ("tables", "target", "debug*"):
         if key in task:
-            newtask[key.replace('*', '')] = task[key]
-    _LOGGER.debug("Migrate task format. New format %s, from old format: %s",
-                  newtask, task)
-    print(safe_dump({'new task format': [newtask]}, default_flow_style=False))
+            newtask[key.replace("*", "")] = task[key]
+    _LOGGER.debug(
+        "Migrate task format. New format %s, from old format: %s", newtask, task
+    )
+    try:
+        print(safe_dump({"new task format": [newtask]}, default_flow_style=False))
+    except RepresenterError:
+        print("new task format:", str(newtask))
     return newtask
 
 
-BASE_SCHEMA = vol.All(_migrate_task, vol.Schema({
-    vol.Optional('name'): vol.Coerce(str),
-    vol.Optional(KEY_DEBUG): vol.Coerce(str),
-    vol.Optional(KEY_TABLES): vol.All(cv.ensure_list, [cv.table_use]),
-    vol.Optional(KEY_TARGET): cv.table_add,
-}, extra=vol.ALLOW_EXTRA))
+BASE_SCHEMA = vol.All(
+    _migrate_task,
+    vol.Schema(
+        {
+            vol.Optional("name"): vol.Coerce(str),
+            vol.Optional(KEY_DEBUG): vol.Coerce(str),
+            vol.Optional(KEY_TABLES): vol.All(cv.ensure_list, [cv.table_use]),
+            vol.Optional(KEY_TARGET): cv.table_add,
+        },
+        extra=vol.ALLOW_EXTRA,
+    ),
+)

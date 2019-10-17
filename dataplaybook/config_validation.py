@@ -9,21 +9,24 @@ import attr
 import voluptuous as vol
 
 from dataplaybook.templates import (  # noqa pylint:disable=unused-import
-    isjmespath, process_templates)
+    isjmespath,
+    process_templates,
+)
 
 # typing typevar
-T = TypeVar('T')  # pylint: disable=invalid-name
-RE_SLUGIFY = re.compile(r'[^a-z0-9_]+')
+T = TypeVar("T")  # pylint: disable=invalid-name
+RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
 
 @attr.s(slots=True)
-class Env():
+class Env:
     """Environment global variable."""
+
     tables = attr.ib(default=[])
     cols = attr.ib(default=[])
-    lasttable = attr.ib(default='')
+    lasttable = attr.ib(default="")
     env = attr.ib(default=None)
 
     @contextmanager
@@ -52,24 +55,26 @@ class AttrDict(dict):
         return AttrDict(value) if isinstance(value, dict) else value
 
     def __setattr__(self, key, value):
-        raise IOError('Read only')
+        raise IOError("Read only")
 
     def __repr__(self):
-        lst = [("{}='{}'" if isinstance(v, str) else "{}={}").format(k, v)
-               for k, v in self.items()]
-        return '(' + ', '.join(lst) + ')'
+        lst = [
+            ("{}='{}'" if isinstance(v, str) else "{}={}").format(k, v)
+            for k, v in self.items()
+        ]
+        return "(" + ", ".join(lst) + ")"
 
 
 def isfile(value: Any) -> str:
     """Validate that the value is an existing file."""
     if value is None:
-        raise vol.Invalid('None is not file')
+        raise vol.Invalid("None is not file")
     file_in = os.path.expanduser(str(value))
 
     if not os.path.isfile(file_in):
-        raise vol.Invalid('not a file')
+        raise vol.Invalid("not a file")
     if not os.access(file_in, os.R_OK):
-        raise vol.Invalid('file not readable')
+        raise vol.Invalid("file not readable")
     return file_in
 
 
@@ -93,8 +98,8 @@ def table_add(value):
 def _col(value, table=None):
     if value is None:
         raise vol.Invalid("Empty column name")
-    if table is None and '.' in value:
-        table, _, value = value.partition('.')
+    if table is None and "." in value:
+        table, _, value = value.partition(".")
     # value = slug(value)
     if table is None:
         table = ENV.lasttable
@@ -106,14 +111,14 @@ def col_add(value, table=None):
     """Check if valid table and add to the list."""
     fullname = _col(value, table)
     ENV.cols.append(fullname)
-    _LOGGER.debug('Added col %s', fullname)
+    _LOGGER.debug("Added col %s", fullname)
     return value
 
 
 def col_copy(table_from, table_to):
     """Copy columns from one table to another."""
-    table_from = table_from + '.'
-    table_to = table_to + '.'
+    table_from = table_from + "."
+    table_to = table_to + "."
     for col in list(ENV.cols):
         if col.startswith(table_from):
             ENV.cols.append(col.replace(table_from, table_to))
@@ -137,18 +142,18 @@ def table_remove(value):
 def slug(value):
     """Validate value is a valid slug."""
     if value is None:
-        raise vol.Invalid('Slug should not be None')
+        raise vol.Invalid("Slug should not be None")
     value = str(value)
     slg = util_slugify(value)
     if value == slg:
         return value
-    raise vol.Invalid('invalid slug {} (try {})'.format(value, slg))
+    raise vol.Invalid("invalid slug {} (try {})".format(value, slg))
 
 
 def ensure_list_csv(value: Any) -> Sequence:
     """Ensure that input is a list or make one from comma-separated string."""
     if isinstance(value, str):
-        return [member.strip() for member in value.split(',')]
+        return [member.strip() for member in value.split(",")]
     return ensure_list(value)
 
 
@@ -172,16 +177,19 @@ def util_slugify(text: str) -> str:
 
 def endswith(parts):
     """Ensure a string ends with specified part."""
+
     def _check(_str):
         """Return the validator."""
         if _str.endswith(parts):
             return _str
-        raise vol.Invalid('{} does not end with {}'.format(_str, parts))
+        raise vol.Invalid("{} does not end with {}".format(_str, parts))
+
     return _check
 
 
 def deprecate_key(key, msg, renamed=None):
     """Indicate a key is deprecated: dropped or renamed."""
+
     def _validator(config):
         nonlocal key
         if isinstance(key, tuple):
@@ -202,14 +210,15 @@ def deprecate_key(key, msg, renamed=None):
             conf[renamed] = old_val
             _LOGGER.warning(msg)
         else:
-            _LOGGER.warning(
-                "%s: %s was deprecated and can be removed.", msg, key)
+            _LOGGER.warning("%s: %s was deprecated and can be removed.", msg, key)
         return config
+
     return _validator
 
 
 def templateSchema(  # pylint: disable=invalid-name
-        *schema, pre=None, runtime_only=None):
+    *schema, pre=None, runtime_only=None
+):
     """Template schema validator using vol.All.
 
     Templates are validated during startup and expanded during runtime."""
@@ -218,9 +227,9 @@ def templateSchema(  # pylint: disable=invalid-name
 
     def _validator(value):
         if ENV.runtime:
-            return vol.All(*pre,
-                           lambda t: process_templates(t, ENV.env),
-                           *schema, *runtime_only)(value)
+            return vol.All(
+                *pre, lambda t: process_templates(t, ENV.env), *schema, *runtime_only
+            )(value)
         return vol.All(*pre, process_templates, *schema)(value)
 
     return _validator
@@ -234,14 +243,18 @@ def on_key(key, validator, *validators, vol_any=False):
         else:
             validator = vol.All(validator, *validators)
 
-    return vol.Schema({vol.Required(key): validator},
-                      extra=vol.ALLOW_EXTRA)
+    return vol.Schema({vol.Required(key): validator}, extra=vol.ALLOW_EXTRA)
 
 
 def task_schema(  # pylint: disable=invalid-name
-        schema: dict, *additional_validators: callable,
-        tables: int = 0, target: bool = False, columns: int = 0,
-        kwargs=False, pre_validator=None):
+    schema: dict,
+    *additional_validators: callable,
+    tables: int = 0,
+    target: bool = False,
+    columns: int = 0,
+    kwargs=False,
+    pre_validator=None,
+):
     """Decorate a task_ function and add schema and kwargs.
 
     schema: user define schema
@@ -261,14 +274,17 @@ def task_schema(  # pylint: disable=invalid-name
             assert len(columns) == 2
         else:
             columns = (columns, columns)
-        schema[vol.Required('columns')] = vol.All(
-            ensure_list, vol.Length(min=columns[0], max=columns[1]), [str])
+        schema[vol.Required("columns")] = vol.All(
+            ensure_list, vol.Length(min=columns[0], max=columns[1]), [str]
+        )
 
     def _deco(func):
         """Add decorator to function, used by Task()."""
-        setattr(func, 'task_schema', (
-            schema, target, tables, kwargs,
-            pre_validator, additional_validators))
+        setattr(
+            func,
+            "task_schema",
+            (schema, target, tables, kwargs, pre_validator, additional_validators),
+        )
         return func
 
     return _deco

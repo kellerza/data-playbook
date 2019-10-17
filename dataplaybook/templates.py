@@ -10,8 +10,8 @@ import yaml
 from jinja2 import Template
 
 _LOGGER = logging.getLogger(__name__)
-TEMPLATE_JMES = 'jmespath'
-TEMPLATE_JINJA = '{{'
+TEMPLATE_JMES = "jmespath"
+TEMPLATE_JINJA = "{{"
 
 
 def isjmespath(jmp):
@@ -35,15 +35,19 @@ def process_template_str(template, env=None):
     """Validate or expand the template. Jinja or jmespath.
 
     If env is None, validate the template."""
-    if template.partition(' ')[0] == TEMPLATE_JMES:
+    if template.partition(" ")[0] == TEMPLATE_JMES:
         if env is None:  # only validate
             return f"{TEMPLATE_JMES} {isjmespath(template.partition(' ')[2])}"
-        jmes_expr = template.partition(' ')[2]
+        jmes_expr = template.partition(" ")[2]
         newvalue = jmespath_lib.search(jmes_expr, env, options=JMES_OPTIONS)
 
     elif TEMPLATE_JINJA in template:
         if env is None:  # only validate
-            Template(template)
+            try:
+                Template(template)
+            except:
+                _LOGGER.warning("Jinja Template %s, env:%s", template, env)
+                raise
             return template
         temp = Template(template)
         newvalue = temp.render(**env)
@@ -53,8 +57,7 @@ def process_template_str(template, env=None):
 
     if newvalue is None:
         if template.startswith('"'):
-            _LOGGER.error(
-                "Template starts with "",= %s expanded to None", template)
+            _LOGGER.error("Template starts with " ",= %s expanded to None", template)
         else:
             _LOGGER.error("Template %s expanded to None", template)
     else:
@@ -80,9 +83,7 @@ def process_templates(value, env=None):
 class CustomFunctions(jmes_functions.Functions):
     """Custom JMESpath functions."""
 
-    @jmes_functions.signature(
-        {'types': ['object', 'array']},
-        {'types': ['number']})
+    @jmes_functions.signature({"types": ["object", "array"]}, {"types": ["number"]})
     def _func_flatten(self, data, depth):
         def _flatten(itm, depth_):
             itm = dict(itm)  # make a copy
@@ -94,7 +95,7 @@ class CustomFunctions(jmes_functions.Functions):
                 if not isinstance(val, dict):
                     continue
                 # recursively flatten
-                val = _flatten(val, depth_-1)
+                val = _flatten(val, depth_ - 1)
                 # flatten current sub-dict
                 for _k2, _v2 in val.items():
                     itm[f"{key}_{_k2}"] = _v2
@@ -106,9 +107,7 @@ class CustomFunctions(jmes_functions.Functions):
         if isinstance(data, list):
             return [_flatten(r, depth) for r in data if isinstance(r, dict)]
 
-    @jmes_functions.signature(
-        {'types': ['object', 'array']},
-        {'types': ['string']})
+    @jmes_functions.signature({"types": ["object", "array"]}, {"types": ["string"]})
     def _func_to_table(self, data, keyname):
         """Convert {k:v} to a table [{keyname:k, **v}, {...},].
 

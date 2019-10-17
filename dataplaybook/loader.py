@@ -48,12 +48,15 @@ class TaskDefs(dict):
 
         # collect task functions
         for nme, fun in members:
-            if nme.startswith('task_'):
+            if nme.startswith("task_"):
                 task = TaskDef(name=nme[5:], function=fun, module=mod_name)
                 if task.name in self:
                     _LOGGER.warning(
-                        "Module %s: Skipping task %s. Already loaded from "
-                        "%s", mod_name, nme, self[task.name].module)
+                        "Module %s: Skipping task %s. Already loaded from " "%s",
+                        mod_name,
+                        nme,
+                        self[task.name].module,
+                    )
                     continue
 
                 # Success
@@ -61,8 +64,7 @@ class TaskDefs(dict):
                 self[task.name] = task
 
         _LOGGER.debug(
-            "Module %s: Loaded %s tasks: %s", mod_name, len(loaded),
-            ', '.join(loaded)
+            "Module %s: Loaded %s tasks: %s", mod_name, len(loaded), ", ".join(loaded)
         )
 
         return mod_name
@@ -76,7 +78,7 @@ def _import(mod_name):
     except ModuleNotFoundError:
         pass
 
-    path = Path(mod_name + '.py').resolve(strict=True)
+    path = Path(mod_name + ".py").resolve(strict=True)
     mod_name = path.stem
 
     sys.path.insert(0, str(path.parent))
@@ -98,9 +100,8 @@ def load_yaml(filename=None, text=None):
         return OrderedDict(tasks=[])
 
     try:
-        with Path(filename).open(encoding='utf-8') as conf_file:
-            return yaml.safe_load(conf_file) \
-                or OrderedDict()
+        with Path(filename).open(encoding="utf-8") as conf_file:
+            return yaml.safe_load(conf_file) or OrderedDict()
     except yaml.YAMLError as exc:
         _LOGGER.error(exc)
         raise PlaybookError()
@@ -114,7 +115,7 @@ def _re(loader: yaml.SafeLoader, node: yaml.nodes.Node):
     return re.compile(node.value)
 
 
-yaml.SafeLoader.add_constructor('!re', _re)
+yaml.SafeLoader.add_constructor("!re", _re)
 
 
 # From: https://gist.github.com/miracle2k/3184458
@@ -126,15 +127,14 @@ def represent_odict(dump, tag, mapping, flow_style=None):
     if dump.alias_key is not None:
         dump.represented_objects[dump.alias_key] = node
     best_style = True
-    if hasattr(mapping, 'items'):
+    if hasattr(mapping, "items"):
         mapping = mapping.items()
     for item_key, item_value in mapping:
         node_key = dump.represent_data(item_key)
         node_value = dump.represent_data(item_value)
         if not (isinstance(node_key, yaml.ScalarNode) and not node_key.style):
             best_style = False
-        if not (isinstance(node_value, yaml.ScalarNode) and
-                not node_value.style):
+        if not (isinstance(node_value, yaml.ScalarNode) and not node_value.style):
             best_style = False
         value.append((node_key, node_value))
     if flow_style is None:
@@ -148,6 +148,7 @@ def represent_odict(dump, tag, mapping, flow_style=None):
 def _find_file(loader, node: yaml.nodes.Node):
     """Get the full file path using everything."""
     from dataplaybook.everything import search
+
     res = search(node.value)
     if not res.files:
         raise FileNotFoundError()
@@ -158,6 +159,6 @@ def _find_file(loader, node: yaml.nodes.Node):
 
 yaml.SafeDumper.add_representer(
     OrderedDict,
-    lambda dumper, value:
-    represent_odict(dumper, 'tag:yaml.org,2002:map', value))
-yaml.SafeLoader.add_constructor('!es', _find_file)
+    lambda dumper, value: represent_odict(dumper, "tag:yaml.org,2002:map", value),
+)
+yaml.SafeLoader.add_constructor("!es", _find_file)

@@ -10,39 +10,37 @@ from pathlib import Path
 
 import requests
 
-SANE = (r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$"
-        r" !C:\program !c:\$R")
+SANE = (
+    r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$" r" !C:\program !c:\$R"
+)
 SERVER = "http://localhost:8881"
 
-Result = namedtuple('Result', ['total', 'files', 'folders'])
-PathT = namedtuple('PathT', ['path', 'name'])
+Result = namedtuple("Result", ["total", "files", "folders"])
+PathT = namedtuple("PathT", ["path", "name"])
 
 
 def _everything_result(json, class_):
     """a."""
-    result = {'total': -1, 'files': [], 'folders': [], }
-    result['total'] = json['totalResults']
-    for itm in json['results']:
+    result = {"total": -1, "files": [], "folders": []}
+    result["total"] = json["totalResults"]
+    for itm in json["results"]:
         try:
-            result[itm['type'] + 's'].append(class_(itm['path'], itm['name']))
+            result[itm["type"] + "s"].append(class_(itm["path"], itm["name"]))
         except KeyError as err:
             print(err)
     return Result(**result)
 
 
-def search(*terms, params={}, sane=True, sort=True, max_results=50,
-           class_=Path):
+def search(*terms, params={}, sane=True, sort=True, max_results=50, class_=Path):
     """Search for files."""
-    params = dict({
-        's': ' '.join(terms),
-        'path_column': 1,
-        'json': 1,
-        'count': max_results,
-    }, **params)
+    params = dict(
+        {"s": " ".join(terms), "path_column": 1, "json": 1, "count": max_results},
+        **params
+    )
     if sane:
-        params['s'] += SANE
+        params["s"] += SANE
     if sort:
-        params['sort'] = 'date_modified'
-        params['ascending'] = 0
+        params["sort"] = "date_modified"
+        params["ascending"] = 0
     res = requests.get(SERVER, params=params)
     return _everything_result(res.json(), class_)

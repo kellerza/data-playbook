@@ -7,17 +7,19 @@ import voluptuous as vol
 import dataplaybook.config_validation as cv
 
 
-@cv.task_schema({
-    vol.Required('file'): str,
-    vol.Optional('columns'): vol.Any(None, vol.Schema({
-        str: str
-    })),
-}, target=1, kwargs=True)
+@cv.task_schema(
+    {
+        vol.Required("file"): str,
+        vol.Optional("columns"): vol.Any(None, vol.Schema({str: str})),
+    },
+    target=1,
+    kwargs=True,
+)
 def task_read_csv(tables, file, columns=None):
     """Read csv file."""
     from csv import DictReader
 
-    with open(file, 'r', encoding="utf-8") as fle:
+    with open(file, "r", encoding="utf-8") as fle:
         csvf = DictReader(fle)
         # header = opt.headers if 'headers' in opt else None
         for line in csvf:
@@ -34,49 +36,55 @@ def task_read_csv(tables, file, columns=None):
             # yield {k: v for k, v in zip(header, line)}
 
 
-@cv.task_schema({
-    vol.Required('file'): str,
-}, target=(0, 1), kwargs=True)
+@cv.task_schema({vol.Required("file"): str}, target=(0, 1), kwargs=True)
 def task_read_json(tables, file):
-    with Path(file).open('r', encoding='utf-8') as __f:
+    with Path(file).open("r", encoding="utf-8") as __f:
         res = load(__f)
         print(str(res)[:100])
         return res
 
 
-@cv.task_schema({
-    vol.Required('file'): str,
-    vol.Optional('only_var'): bool,
-}, tables=(0, 1), kwargs=True)
+@cv.task_schema(
+    {vol.Required("file"): str, vol.Optional("only_var"): bool},
+    tables=(0, 1),
+    kwargs=True,
+)
 def task_write_json(tables, file, only_var=False):
-    with Path(file).open('w') as __f:
+    with Path(file).open("w") as __f:
         dump(tables.var if only_var else tables, __f, indent="  ")
 
 
-@cv.task_schema({
-    vol.Required('file'): str,
-    vol.Optional('headers'): vol.All(cv.ensure_list, [cv.col_add])
-}, target=1)
+@cv.task_schema(
+    {
+        vol.Required("file"): str,
+        vol.Optional("headers"): vol.All(cv.ensure_list, [cv.col_add]),
+    },
+    target=1,
+)
 def task_read_tab_delim(tables, opt):
     """Read xml file."""
-    with open(opt.file, 'r', encoding="utf-8") as fle:
-        header = opt.headers if 'headers' in opt else None
+    with open(opt.file, "r", encoding="utf-8") as fle:
+        header = opt.headers if "headers" in opt else None
         for line in fle:
-            if line.startswith('#'):
+            if line.startswith("#"):
                 continue
             if header is None:
-                header = line.split('\t')
+                header = line.split("\t")
                 continue
-            line = line.split('\t')
+            line = line.split("\t")
             yield {k: v for k, v in zip(header, line)}
 
 
-@cv.task_schema({
-    vol.Required('filename'): str,
-    vol.Required('newline'): object,
-    vol.Required('fields'): object,
-}, target=1, kwargs=True)
-def task_read_text_regex(_, filename, newline, fields):
+@cv.task_schema(
+    {
+        vol.Required("filename"): str,
+        vol.Required("newline"): object,
+        vol.Optional("fields", default=None): object,
+    },
+    target=1,
+    kwargs=True,
+)
+def task_read_text_regex(_, filename, newline, fields: None):
     """Much regular expressions into a table."""
     res = None
     with open(filename) as file:
@@ -86,8 +94,14 @@ def task_read_text_regex(_, filename, newline, fields):
                 if res:
                     yield res
                 res = {}
-                res[match_obj[1]] = match_obj[2]
-            if not res:
+                groups = match_obj.groups()
+                if len(groups) > 1:
+                    res[groups[0]] = groups[1]
+                elif len(groups) > 0:
+                    res["_id_"] = groups[0]
+            if res is None:
+                continue
+            if not fields:
                 continue
             for match_obj in fields.finditer(line):
                 res[match_obj[1]] = match_obj[2]
@@ -95,11 +109,14 @@ def task_read_text_regex(_, filename, newline, fields):
         yield res
 
 
-@cv.task_schema({
-    vol.Required('file'): str,
-    vol.Required('url'): str,
-    vol.Optional('age', default=48*60*60): int
-}, kwargs=True)
+@cv.task_schema(
+    {
+        vol.Required("file"): str,
+        vol.Required("url"): str,
+        vol.Optional("age", default=48 * 60 * 60): int,
+    },
+    kwargs=True,
+)
 def task_wget(tables, url, file, age):
     """Download a file."""
     from os import getenv
@@ -112,13 +129,12 @@ def task_wget(tables, url, file, age):
         if time.time() - path.stat().st_mtime < age:
             return
 
-    proxy = getenv('HTTP_PROXY')
+    proxy = getenv("HTTP_PROXY")
     if proxy:
         dburl = urlparse(proxy)
         # create the object, assign it to a variable
         prx = "{}:{}".format(dburl.hostname, dburl.port)
-        proxy = urllib.request.ProxyHandler(
-            {'http': prx, 'https': prx, 'ftp': prx})
+        proxy = urllib.request.ProxyHandler({"http": prx, "https": prx, "ftp": prx})
         # construct a new opener using your proxy settings
         opener = urllib.request.build_opener(proxy)
         # install the openen on the module-level
@@ -127,16 +143,14 @@ def task_wget(tables, url, file, age):
     urllib.request.urlretrieve(url, file)
 
 
-@cv.task_schema({
-    vol.Required('file'): cv.endswith('.xlsx'),
-}, tables=1, kwargs=True)
+@cv.task_schema({vol.Required("file"): cv.endswith(".xlsx")}, tables=1, kwargs=True)
 def task_write_csv(table, file):
     """Write a csv file."""
     from csv import DictWriter
 
     fieldnames = list(table[0].keys())
 
-    with open(file, 'w', newline='') as csvfile:
+    with open(file, "w", newline="") as csvfile:
         writer = DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()

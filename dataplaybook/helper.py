@@ -5,11 +5,9 @@ from operator import itemgetter
 # Source:
 # https://www.calazan.com/
 #     python-function-for-displaying-a-list-of-dictionaries-in-table-format/
-def format_as_table(data,
-                    keys,
-                    header=None,
-                    sort_by_key=None,
-                    sort_order_reverse=False):
+def format_as_table(
+    data, keys, header=None, sort_by_key=None, sort_order_reverse=False
+):
     """Text formatted table from a list of dicts.
 
     Required Parameters:
@@ -25,9 +23,7 @@ def format_as_table(data,
     # Sort the data if a sort key is specified (default sort order
     # is ascending)
     if sort_by_key:
-        data = sorted(data,
-                      key=itemgetter(sort_by_key),
-                      reverse=sort_order_reverse)
+        data = sorted(data, key=itemgetter(sort_by_key), reverse=sort_order_reverse)
 
     # If header is not empty, add header to data
     if header:
@@ -35,7 +31,7 @@ def format_as_table(data,
         # on that length
         header_divider = []
         for name in header:
-            header_divider.append('-' * len(name))
+            header_divider.append("-" * len(name))
 
         # Create a list of dictionary from the keys and the header and
         # insert it at the beginning of the list. Do the same for the
@@ -52,16 +48,15 @@ def format_as_table(data,
     # Create a tuple pair of key and the associated column width for it
     key_width_pair = zip(keys, column_widths)
 
-    fmt = ("{} " * len(keys)).strip() + '\n'
+    fmt = ("{} " * len(keys)).strip() + "\n"
     #   = ("%-*s ' * len(keys)).strip() + '\n'
-    formatted_data = ''
+    formatted_data = ""
     for element in data:
         data_to_format = []
         # Create a tuple that will be used for the formatting in
         # width, value format
         for pair in key_width_pair:
-            data_to_format.append((pair[1],
-                                   element[pair[0]]))
+            data_to_format.append((pair[1], element[pair[0]]))
         print(fmt)
         print(data_to_format)
         if data_to_format:
