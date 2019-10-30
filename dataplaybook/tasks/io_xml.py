@@ -1,14 +1,15 @@
 """Read XML files."""
-# import dicttoxml
-from xml.etree import ElementTree
+import json
+import logging
 
 # https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
 from collections import defaultdict
-import logging
 
-import voluptuous as vol
+# import dicttoxml
+from xml.etree import ElementTree
 
 import dataplaybook.config_validation as cv
+import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,8 +45,6 @@ def task_read_xml(tables, opt):
 
 def writejson(filename, dct):
     """Write dict to file."""
-    import json
-
     with open(filename, "w") as fle:
         fle.write(json.dumps(dct))
 

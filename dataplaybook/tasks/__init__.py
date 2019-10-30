@@ -1,8 +1,8 @@
 """General tasks."""
 import logging
-import voluptuous as vol
 
 import dataplaybook.config_validation as cv
+import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,15 +1,14 @@
 """Merge FNB statement."""
+from calendar import monthrange
 import csv
+from datetime import datetime
 import logging
 import os
 import re
 import traceback
-from datetime import datetime
-from calendar import monthrange
-
-import voluptuous as vol
 
 import dataplaybook.config_validation as cv
+import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 
