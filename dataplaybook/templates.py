@@ -1,13 +1,13 @@
 """JMESpath tasks."""
-import logging
 from io import StringIO
+import logging
 from pathlib import Path
 
+from jinja2 import Template
 import jmespath as jmespath_lib
 from jmespath import functions as jmes_functions
 import voluptuous as vol
 import yaml
-from jinja2 import Template
 
 _LOGGER = logging.getLogger(__name__)
 TEMPLATE_JMES = "jmespath"
@@ -45,7 +45,7 @@ def process_template_str(template, env=None):
         if env is None:  # only validate
             try:
                 Template(template)
-            except:
+            except Exception:
                 _LOGGER.warning("Jinja Template %s, env:%s", template, env)
                 raise
             return template

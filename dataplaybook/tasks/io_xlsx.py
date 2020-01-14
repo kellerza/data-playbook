@@ -26,55 +26,63 @@ def read_excel_deprecate(conf):
     msg = "read_excel: Deprecated config. "
     conf_re = conf["read_excel"]
     old = [k for k in conf_re if k in ("sheet", "header", "columns", "target")]
-    if not old:
-        if "target" in conf:
-            _LOGGER.warning("%s Moving 'target:' to 'read_excel.default_sheet:'", msg)
-            conf_re["default_sheet"] = conf.pop("target")
-        return conf
-    if "sheets" in conf_re:
-        raise vol.Invalid(f"{msg} Replacement key 'sheets' also in config.")
-    new = {"target": conf.pop("target", None)}
-    new["name"] = conf_re.pop("sheet", None)
-    if "header" in conf_re:
-        new["header"] = conf_re["header"]
-    new["columns"] = conf_re.pop("columns", None)
-    conf_re["sheets"] = [new]
-    _LOGGER.warning("%s Old keys: %s. Replace with 'sheets: [%s]'", msg, old, new)
+    old_target = conf.pop("target", None)
+    old_default_sheet = conf_re.pop("default_sheet", None)
+
+    conf_re["sheets"] = cv.ensure_list(conf_re.get("sheets"))
+
+    if old_default_sheet:
+        conf_re["sheets"].append({"name": conf_re.pop("default_sheet", None)})
+
+    if old_target:
+        _LOGGER.warning("%s Moving 'target:' to the default sheet(name=*)", msg)
+        conf_re["sheets"].append({"name": "*", "target": old_target})
+
+    if old:
+        new = {"target": conf.pop("target", None)}
+        for fld in ("sheet", "columns", "header"):
+            if fld in conf_re:
+                new[fld] = conf_re.pop(fld, None)
+        conf_re["sheets"].append(new)
+        _LOGGER.warning("%s Old keys: %s. Replace with 'sheets: [%s]'", msg, old, new)
+
     return conf
 
 
 @cv.task_schema(
     {
         vol.Required("file"): str,
-        vol.Exclusive("sheets", "XOR"): [
+        vol.Required("sheets"): [
             vol.Schema(
                 {
                     vol.Optional("name", default=None): vol.Any(str, None),
                     vol.Optional("header"): int,
                     vol.Optional("columns", default=None): vol.Any(
-                        None, vol.Schema({cv.col_add: dict})
+                        None,
+                        vol.Schema(
+                            {cv.col_add: vol.Schema({vol.Required("from"): str})}
+                        ),
                     ),
                     vol.Required("target"): cv.table_add,
                 }
             )
         ],
-        vol.Exclusive("default_sheet", "XOR"): cv.table_add,
     },
     kwargs=True,
     pre_validator=read_excel_deprecate,
 )
-def task_read_excel(tables, file, sheets=None, default_sheet=None):
+def task_read_excel(tables, file, sheets=None):
     """Read excel file using openpyxl."""
 
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
-    if default_sheet:
-        tables[default_sheet] = _sheet_read(wbk.active)
     for sht in sheets or []:
-        name = sht.get("name", None) or sht["target"]
+        name = sht.get("name") or sht["target"]
+        # default_sheet = *
+        the_sheet = wbk.active if name == "*" else wbk[name]
         tables[sht["target"]] = _sheet_read(
-            wbk[name], sht.get("columns", None), sht.get("header", 0)
+            the_sheet, sht.get("columns"), sht.get("header", 0)
         )
 
 
@@ -150,9 +158,8 @@ def _fmt(obj):
         return str(obj)
 
     # openpyxl's _bind_value in cell.py doesn't use isinstance
-    if (
-        isinstance(obj, str) and type(obj) != str
-    ):  # pylint: disable=unidiomatic-typecheck
+    # pylint: disable=unidiomatic-typecheck
+    if isinstance(obj, str) and type(obj) != str:
         return str(obj)
 
     return obj
@@ -175,6 +182,7 @@ def task_write_excel(
 ):
     """Write an excel file."""
     header = header or []
+    headers = headers or []
     wbk = openpyxl.Workbook()
 
     if not include:
@@ -182,7 +190,6 @@ def task_write_excel(
 
     # prep headers
     headers_lookup = {i["sheet"]: i["columns"] for i in headers}
-    _LOGGER.info("a")
 
     # Remove default sheet
     wbk.remove(wbk["Sheet"])

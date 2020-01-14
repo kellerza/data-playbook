@@ -20,7 +20,7 @@ def pre_copy_tables(task):
 
 
 @cv.task_schema(
-    {vol.Required("key"): cv.col_use}, target=1, tables=1, columns=(1, 10), kwargs=True
+    {vol.Required("key"): cv.col_use}, target=1, tables=1, columns=(1, 99), kwargs=True
 )
 def task_build_lookup(table, key, columns):
     """Build a lookup table (unique key & columns) and removing the columns."""
@@ -37,7 +37,7 @@ def task_build_lookup(table, key, columns):
 
 
 @cv.task_schema(
-    {vol.Required("key"): cv.col_use}, target=1, tables=1, columns=(1, 10), kwargs=True
+    {vol.Required("key"): cv.col_use}, target=1, tables=1, columns=(1, 99), kwargs=True
 )
 def task_build_lookup_var(table, key, columns):
     """Build lookup tables {key: columns}."""
@@ -55,8 +55,8 @@ def task_build_lookup_var(table, key, columns):
         vol.Required("tables"): [str],  # copied from the outer validator
     },
     target=1,
-    tables=(1, 10),
-    columns=(0, 10),
+    tables=(1, 99),
+    columns=(0, 99),
     pre_validator=pre_copy_tables("combine"),
 )
 def task_combine(*tables, opt):
@@ -101,7 +101,7 @@ def _validate_extend(schema):
     return schema
 
 
-@cv.task_schema({}, _validate_extend, tables=(2, 10))
+@cv.task_schema({}, _validate_extend, tables=(2, 99))
 def task_extend(*tables, opt):
     """Extend a table with another table."""
     for tbl in tables[1:]:
@@ -197,7 +197,7 @@ def task_fuzzy_match(table1, table2, opt):
         ),  # copied from the outer validator
         vol.Optional("title", default=""): str,
     },
-    tables=(1, 10),
+    tables=(1, 99),
     pre_validator=pre_copy_tables("print"),
     kwargs=True,
 )

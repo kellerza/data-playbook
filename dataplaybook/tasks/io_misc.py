@@ -1,10 +1,48 @@
 """Misc IO tasks."""
 from json import dump, load
+from os import getenv
 from pathlib import Path
-
-import voluptuous as vol
+import time
+from urllib.parse import urlparse
+import urllib.request
 
 import dataplaybook.config_validation as cv
+import voluptuous as vol
+
+
+@cv.task_schema(
+    {vol.Required("patterns"): vol.All(cv.ensure_list, [str])}, target=True, kwargs=True
+)
+def task_glob(_, patterns):
+    """Search for files matching certain patterns."""
+    for val in patterns:
+        fol, _, pat = val.partition("/*")
+        folder = Path(fol)
+        for file in folder.glob("*" + pat):
+            yield {"file": str(file)}
+
+
+@cv.task_schema(
+    {vol.Required("file"): str, vol.Optional("count", default=3): int}, kwargs=True
+)
+def task_file_rotate(_, file, count):
+    """Rotate some file fn.ext --> fn.1.ext --> fn.2.ext."""
+
+    __f = Path(file)
+
+    def _rename(start_fn, target_n):
+        if not start_fn.exists():
+            return
+        target_fn = __f.with_suffix(f".{target_n}{__f.suffix}")
+        if target_fn.exists():
+            if target_n < count:
+                _rename(target_fn, target_n + 1)
+            else:
+                target_fn.unlink()
+                return
+        start_fn.rename(target_fn)
+
+    _rename(__f, 1)
 
 
 @cv.task_schema(
@@ -38,6 +76,7 @@ def task_read_csv(tables, file, columns=None):
 
 @cv.task_schema({vol.Required("file"): str}, target=(0, 1), kwargs=True)
 def task_read_json(tables, file):
+    """Read json from a file."""
     with Path(file).open("r", encoding="utf-8") as __f:
         res = load(__f)
         print(str(res)[:100])
@@ -50,6 +89,7 @@ def task_read_json(tables, file):
     kwargs=True,
 )
 def task_write_json(tables, file, only_var=False):
+    """Write into a json file."""
     with Path(file).open("w") as __f:
         dump(tables.var if only_var else tables, __f, indent="  ")
 
@@ -66,7 +106,8 @@ def task_read_tab_delim(tables, opt):
     with open(opt.file, "r", encoding="utf-8") as fle:
         header = opt.headers if "headers" in opt else None
         for line in fle:
-            if line.startswith("#"):
+            line = line.strip()
+            if line.startswith("#") or not line:
                 continue
             if header is None:
                 header = line.split("\t")
@@ -119,11 +160,6 @@ def task_read_text_regex(_, filename, newline, fields: None):
 )
 def task_wget(tables, url, file, age):
     """Download a file."""
-    from os import getenv
-    import time
-    import urllib.request
-    from urllib.parse import urlparse
-
     path = Path(file)
     if path.exists():
         if time.time() - path.stat().st_mtime < age:
