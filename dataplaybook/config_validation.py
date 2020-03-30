@@ -24,8 +24,8 @@ _LOGGER.setLevel(logging.INFO)
 class Env:
     """Environment global variable."""
 
-    tables = attr.ib(default=[])
-    cols = attr.ib(default=[])
+    tables = attr.ib(factory=list)
+    cols = attr.ib(factory=list)
     lasttable = attr.ib(default="")
     env = attr.ib(default=None)
 
@@ -43,11 +43,16 @@ class Env:
         """Is environment set?"""
         return self.env is not None
 
+    def __attrs_post_init__(self):
+        self.tables.append("var")
+
 
 ENV = Env()
 
 
 class AttrKeyError(KeyError):
+    """Key not found in dict."""
+
     pass
 
 

@@ -47,6 +47,7 @@ def main():
         except vol.MultipleInvalid as exc:
             print("Please fix validation errors in {} - {}".format(file.name, str(exc)))
             print_exception()
+            raise
             return 1
 
     try:

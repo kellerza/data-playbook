@@ -1,17 +1,19 @@
 """Read helpers."""
-import logging
-import os
 from collections import OrderedDict
 from json import dumps
+import logging
+import os
 
 import attr
-import openpyxl
-import voluptuous as vol
-from openpyxl.utils import get_column_letter
-
 import dataplaybook.config_validation as cv
+import openpyxl
+from openpyxl.utils import get_column_letter
+import voluptuous as vol
+
+from dataplaybook.utils import log_filter
 
 _LOGGER = logging.getLogger(__name__)
+_LOGGER.addFilter(log_filter)
 
 
 @attr.s()
@@ -60,7 +62,14 @@ def read_excel_deprecate(conf):
                     vol.Optional("columns", default=None): vol.Any(
                         None,
                         vol.Schema(
-                            {cv.col_add: vol.Schema({vol.Required("from"): str})}
+                            {
+                                cv.col_add: vol.Schema(
+                                    {
+                                        vol.Optional("from"): str,
+                                        vol.Optional("col"): int,
+                                    }
+                                )
+                            }
                         ),
                     ),
                     vol.Required("target"): cv.table_add,
@@ -102,18 +111,35 @@ def _sheet_yield_rows(_sheet, columns=None, header=0):
             next(rows)
             header -= 1
         header_row = [cell.value for cell in next(rows)]
+        import q
+
+        q | header_row
     except StopIteration:
         header_row = []
+
+    rstrip = 0
+    for itm in reversed(header_row):
+        if itm is None:
+            rstrip = +1
+        else:
+            break
+    if rstrip:
+        header_row = header_row[:-rstrip]
+
     _LOGGER.debug("Header row: %s", header_row)
     _map = []  # idx, nme, val
     if columns:
         for nme, val in columns.items():
-            fromc = str(val["from"])
-            if fromc not in header_row:
-                raise ValueError(
-                    "{} not found in header {}".format(fromc, list(header_row))
-                )
-            _map.append((list(header_row).index(fromc), nme, val))
+            if "from" in val:
+                fromc = str(val["from"])
+                if fromc not in header_row:
+                    _LOGGER.error("%s not found in header %s", fromc, list(header_row))
+                    raise ValueError("{} not found in header".format(fromc))
+                _map.append((list(header_row).index(fromc), nme, val))
+            elif "col" in val:
+                _map.append((val["col"], nme, val))
+            else:
+                raise ValueError("Bad column definition: {}".format(val))
     else:
         for idx, key in enumerate(header_row):
             if key:

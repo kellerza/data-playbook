@@ -65,8 +65,8 @@ class MongoURI:
     cv.on_key("read_mongo", MongoURI.from_dict),
     target=1,
     kwargs=True,
-)
-def task_read_mongo(_, db):  # pylint: disable=invalid-name
+)  # pylint: disable=invalid-name
+def task_read_mongo(_, db):
     """Read data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
     if db.set_id:
@@ -90,8 +90,8 @@ def task_read_mongo(_, db):  # pylint: disable=invalid-name
     cv.on_key("write_mongo", MongoURI.from_dict),
     tables=1,
     kwargs=True,
-)
-def task_write_mongo(table, db, force=False):  # pylint: disable=invalid-name
+)  # pylint: disable=invalid-name
+def task_write_mongo(table, db, force=False):
     """Write data to a MongoDB collection."""
     try:
         client = MongoClient(db.netloc, connect=True)

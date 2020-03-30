@@ -61,9 +61,6 @@ def process_template_str(template, env=None):
         else:
             _LOGGER.error("Template %s expanded to None", template)
     else:
-        _to = str(newvalue)
-        if len(_to) > 50:
-            _to = f"{_to[:50]}... (type={type(newvalue)} len(str)={len(_to)})"
         _LOGGER.debug("Template %s expanded to: %s", template, _to)
     return newvalue
 

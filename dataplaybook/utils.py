@@ -6,8 +6,10 @@ from contextlib import contextmanager
 from os import getenv
 from pathlib import Path
 from timeit import default_timer
-from traceback import extract_tb
+from traceback import format_exception
 from typing import Any, Dict, List
+
+import q
 
 from dataplaybook.config_validation import util_slugify
 from dataplaybook.const import PlaybookError
@@ -168,34 +170,65 @@ def setup_logger():
         pass
 
 
+def log_filter(record):
+    """Trim log messages.
+
+    https://relaxdiego.com/2014/07/logging-in-python.html
+    """
+    if any(len(str(arg)) > 100 for arg in record.args):
+        q(record, record.args)
+        res = []
+        for arg in record.args:
+            if len(str(arg)) < 100:
+                res.append(arg)
+                continue
+            idx = len(res)
+            res.append(f"{str(arg)[:100]}...q...len={len(arg)}")
+            q(record.args[idx], type(record.args[idx]))
+        record.args = tuple(res)
+        return record
+
+    return True
+
+
 def print_exception(task_name=None, mod_name=None, logger="dataplaybook"):
     """Print last exception."""
-    _, exc, traceback = sys.exc_info()
-    tb_all = extract_tb(traceback)
-
+    exc_type, exc_value, traceback = sys.exc_info()
+    res = format_exception(exc_type, exc_value, traceback)
     if mod_name:
-        mod_name = mod_name.replace(".", "/")
-        tb_show = list((fs for fs in tb_all if fs.filename and mod_name in fs.filename))
-        if tb_show:
-            tb_all = tb_show
-
+        res[0] += f" Module: {mod_name}"
     if task_name:
-        res = [
-            "Exception in task {}: {}: {}".format(
-                task_name, exc.__class__.__name__, exc
-            )
-        ]
-    else:
-        res = ["Exception {}: {}".format(exc.__class__.__name__, exc)]
+        res[0] += f" Task: {task_name}"
+    get_logger(logger).error("".join(res))
 
-    for frame in tb_all:
-        res.append(
-            " File {} line {} in method {}".format(
-                frame.filename, frame.lineno, frame.name
-            )
-        )
+    #     _, exc, traceback = sys.exc_info()
+    #     tb_all = extract_tb(traceback)
 
-    get_logger(logger).error(",\n ".join(res))
+    #     if mod_name:
+    #         mod_name = mod_name.replace(".", "/")
+    #         tb_show = list((fs for fs in tb_all if fs.filename and mod_name in fs.filename))
+    #         if tb_show:
+    #             tb_all = tb_show
+
+    #     if task_name:
+    #         res = [
+    #             "Exception in task {}: {}: {}".format(
+    #                 task_name, exc.__class__.__name__, exc
+    #             )
+    #         ]
+    #     else:
+    #         res = ["Exception {}: {}".format(exc.__class__.__name__, exc)]
+
+    #     res.insert(0, "Tracebcak (most recent call last)")
+
+    #     for frame in tb_all:
+    #         res.insert(
+    #             0,
+    #             " File {} line {} in method {}".format(
+    #                 frame.filename, frame.lineno, frame.name
+    #             ),
+    #         )
+    # get_logger(logger).error(",\n ".join(res))
 
 
 @contextmanager
