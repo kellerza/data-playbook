@@ -18,22 +18,21 @@ def find_version():
 VERSION = find_version()
 
 REQUIRES = [
-    'colorlog',
-    'attrs>=17.4.0',
-    'voluptuous>=0.11.5',
-    'pyyaml>=3.13,<4',
-    'jinja2>=2.9,<3',
-    'jmespath>=0.9.4,<1',
-    'openpyxl>=2.6,<3',
+    "colorlog",
+    "attrs>=17.4.0",
+    "voluptuous>=0.11.5",
+    "pyyaml>=3.13,<4",
+    "jinja2>=2.9,<3",
+    "jmespath>=0.9.4,<1",
+    "openpyxl>=2.6,<3",
+    "q",
+    "icecream",
 ]
 
 setup(
-    name='dataplaybook',
+    name="dataplaybook",
     version=VERSION,
     install_requires=REQUIRES,
-    test_suite='tests',
-    entry_points={
-        'console_scripts': [
-            'dataplaybook = dataplaybook.__main__:main'
-        ]},
+    test_suite="tests",
+    entry_points={"console_scripts": ["dataplaybook = dataplaybook.__main__:main"]},
 )

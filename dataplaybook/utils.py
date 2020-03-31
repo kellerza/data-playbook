@@ -1,18 +1,19 @@
 """DataEnvironment class."""
-import logging
-import sys
 from configparser import ConfigParser
 from contextlib import contextmanager
+import logging
 from os import getenv
 from pathlib import Path
+import sys
 from timeit import default_timer
 from traceback import format_exception
 from typing import Any, Dict, List
 
-import q
-
 from dataplaybook.config_validation import util_slugify
 from dataplaybook.const import PlaybookError
+import q
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class DataVars(dict):
@@ -68,9 +69,11 @@ class DataEnv(dict):
         if res is None:
             res = getenv(key, None)
             if res is None:
-                raise PlaybookError(
-                    f"Could not resolve '{key}' from .env or environment"
-                )
+                _LOGGER.critical("Could not resolve '%s' from .env or environment", key)
+                # raise PlaybookError(
+                #     f"Could not resolve '{key}' from .env or environment"
+                # )
+                # return ""
             self[key] = res
         return self.get(key)
 

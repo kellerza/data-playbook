@@ -1,6 +1,7 @@
 """JMESpath tasks."""
-import voluptuous as vol
 import logging
+
+import voluptuous as vol
 
 import dataplaybook.config_validation as cv
 from dataplaybook.templates import process_template_str, TEMPLATE_JMES

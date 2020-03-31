@@ -61,7 +61,7 @@ def process_template_str(template, env=None):
         else:
             _LOGGER.error("Template %s expanded to None", template)
     else:
-        _LOGGER.debug("Template %s expanded to: %s", template, _to)
+        _LOGGER.debug("Template %s expanded to: %s", template, newvalue)
     return newvalue
 
 

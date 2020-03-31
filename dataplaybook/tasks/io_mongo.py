@@ -6,9 +6,13 @@ import attr
 import voluptuous as vol
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+from icecream import ic
+import q
 
 import dataplaybook.config_validation as cv
 from dataplaybook.const import PlaybookError
+from dataplaybook.templates import process_template_str
+from dataplaybook.utils import DataEnvironment
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,11 +33,13 @@ class MongoURI:
         if isinstance(uri, MongoURI):
             return uri
         try:
-            res = urlparse(uri)
+            sss = process_template_str(uri, env=q | DataEnvironment())
+            res = urlparse(sss)
+            ic("url", res)
         except AttributeError as err:
             _LOGGER.error("could not parse URL: %s: %s", uri, err)
             raise err
-        if res.scheme != "db":
+        if res.scheme not in ["db", "mongodb"]:
             raise vol.Invalid("db://host:port/database/collection/[set_id]")
         pth = res.path.split("/")
         return MongoURI(
@@ -47,7 +53,7 @@ class MongoURI:
     def from_dict(opt, db_field="db"):
         """Validate MongoDB URI. Allow override"""
         if not isinstance(opt.get(db_field), MongoURI):
-            print(opt)
+            ic(opt)
             opt[db_field] = MongoURI.from_string(opt[db_field])
         if "set_id" in opt:
             if opt[db_field].set_id:
@@ -58,6 +64,10 @@ class MongoURI:
 
     def __str__(self):
         return f"{self.netloc}/{self.database}/{self.collection}/{self.set_id}"
+
+    def get_client(self, connect=True):
+        """Return a MongoClient."""
+        return MongoClient(self.netloc, connect=connect)
 
 
 @cv.task_schema(

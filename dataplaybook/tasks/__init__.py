@@ -1,5 +1,6 @@
 """General tasks."""
 import logging
+import shutil
 
 import dataplaybook.config_validation as cv
 import voluptuous as vol
@@ -203,8 +204,6 @@ def task_fuzzy_match(table1, table2, opt):
 )
 def task_print(*table_data, tables, title):
     """Print a table."""
-    import shutil
-
     try:
         import pandas as pd
     except ImportError:

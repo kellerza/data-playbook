@@ -1,15 +1,16 @@
 """Read helpers."""
-from collections import OrderedDict
-from json import dumps
 import logging
 import os
+from collections import OrderedDict
+from json import dumps
 
 import attr
-import dataplaybook.config_validation as cv
 import openpyxl
-from openpyxl.utils import get_column_letter
+import q
 import voluptuous as vol
+from openpyxl.utils import get_column_letter
 
+import dataplaybook.config_validation as cv
 from dataplaybook.utils import log_filter
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,34 +22,6 @@ class Mylist(list):
     """List with additional attributes."""
 
     header = attr.ib()
-
-
-def read_excel_deprecate(conf):
-    """Change schema."""
-    msg = "read_excel: Deprecated config. "
-    conf_re = conf["read_excel"]
-    old = [k for k in conf_re if k in ("sheet", "header", "columns", "target")]
-    old_target = conf.pop("target", None)
-    old_default_sheet = conf_re.pop("default_sheet", None)
-
-    conf_re["sheets"] = cv.ensure_list(conf_re.get("sheets"))
-
-    if old_default_sheet:
-        conf_re["sheets"].append({"name": conf_re.pop("default_sheet", None)})
-
-    if old_target:
-        _LOGGER.warning("%s Moving 'target:' to the default sheet(name=*)", msg)
-        conf_re["sheets"].append({"name": "*", "target": old_target})
-
-    if old:
-        new = {"target": conf.pop("target", None)}
-        for fld in ("sheet", "columns", "header"):
-            if fld in conf_re:
-                new[fld] = conf_re.pop(fld, None)
-        conf_re["sheets"].append(new)
-        _LOGGER.warning("%s Old keys: %s. Replace with 'sheets: [%s]'", msg, old, new)
-
-    return conf
 
 
 @cv.task_schema(
@@ -78,7 +51,6 @@ def read_excel_deprecate(conf):
         ],
     },
     kwargs=True,
-    pre_validator=read_excel_deprecate,
 )
 def task_read_excel(tables, file, sheets=None):
     """Read excel file using openpyxl."""
@@ -111,8 +83,6 @@ def _sheet_yield_rows(_sheet, columns=None, header=0):
             next(rows)
             header -= 1
         header_row = [cell.value for cell in next(rows)]
-        import q
-
         q | header_row
     except StopIteration:
         header_row = []
@@ -199,9 +169,6 @@ def _fmt(obj):
         vol.Optional("headers", default=[]): vol.All(cv.ensure_list, [object]),
     },
     kwargs=True,
-    pre_validator=cv.deprecate_key(
-        ("write_excel", "ensure_string"), "In function write_excel"
-    ),
 )
 def task_write_excel(
     tables, file, include=None, header=None, headers=None, ensure_string=None

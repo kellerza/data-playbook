@@ -80,9 +80,8 @@ class DataPlaybook:
                     _LOGGER.debug("Calling task: %s", info)
                     res = taskdef.function(*fn_args, **fn_kwargs)
                 except TypeError as exc:
-                    msg = f"TypeError in/calling task {info}: {exc}"
-                    _LOGGER.error(msg)
-                    raise  # PlaybookError(msg)
+                    print_exception(task_name=name)
+                    raise PlaybookError(f"TypeError in/calling task {info}: {exc}")
 
                 if taskdef.isgenerator:
                     res = list(res)
