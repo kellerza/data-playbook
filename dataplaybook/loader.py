@@ -75,7 +75,11 @@ def _import(mod_name):
     try:
         mod_obj = import_module(mod_name)
         return mod_obj
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as err:
+        if err.name != mod_name:
+            _LOGGER.critical("No module named '%s' found while trying to import '%s'",
+            err.name, mod_name)
+            raise
         pass
 
     path = Path(mod_name + ".py").resolve(strict=True)

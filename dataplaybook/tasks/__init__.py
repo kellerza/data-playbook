@@ -95,6 +95,41 @@ def task_drop(tables, drop):
         _LOGGER.warning("Task drop: The tables did not exist %s", bad)
 
 
+@cv.task_schema(
+    {
+        vol.Required("ensure_list"): [
+            vol.Schema(
+                {
+                    vol.Required("table"): cv.table_use,
+                    vol.Required("columns"): vol.All(cv.ensure_list, [cv.col_use]),
+                }
+            )
+        ]
+    },
+    kwargs=True,
+)
+def task_ensure_list(tables, ensure_list):
+    """Ensure list."""
+    for _def in ensure_list:
+        for row in tables[_def["table"]]:
+            for col in _def["columns"]:
+                val = row.get(col)
+                if not val:
+                    row[col] = []
+                    continue
+                if not isinstance(val, str):
+                    _LOGGER.warning("%s %s", type(val), val)
+                    continue
+                if val.startswith("["):
+                    # try json
+                    try:
+                        row[col] = json.loads(val)
+                        continue
+                    except ValueError:
+                        pass
+                row[col] = cv.ensure_list_csv(val.strip("[").strip("]"))
+
+
 def _validate_extend(schema):
     """Additional validate schema for extend."""
     for table in schema["tables"]:
@@ -227,6 +262,16 @@ def task_print(*table_data, tables, title):
             print("  ...last 10:")
             for row in tbl[-10:]:
                 print(" ", row)
+
+
+@cv.task_schema({}, tables=(1, 10), kwargs=True)
+def task_remove_null(*tables):
+    """Ensure list."""
+    for table in tables:
+        for row in table:
+            for col in list(row.keys()):
+                if row[col] is None:
+                    del row[col]
 
 
 @cv.task_schema({vol.Required("replace"): dict}, tables=1, columns=1, kwargs=True)

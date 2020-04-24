@@ -150,3 +150,40 @@ def task_list_to_columns(table, opt):
             if col in row[opt.list]:
                 row[col] = True
         del row[opt.list]
+
+
+@cv.task_schema(
+    {vol.Required("db"): object},
+    cv.on_key("mongo_list_sids", MongoURI.from_dict),
+    target=1,
+    kwargs=True,
+)  # pylint: disable=invalid-name
+def task_mongo_list_sids(_, db):
+    """Return a list of _sid's"""
+    client = MongoClient(db.netloc, connect=True)
+    cursor = client[db.database][db.collection]
+    non = cursor.find_one({"_sid": {"$exists": False}})
+    print(non)
+    other = cursor.distinct("_sid")
+    print(other)
+    return other
+
+
+@cv.task_schema(
+    {
+        vol.Required("db"): object,
+        vol.Required("sids"): vol.All([cv.ensure_list_csv, []]),
+    },
+    cv.on_key("mongo_delete_sids", MongoURI.from_dict),
+    target=1,
+    kwargs=True,
+)  # pylint: disable=invalid-name
+def task_mongo_delete_sids(_, db, sids):
+    """Delete a specific _sid."""
+    client = MongoClient(db.netloc, connect=True)
+    cursor = client[db.database][db.collection]
+    for sid in sids:
+        if sid == "None" or sid is None:
+            cursor.delete_many({"_sid": {"$exists": False}})
+        else:
+            cursor.delete_many({"_sid": sid})
