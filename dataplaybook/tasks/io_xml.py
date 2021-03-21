@@ -37,7 +37,7 @@ def task_read_xml(tables, opt):
                 if key in _notok:
                     _notok.remove(key)
             else:
-                _LOGGER.warning("Ignored %s: %s", key, val[:20])
+                _LOGGER.warning("Ignored %s: %s", key, str(val)[:20])
 
     if _notok:
         _LOGGER.warning("Expected table %s", ",".join(_notok))

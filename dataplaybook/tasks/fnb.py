@@ -209,7 +209,7 @@ def task_fnb_process(*tables, opt):
 
                 row = row.copy()
                 (row["description"], row["extras"]) = f_t
-                row["amount"] = -row["amount"]
+                row["amount"] = -(row["amount"] or 0)
                 yield _clean(row)
 
             # Cheque transaction

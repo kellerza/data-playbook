@@ -9,7 +9,7 @@ import dataplaybook.config_validation as cv
 _LOGGER = logging.getLogger(__name__)
 
 REGEX = (
-    re.compile(r"(?:[^-]|^)((draft(?:-\w+)+?)(?:-\d{2})?)(?:[^-]|$)", re.I),
+    re.compile(r"(?:[^-]|^)((draft(?:-[\d\w]+)*)(?:-\d{2})?)(?:[^-]|$)", re.I),
     (r"RFC\1", re.compile(r"RFC\s*(\d{3,5})(?:\D|$)", re.I)),
     (r"IEEE \1", re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)),
     (r"IEEE \1", re.compile(r"(80[12].\d\w+)", re.I)),
