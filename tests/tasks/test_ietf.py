@@ -1,6 +1,6 @@
 """Tests for ietf.py"""
 import dataplaybook.tasks.ietf as ietf
-from dataplaybook.config_validation import AttrDict
+from dataplaybook.const import ATable
 
 
 def test_extract_standards():
@@ -17,9 +17,17 @@ def test_extract_standards():
     assert std[0].key == "draft-ietf-l3vpn-2547bis-mcast-bgp"
 
 
+def test_extract_standards_pad():
+    """Test starting from string."""
+    txt = "RFC1 RFC11 RFC111 RFC1111"
+    std = list(ietf.extract_standards(txt))
+
+    assert std == ["RFC0001", "RFC0011", "RFC0111", "RFC1111"]
+
+
 def test_extract_standards_version():
     """Test starting from string."""
-    txt = "draft-ietf-standard-01  draft-ietf-std"
+    txt = "draft-ietf-standard-01  draft-ietf-std--"
     std = list(ietf.extract_standards(txt))
 
     assert std == ["draft-ietf-standard-01", "draft-ietf-std"]
@@ -83,9 +91,7 @@ def test_task_add_std_col():
 
     table = [{"ss": "rfc 1234 rfc 5678"}]
 
-    opt = AttrDict({"rfc_col": "r", "columns": ("ss",)})
-
-    ietf.task_add_standards_column(table, opt)
+    ietf.add_standards_column(table=table, rfc_col="r", columns=["ss"])
 
     assert "r" in table[0]
     assert table[0]["r"] == "RFC1234, RFC5678"
@@ -96,16 +102,28 @@ def test_extract_std():
 
     table = [{"ss": "rfc 1234 rfc 5678"}, {"ss": "rfc 9999"}]
 
-    opt = AttrDict(
-        {"rfc_col": "r", "columns": ("ss",), "include_columns": [], "tables": ("tt",),}
+    resttt = ietf.extract_standards_from_table(
+        table=table, extract_columns=["ss"]  # , include_columns=[],  # rfc_col="r",
     )
 
-    res = list(ietf.task_extract_standards(table, opt))
+    assert isinstance(resttt, list)
+
+    res = list(resttt)
 
     assert len(res) == 3
     assert "name" in res[0]
     assert "key" in res[0]
     assert "lineno" in res[0]
-    assert res[0] == {"name": "RFC1234", "key": "RFC1234", "table": "tt", "lineno": 1}
-    assert res[1] == {"name": "RFC5678", "key": "RFC5678", "table": "tt", "lineno": 1}
-    assert res[2] == {"name": "RFC9999", "key": "RFC9999", "table": "tt", "lineno": 2}
+    assert res[0] == {"name": "RFC1234", "key": "RFC1234", "lineno": 1}
+    assert res[1] == {"name": "RFC5678", "key": "RFC5678", "lineno": 1}
+    assert res[2] == {"name": "RFC9999", "key": "RFC9999", "lineno": 2}
+
+    table = ATable(table)
+    table.name = "ttt"
+
+    resttt = ietf.extract_standards_from_table(table=table, extract_columns=["ss"])
+    res = list(resttt)
+
+    assert res[0] == {"name": "RFC1234", "key": "RFC1234", "table": "ttt", "lineno": 1}
+    assert res[1] == {"name": "RFC5678", "key": "RFC5678", "table": "ttt", "lineno": 1}
+    assert res[2] == {"name": "RFC9999", "key": "RFC9999", "table": "ttt", "lineno": 2}

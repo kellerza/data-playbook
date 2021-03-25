@@ -1,16 +1,16 @@
 """Telecoms related tasks."""
 import logging
 import re
+from typing import List, Optional
 
-import voluptuous as vol
-
-import dataplaybook.config_validation as cv
+from dataplaybook import Columns, Table, task
 
 _LOGGER = logging.getLogger(__name__)
 
+
 REGEX = (
-    re.compile(r"(?:[^-]|^)((draft(?:-[\d\w]+)*)(?:-\d{2})?)(?:[^-]|$)", re.I),
-    (r"RFC\1", re.compile(r"RFC\s*(\d{3,5})(?:\D|$)", re.I)),
+    re.compile(r"(?=[^-]|^)((draft-[\w-]+?)(?:-\d{2})?)-*(?![-\w])", re.I),
+    (r"RFC\1", re.compile(r"RFC\s*(\d{1,5})(?:\D|$)", re.I),),
     (r"IEEE \1", re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)),
     (r"IEEE \1", re.compile(r"(80[12].\d\w+)", re.I)),
     (r"ITU-T \1", re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)),
@@ -55,7 +55,7 @@ class KeyStr(str):
         return res
 
 
-def extract_standards(val):
+def extract_standards(val: str) -> List[str]:
     """Ensure it is unique."""
     match = {}
     for itm in _extract_standards(val):
@@ -65,12 +65,12 @@ def extract_standards(val):
         yield itm
 
 
-def extract_standards_ordered(val):
+def extract_standards_ordered(val: str) -> List[str]:
     """Ensure sorted."""
     return sorted(extract_standards(val), key=lambda x: x.start)
 
 
-def extract_one_standard(val):
+def extract_one_standard(val: str) -> str:
     """Extract a single standard."""
     lst = extract_standards_ordered(val)
     return lst[0] if lst else None
@@ -82,8 +82,11 @@ def _extract_standards(val):
         if isinstance(rex, tuple):
             for match in rex[1].finditer(val):
                 # _LOGGER.debug("%s groups: %s", rex, match.groups())
+                template = rex[0]
+                if template.startswith("RFC") and len(match.group(1)) < 4:
+                    template = r"RFC" + r"\1".zfill(6 - len(match.group(1)))
                 yield KeyStr(
-                    match.expand(rex[0]),
+                    match.expand(template),
                     match.expand(rex[2]) if len(rex) > 2 else None,
                     start=match.start(),
                 )
@@ -95,35 +98,30 @@ def _extract_standards(val):
             )
 
 
-def _copy_table_es(opt):
-    _LOGGER.warning(str(opt))
-    opt["extract_standards"]["tables"] = opt["tables"]
-    return opt
+# def _copy_table_es(opt):
+#     _LOGGER.warning(str(opt))
+#     opt["extract_standards"]["tables"] = opt["tables"]
+#     return opt
 
 
-@cv.task_schema(
-    {
-        vol.Optional("include_columns", default=[]): vol.All(
-            cv.ensure_list, [cv.col_use]
-        ),
-        vol.Optional("tables", default=[]): [str],  # copied from outer
-    },
-    _copy_table_es,
-    tables=1,
-    columns=(1, 10),
-    target=1,
-)
-def task_extract_standards(table, opt):
+@task
+def extract_standards_from_table(
+    table: Table, extract_columns: Columns, include_columns: Optional[Columns] = None
+) -> Table:
     """Extract all RFCs from a table, into a new table."""
     header = getattr(table, "header", 1)
+    name = getattr(table, "name", "")
     _LOGGER.debug("Header start at line: %s", header)
-    for _no, row in enumerate(table, header):
 
-        base = {"table": opt.tables[0], "lineno": _no}
-        for col in opt.include_columns:
+    for _no, row in enumerate(table, header):
+        base = {"lineno": _no}
+        if name:
+            base["table"] = name
+
+        for col in include_columns or []:
             base[col] = row.get(col)
 
-        for coln in opt.columns:
+        for coln in extract_columns:
             val = row.get(coln, None)
             if val:
                 for match in extract_standards(val):
@@ -133,11 +131,11 @@ def task_extract_standards(table, opt):
                     yield res
 
 
-@cv.task_schema({vol.Required("rfc_col"): cv.col_add}, tables=1, columns=(1))
-def task_add_standards_column(table, opt):
+@task
+def add_standards_column(table: Table, columns: Columns, rfc_col: str):
     """Extract all RFCs from a table."""
     for row in table:
-        val = row.get(opt.columns[0])
+        val = row.get(columns[0])
         new = list(extract_standards(val))
         if new:
-            row[opt.rfc_col] = ", ".join(new)
+            row[rfc_col] = ", ".join(new)

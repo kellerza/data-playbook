@@ -3,17 +3,16 @@ from json import dump, load
 from os import getenv
 from pathlib import Path
 import time
+from typing import List, Optional, Pattern
 from urllib.parse import urlparse
 import urllib.request
+from csv import DictReader, DictWriter
 
-import dataplaybook.config_validation as cv
-import voluptuous as vol
+from dataplaybook import Columns, Table, Tables, task
 
 
-@cv.task_schema(
-    {vol.Required("patterns"): vol.All(cv.ensure_list, [str])}, target=True, kwargs=True
-)
-def task_glob(_, patterns):
+@task
+def glob(patterns: List[str]) -> Table:
     """Search for files matching certain patterns."""
     for val in patterns:
         fol, _, pat = val.partition("/*")
@@ -22,10 +21,8 @@ def task_glob(_, patterns):
             yield {"file": str(file)}
 
 
-@cv.task_schema(
-    {vol.Required("file"): str, vol.Optional("count", default=3): int}, kwargs=True
-)
-def task_file_rotate(_, file, count):
+@task
+def file_rotate(file: str, count: int = 3) -> None:
     """Rotate some file fn.ext --> fn.1.ext --> fn.2.ext."""
 
     __f = Path(file)
@@ -45,18 +42,9 @@ def task_file_rotate(_, file, count):
     _rename(__f, 1)
 
 
-@cv.task_schema(
-    {
-        vol.Required("file"): str,
-        vol.Optional("columns"): vol.Any(None, vol.Schema({str: str})),
-    },
-    target=1,
-    kwargs=True,
-)
-def task_read_csv(tables, file, columns=None):
+@task
+def read_csv(file: str, columns: Optional[Columns] = None) -> Table:
     """Read csv file."""
-    from csv import DictReader
-
     with open(file, "r", encoding="utf-8") as fle:
         csvf = DictReader(fle)
         # header = opt.headers if 'headers' in opt else None
@@ -74,8 +62,8 @@ def task_read_csv(tables, file, columns=None):
             # yield {k: v for k, v in zip(header, line)}
 
 
-@cv.task_schema({vol.Required("file"): str}, target=(0, 1), kwargs=True)
-def task_read_json(tables, file):
+@task
+def read_json(file) -> Table:
     """Read json from a file."""
     with Path(file).open("r", encoding="utf-8") as __f:
         res = load(__f)
@@ -83,28 +71,18 @@ def task_read_json(tables, file):
         return res
 
 
-@cv.task_schema(
-    {vol.Required("file"): str, vol.Optional("only_var"): bool},
-    tables=(0, 1),
-    kwargs=True,
-)
-def task_write_json(tables, file, only_var=False):
+@task
+def write_json(tables: Tables, file: str, only_var=False) -> None:
     """Write into a json file."""
     with Path(file).open("w") as __f:
         dump(tables.var if only_var else tables, __f, indent="  ")
 
 
-@cv.task_schema(
-    {
-        vol.Required("file"): str,
-        vol.Optional("headers"): vol.All(cv.ensure_list, [cv.col_add]),
-    },
-    target=1,
-)
-def task_read_tab_delim(tables, opt):
+@task
+def read_tab_delim(tables: Tables, file, headers: Columns) -> Table:
     """Read xml file."""
-    with open(opt.file, "r", encoding="utf-8") as fle:
-        header = opt.headers if "headers" in opt else None
+    with open(file, "r", encoding="utf-8") as fle:
+        header = headers
         for line in fle:
             line = line.strip()
             if line.startswith("#") or not line:
@@ -113,19 +91,13 @@ def task_read_tab_delim(tables, opt):
                 header = line.split("\t")
                 continue
             line = line.split("\t")
-            yield {k: v for k, v in zip(header, line)}
+            yield zip(header, line)
 
 
-@cv.task_schema(
-    {
-        vol.Required("filename"): str,
-        vol.Required("newline"): object,
-        vol.Optional("fields", default=None): object,
-    },
-    target=1,
-    kwargs=True,
-)
-def task_read_text_regex(_, filename, newline, fields: None):
+@task
+def task_read_text_regex(
+    filename: str, newline: Pattern, fields: Optional[Pattern]
+) -> Table:
     """Much regular expressions into a table."""
     res = None
     with open(filename) as file:
@@ -150,15 +122,8 @@ def task_read_text_regex(_, filename, newline, fields: None):
         yield res
 
 
-@cv.task_schema(
-    {
-        vol.Required("file"): str,
-        vol.Required("url"): str,
-        vol.Optional("age", default=48 * 60 * 60): int,
-    },
-    kwargs=True,
-)
-def task_wget(tables, url, file, age):
+@task
+def wget(url: str, file: str, age: int = 48 * 60 * 60):
     """Download a file."""
     path = Path(file)
     if path.exists():
@@ -179,11 +144,9 @@ def task_wget(tables, url, file, age):
     urllib.request.urlretrieve(url, file)
 
 
-@cv.task_schema({vol.Required("file"): cv.endswith(".xlsx")}, tables=1, kwargs=True)
-def task_write_csv(table, file):
+@task
+def write_csv(table: Table, file: str) -> None:
     """Write a csv file."""
-    from csv import DictWriter
-
     fieldnames = list(table[0].keys())
 
     with open(file, "w", newline="") as csvfile:

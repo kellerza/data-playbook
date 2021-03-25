@@ -1,29 +1,17 @@
 """General tasks."""
+import json
 import logging
 import shutil
+from typing import List, Optional, Union, Dict
 
+from dataplaybook import Columns, Table, Tables, task
 import dataplaybook.config_validation as cv
-import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def pre_copy_tables(task):
-    """Copy table names into the task."""
-
-    def _copy(conf):
-        if "tables" in conf[task] and (conf[task]["tables"] != conf.get("tables")):
-            raise vol.Invalid("Only specify ['tables'] in the root")
-        conf[task]["tables"] = conf.get("tables")
-        return conf
-
-    return _copy
-
-
-@cv.task_schema(
-    {vol.Required("key"): cv.col_use}, target=1, tables=1, columns=(1, 99), kwargs=True
-)
-def task_build_lookup(table, key, columns):
+@task
+def build_lookup(table: Table, key: str, columns: Columns) -> Table:
     """Build a lookup table (unique key & columns) and removing the columns."""
     lookup = {}
     all_cols = list(columns)
@@ -37,10 +25,8 @@ def task_build_lookup(table, key, columns):
             row.pop(col)
 
 
-@cv.task_schema(
-    {vol.Required("key"): cv.col_use}, target=1, tables=1, columns=(1, 99), kwargs=True
-)
-def task_build_lookup_var(table, key, columns):
+@task
+def build_lookup_var(table: Table, key: str, columns: Columns) -> Table:
     """Build lookup tables {key: columns}."""
     lookup = {}
     for row in table:
@@ -49,18 +35,10 @@ def task_build_lookup_var(table, key, columns):
     return lookup
 
 
-@cv.task_schema(
-    {
-        vol.Required("key"): cv.col_use,
-        vol.Optional("value", default=True): vol.Any(True, str),
-        vol.Required("tables"): [str],  # copied from the outer validator
-    },
-    target=1,
-    tables=(1, 99),
-    columns=(0, 99),
-    pre_validator=pre_copy_tables("combine"),
-)
-def task_combine(*tables, opt):
+@task
+def combine(
+    tables: List[Table], key: str, columns: Columns, value: Union[bool, str] = True
+) -> Table:
     """Combine multiple tables on key.
 
     key: unique identifier for the rows
@@ -68,91 +46,47 @@ def task_combine(*tables, opt):
     target: output
     """
     _res = {}
-    copy_columns = list(opt.columns)
-    copy_columns.insert(0, opt.key)
-    for table, table_name in zip(tables, opt.tables):
+    copy_columns = list(columns)
+    copy_columns.insert(0, key)
+    for table, table_name in zip(tables, tables):
         for row in table:
-            key = row[opt.key]
+            key = row[key]
             if key not in _res:
                 _res[key] = {k: row.get(k, "") for k in copy_columns}
             else:
                 pass  # add redundant info...
-            _res[key][table_name] = True if opt.value is True else row[opt.value]
+            _res[key][table_name] = True if value is True else row[value]
     return list(_res.values())
 
 
-@cv.task_schema(
-    {vol.Required("drop"): vol.All(cv.ensure_list, [cv.table_remove])}, kwargs=True
-)
-def task_drop(tables, drop):
-    """Drop tables from the active set."""
-    _LOGGER.debug("Tables: %s Vars: %s", list(tables.keys()), list(tables.var.keys()))
-    drop = set(drop)
-    bad = {t for t in drop if t not in tables}
-    for tbl in drop - bad:
-        del tables[tbl]
-    if bad:
-        _LOGGER.warning("Task drop: The tables did not exist %s", bad)
-
-
-@cv.task_schema(
-    {
-        vol.Required("ensure_list"): [
-            vol.Schema(
-                {
-                    vol.Required("table"): cv.table_use,
-                    vol.Required("columns"): vol.All(cv.ensure_list, [cv.col_use]),
-                }
-            )
-        ]
-    },
-    kwargs=True,
-)
-def task_ensure_list(tables, ensure_list):
+@task
+def ensure_list(table: Table, columns: Columns):
     """Ensure list."""
-    for _def in ensure_list:
-        for row in tables[_def["table"]]:
-            for col in _def["columns"]:
-                val = row.get(col)
-                if not val:
-                    row[col] = []
+    for row in table:
+        for col in columns:
+            val = row.get(col)
+            if not val:
+                row[col] = []
+                continue
+            if not isinstance(val, str):
+                _LOGGER.warning("%s %s", type(val), val)
+                continue
+            if val.startswith("["):
+                # try json
+                try:
+                    row[col] = json.loads(val)
                     continue
-                if not isinstance(val, str):
-                    _LOGGER.warning("%s %s", type(val), val)
-                    continue
-                if val.startswith("["):
-                    # try json
-                    try:
-                        row[col] = json.loads(val)
-                        continue
-                    except ValueError:
-                        pass
-                row[col] = cv.ensure_list_csv(val.strip("[").strip("]"))
+                except ValueError:
+                    pass
+            row[col] = cv.ensure_list_csv(val.strip("[").strip("]"))
 
 
-def _validate_extend(schema):
-    """Additional validate schema for extend."""
-    for table in schema["tables"]:
-        cv.table_use(table)
-    return schema
-
-
-@cv.task_schema({}, _validate_extend, tables=(2, 99))
-def task_extend(*tables, opt):
-    """Extend a table with another table."""
-    for tbl in tables[1:]:
-        tables[0].extend(tbl)
-
-
-@cv.task_schema(
-    {
-        vol.Optional("include", default={}): vol.Schema({cv.col_use: object}),
-        vol.Optional("exclude", default={}): vol.Schema({cv.col_use: object}),
-    },
-    tables=1,
-    target=1,
-)
-def task_filter(table, opt):
+@task
+def filter_rows(
+    table: Table,
+    include: Optional[List[str]] = None,
+    exclude: Optional[List[str]] = None,
+) -> Table:
     """Filter rows from a table."""
 
     def _match(criteria, row):
@@ -167,80 +101,28 @@ def task_filter(table, opt):
 
         return False
 
-    if opt.include:
+    if include:
         for row in table:
-            if _match(opt.exclude, row):
+            if _match(exclude, row):
                 continue
-            if _match(opt.include, row):
+            if _match(include, row):
                 yield row
         return
 
     for row in table:
-        if not _match(opt.exclude, row):
+        if not _match(exclude, row):
             yield row
 
 
-def _validate_fuzzy(val):
-    cv.col_add(val.target_column, val.tables[1])
-    cv.col_use(val.columns[0], val.tables[0])
-    cv.col_use(val.columns[1], val.tables[1])
-    return val
-
-
-@cv.task_schema(
-    {vol.Required("target_column"): cv.slug},
-    cv.on_key("fuzzy", _validate_fuzzy),
-    tables=2,
-    columns=2,
-)
-def task_fuzzy_match(table1, table2, opt):
-    """Fuzzy matching.
-
-    https://marcobonzanini.com/2015/02/25/fuzzy-string-matching-in-python/
-    """
-    from fuzzywuzzy import fuzz  # process
-
-    t2_colname = opt.columns[1]
-    t2_names = list({str(r[t2_colname]) for r in table2 if r.get(t2_colname)})
-    t2_namesl = list(map(str.lower, t2_names))
-
-    for row in table1:
-        col1 = row.get(opt.columns[0])
-        if not col1:
-            continue
-        col1 = str(col1).lower()
-        # res = process.extractBests(
-        #     col1, t2_names, limit=10, scorer=fuzz.ratio)
-        # row[opt.target_column] = '' if not res else res[0][0]
-        # row[opt.target_column + '#'] = 0 if not res else res[0][1]
-        # row[opt.target_column + '_'] = str(res)
-
-        res = []
-        for col2l, col2 in zip(t2_namesl, t2_names):
-            resf = fuzz.ratio(col1, col2l)
-            if resf > 20:
-                res.append((resf, col2))
-        res.sort(key=lambda rec: rec[0], reverse=True)
-        row[opt.target_column] = "" if not res else res[0][1]
-        row[opt.target_column + "#"] = 0 if not res else res[0][0]
-        row[opt.target_column + "_"] = str(res[:10])
-
-
-@cv.task_schema(
-    {
-        vol.Required("tables"): vol.All(
-            cv.ensure_list, [str]
-        ),  # copied from the outer validator
-        vol.Optional("title", default=""): str,
-    },
-    tables=(1, 99),
-    pre_validator=pre_copy_tables("print"),
-    kwargs=True,
-)
-def task_print(*table_data, tables, title):
+@task
+def print_table(*, table: Optional[Table], tables: Optional[Tables]):
     """Print a table."""
+    if not tables:
+        tables = {}
+    if table:
+        tables["_"] = table
     try:
-        import pandas as pd
+        import pandas as pd  # pylint: disable=import-outside-toplevel
     except ImportError:
         pass
     else:
@@ -248,14 +130,14 @@ def task_print(*table_data, tables, title):
         size = shutil.get_terminal_size()
         pd.set_option("display.width", size.columns)
 
-        for tbl, nme in zip(table_data, tables):
+        for tbl, nme in tables:
             dframe = pd.DataFrame(tbl)
-            print(f"{title} Table {nme}".strip())
+            print(f"Table {nme}".strip())
             print(dframe)
         return
 
-    for tbl, nme in zip(table_data, tables):
-        print(f"{title} Table {nme} first 10 rows".strip())
+    for tbl, nme in tables:
+        print(f"Table {nme} first 10 rows".strip())
         for row in tbl[:10]:
             print(" ", row)
         if len(tbl) > 10:
@@ -264,8 +146,9 @@ def task_print(*table_data, tables, title):
                 print(" ", row)
 
 
-@cv.task_schema({}, tables=(1, 10), kwargs=True)
-def task_remove_null(*tables):
+# @cv.task_schema({}, tables=(1, 10), kwargs=True)
+@task
+def remove_null(*tables):
     """Ensure list."""
     for table in tables:
         for row in table:
@@ -274,22 +157,22 @@ def task_remove_null(*tables):
                     del row[col]
 
 
-@cv.task_schema({vol.Required("replace"): dict}, tables=1, columns=1, kwargs=True)
-def task_replace(table, replace, columns):
+@task
+def replace(table: Table, replace_dict: Dict[str, str], columns: Columns) -> None:
     """Replace word in a column."""
     col = columns[0]
     for row in table:
         if col not in row:
             continue
-        for _from, _to in replace.items():
+        for _from, _to in replace_dict.items():
             if not _to:
                 _to = _from + " "
             if row[col].find(_from) >= 0:
                 row[col] = row[col].replace(_from, _to)
 
 
-@cv.task_schema({vol.Required("key"): cv.col_use}, tables=1, target=1, kwargs=True)
-def task_unique(table, key):
+@task
+def unique(table: Table, key: str) -> Table:
     """Unique based on a key."""
     seen = {}
     for row in table:
@@ -300,14 +183,14 @@ def task_unique(table, key):
         yield row
 
 
-@cv.task_schema({}, tables=2, columns=3)
-def task_vlookup(table0, acro, opt):
+@task  # , tables=2, columns=3)
+def vlookup(table0: Table, acro: Table, columns: Columns):
     """Modify table0[col0], replacing table1[col1] with table1[col2]."""
-    _LOGGER.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
+    # _LOGGER.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
     _acro = {}
     for row in acro:
-        key = str(row.get(opt.columns[1], "")).lower()
-        val = row.get(opt.columns[2], "")
+        key = str(row.get(columns[1], "")).lower()
+        val = row.get(columns[2], "")
         if key in _acro:
             _LOGGER.debug("duplicate %s=%s (used: %s)", key, val, _acro[key])
             continue
@@ -318,6 +201,6 @@ def task_vlookup(table0, acro, opt):
     _LOGGER.debug("Expand %s", str(_acro))
 
     for row0 in table0:
-        val0 = str(row0.get(opt.columns[0], "")).lower()
+        val0 = str(row0.get(columns[0], "")).lower()
         if val0 in _acro:
-            row0[opt.columns[0]] = _acro[val0]
+            row0[columns[0]] = _acro[val0]

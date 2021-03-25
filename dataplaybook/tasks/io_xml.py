@@ -1,33 +1,27 @@
 """Read XML files."""
+from collections import defaultdict
 import json
 import logging
-
-# https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
-from collections import defaultdict
-
-# import dicttoxml
+from typing import List
 from xml.etree import ElementTree
 
-import dataplaybook.config_validation as cv
-import voluptuous as vol
+from dataplaybook import Tables, task
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@cv.task_schema(
-    {
-        vol.Required("file"): str,
-        vol.Required("targets"): vol.All(cv.ensure_list, [cv.table_add]),
-    }
-)
-def task_read_xml(tables, opt):
-    """Read xml file."""
-    tree = ElementTree.parse(opt.file)
+@task
+def read_xml(tables: Tables, file: str, targets: List[str]):
+    """Read xml file.
+
+    https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
+    """
+    tree = ElementTree.parse(file)
     root = tree.getroot()
-    dct = etree_to_dict(root)
+    dct = _etree_to_dict(root)
     # writejson('zza.json', dct)
 
-    _notok = list(opt.targets)
+    _notok = list(targets)
 
     for _t1 in dct.values():
         for key, val in _t1.items():
@@ -43,7 +37,7 @@ def task_read_xml(tables, opt):
         _LOGGER.warning("Expected table %s", ",".join(_notok))
 
 
-def writejson(filename, dct):
+def _writejson(filename, dct):
     """Write dict to file."""
     with open(filename, "w") as fle:
         fle.write(json.dumps(dct))
@@ -54,7 +48,7 @@ def _ns(_ss):
 
 
 # pylint: disable=invalid-name
-def etree_to_dict(t):
+def _etree_to_dict(t):
     """Elementtree to dict."""
     t_tag = _ns(t.tag)
     d = {t_tag: {} if t.attrib else None}
@@ -62,7 +56,7 @@ def etree_to_dict(t):
     children = list(t)
     if children:
         dd = defaultdict(list)
-        for dc in map(etree_to_dict, children):
+        for dc in map(_etree_to_dict, children):
             for k, v in dc.items():
                 dd[_ns(k)].append(v)
         d = {t_tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}

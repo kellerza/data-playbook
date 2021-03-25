@@ -9,9 +9,10 @@ from timeit import default_timer
 from traceback import format_exception
 from typing import Any, Dict, List
 
+from icecream import ic
+
 from dataplaybook.config_validation import util_slugify
 from dataplaybook.const import PlaybookError
-import q
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -108,7 +109,10 @@ class DataEnvironment(dict):
     def __setitem__(self, key: str, val: Any):
         if key == "var":
             raise Exception("Cannot set vaiables directly. Use .var.")
-        dict.__setitem__(self, key, val)
+        if isinstance(val, list):
+            dict.__setitem__(self, key, val)
+        else:
+            self._var[key] = val
 
 
 def get_logger(logger=None):
@@ -153,7 +157,7 @@ def setup_logger():
     datefmt = "%H:%M:%S"
 
     try:
-        from colorlog import ColoredFormatter
+        from colorlog import ColoredFormatter  # pylint: disable=import-outside-toplevel
 
         logging.getLogger().handlers[0].setFormatter(
             ColoredFormatter(
@@ -179,7 +183,7 @@ def log_filter(record):
     https://relaxdiego.com/2014/07/logging-in-python.html
     """
     if any(len(str(arg)) > 100 for arg in record.args):
-        q(record, record.args)
+        ic(record, record.args)
         res = []
         for arg in record.args:
             if len(str(arg)) < 100:
@@ -187,7 +191,7 @@ def log_filter(record):
                 continue
             idx = len(res)
             res.append(f"{str(arg)[:100]}...q...len={len(arg)}")
-            q(record.args[idx], type(record.args[idx]))
+            ic(record.args[idx], type(record.args[idx]))
         record.args = tuple(res)
         return record
 

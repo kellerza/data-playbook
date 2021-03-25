@@ -6,38 +6,23 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from socket import gaierror
+from typing import Optional, List
 
-import voluptuous as vol
-from dataplaybook import config_validation as cv
+from dataplaybook import task
 
 
-@cv.task_schema(
-    {
-        vol.Required("from_addr"): str,
-        vol.Required("to_addrs"): vol.All(cv.ensure_list, [str]),
-        vol.Optional("cc_addrs", default=[]): vol.All(cv.ensure_list, [str]),
-        vol.Optional("bcc_addrs", default=[]): vol.All(cv.ensure_list, [str]),
-        vol.Optional("files", default=[]): vol.All(cv.ensure_list, [str]),
-        vol.Optional("body", default=""): str,
-        vol.Optional("html", default=""): str,
-        vol.Required("subject"): str,
-        vol.Optional("priority"): str,
-        vol.Optional("server"): str,
-    },
-    kwargs=True,
-)
-def task_mail(
-    _,
-    to_addrs,
-    from_addr,
-    subject,
-    files=None,
-    priority=4,
-    body=None,
-    html=None,
-    server=None,
-    cc_addrs=None,
-    bcc_addrs=None,
+@task
+def mail(
+    to_addrs: List[str],
+    from_addr: str,
+    subject: str,
+    files: Optional[List[str]] = None,
+    priority: int = 4,
+    body: Optional[str] = "",
+    html: Optional[str] = "",
+    server: Optional[str] = None,
+    cc_addrs: Optional[List[str]] = None,
+    bcc_addrs: Optional[List[str]] = None,
 ):
     """Send a mail."""
     cc_addrs = cc_addrs or []
@@ -69,7 +54,7 @@ def task_mail(
         message.attach(MIMEText(html, "html", "utf-8"))
 
     for file_path in files or []:
-        attach(message, Path(file_path))
+        _attach(message, Path(file_path))
 
     msg = message.as_string()
 
@@ -88,7 +73,7 @@ def task_mail(
         raise
 
 
-def attach(message, path):
+def _attach(message, path):
     """Attach a file to message."""
     assert isinstance(path, Path)
 

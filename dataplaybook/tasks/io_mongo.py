@@ -1,18 +1,16 @@
 """MongoDB IO tasks."""
 import logging
+from typing import List, Optional
 from urllib.parse import urlparse
-import attr
 
-import voluptuous as vol
+import attr
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from icecream import ic
-import q
+import voluptuous as vol
+from icecream import ic  # noqa pylint: disable=unused-import
 
-import dataplaybook.config_validation as cv
+from dataplaybook import Columns, Table, task
 from dataplaybook.const import PlaybookError
-from dataplaybook.templates import process_template_str
-from dataplaybook.utils import DataEnvironment
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,39 +25,31 @@ class MongoURI:
     set_id = attr.ib()
 
     @staticmethod
-    def from_string(uri):
-        """Validate mongodb uri.
-        Additional set_id"""
-        if isinstance(uri, MongoURI):
-            return uri
+    def new_from_string(db_uri, set_id=None):
+        """new mongodb uri."""
         try:
-            sss = process_template_str(uri, env=q | DataEnvironment())
-            res = urlparse(sss)
-            ic("url", res)
+            res = urlparse(db_uri)
         except AttributeError as err:
-            _LOGGER.error("could not parse URL: %s: %s", uri, err)
+            _LOGGER.error("could not parse URL: %s: %s", db_uri, err)
             raise err
         if res.scheme not in ["db", "mongodb"]:
             raise vol.Invalid("db://host:port/database/collection/[set_id]")
         pth = res.path.split("/")
+
+        if len(pth) == 4:
+            if set_id:
+                raise vol.InInvalid("set_id specified, not allowed in db URI")
+            set_id = pth[3]
+
         return MongoURI(
-            netloc=res.netloc,
-            database=pth[1],
-            collection=pth[2],
-            set_id=pth[3] if len(pth) == 4 else None,
+            netloc=res.netloc, database=pth[1], collection=pth[2], set_id=set_id,
         )
 
     @staticmethod
-    def from_dict(opt, db_field="db"):
-        """Validate MongoDB URI. Allow override"""
-        if not isinstance(opt.get(db_field), MongoURI):
-            ic(opt)
-            opt[db_field] = MongoURI.from_string(opt[db_field])
-        if "set_id" in opt:
-            if opt[db_field].set_id:
-                raise vol.InInvalid("set_id specified, not allowed in db URI")
-            opt[db_field].set_id = opt["set_id"]
-            del opt["set_id"]
+    def validate(opt):
+        """Validate MongoDB URI."""
+        if not isinstance(opt.get("db"), MongoURI):
+            opt["db"] = MongoURI.new_from_string(opt["db"], opt.pop("set_id", None))
         return opt
 
     def __str__(self):
@@ -70,13 +60,10 @@ class MongoURI:
         return MongoClient(self.netloc, connect=connect)
 
 
-@cv.task_schema(
-    {vol.Required("db"): object, vol.Optional("set_id"): str},
-    cv.on_key("read_mongo", MongoURI.from_dict),
-    target=1,
-    kwargs=True,
-)  # pylint: disable=invalid-name
-def task_read_mongo(_, db):
+@task(validator=MongoURI.validate)
+def read_mongo(  # pylint: disable=invalid-name
+    db: str, set_id: Optional[str] = None,
+) -> Table:
     """Read data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
     if db.set_id:
@@ -91,17 +78,10 @@ def task_read_mongo(_, db):
         yield result
 
 
-@cv.task_schema(
-    {
-        vol.Required("db"): object,
-        vol.Optional("set_id"): str,
-        vol.Optional("force"): bool,
-    },
-    cv.on_key("write_mongo", MongoURI.from_dict),
-    tables=1,
-    kwargs=True,
-)  # pylint: disable=invalid-name
-def task_write_mongo(table, db, force=False):
+@task(validator=MongoURI.validate)
+def write_mongo(  # pylint: disable=invalid-name
+    table: Table, db: str, set_id: Optional[str] = None, force=False
+):
     """Write data to a MongoDB collection."""
     try:
         client = MongoClient(db.netloc, connect=True)
@@ -131,54 +111,45 @@ def task_write_mongo(table, db, force=False):
         raise PlaybookError(f"Could not open connection to DB {db}")
 
 
-@cv.task_schema({vol.Required("list"): str}, tables=1, columns=(1, 10))
-def task_columns_to_list(table, opt):
+@task
+def columns_to_list(table: Table, list_column: str, columns: Columns):
     """Convert columns with booleans to a list in a single column.
 
     Useful to store columns with true/false in a single list with the columns
     names.
     """
     for row in table:
-        row[opt.list] = [n for n in opt.columns if row.pop(n, False)]
+        row[list_column] = [n for n in columns if row.pop(n, False)]
 
 
-@cv.task_schema({vol.Required("list"): str}, tables=1, columns=(1, 10))
-def task_list_to_columns(table, opt):
+@task
+def list_to_columns(table: Table, list_column: str, columns: Columns):
     """Convert a list with values to columns wth True."""
     for row in table:
-        for col in opt.columns:
-            if col in row[opt.list]:
+        for col in columns:
+            if col in row[list_column]:
                 row[col] = True
-        del row[opt.list]
+        del row[list_column]
 
 
-@cv.task_schema(
-    {vol.Required("db"): object},
-    cv.on_key("mongo_list_sids", MongoURI.from_dict),
-    target=1,
-    kwargs=True,
-)  # pylint: disable=invalid-name
-def task_mongo_list_sids(_, db):
+@task(validator=MongoURI.validate)
+def mongo_list_sids(  # pylint: disable=invalid-name
+    db: str, set_id: Optional[str] = None
+) -> List[str]:
     """Return a list of _sid's"""
     client = MongoClient(db.netloc, connect=True)
     cursor = client[db.database][db.collection]
-    non = cursor.find_one({"_sid": {"$exists": False}})
-    print(non)
+    # non = cursor.find_one({"_sid": {"$exists": False}})
+    # print(non)
     other = cursor.distinct("_sid")
-    print(other)
+    # print(other)
     return other
 
 
-@cv.task_schema(
-    {
-        vol.Required("db"): object,
-        vol.Required("sids"): vol.All([cv.ensure_list_csv, []]),
-    },
-    cv.on_key("mongo_delete_sids", MongoURI.from_dict),
-    target=1,
-    kwargs=True,
-)  # pylint: disable=invalid-name
-def task_mongo_delete_sids(_, db, sids):
+@task(validator=MongoURI.validate)  # pylint: disable=invalid-name
+def mongo_delete_sids(
+    sids: List[str], db: str, set_id: Optional[str] = None
+):  # pylint: disable=invalid-name
     """Delete a specific _sid."""
     client = MongoClient(db.netloc, connect=True)
     cursor = client[db.database][db.collection]

@@ -1,31 +1,27 @@
 """GIS / QGIS tasks."""
-import voluptuous as vol
-
-import dataplaybook.config_validation as cv
+from dataplaybook import task, Table
 
 
-@cv.task_schema(
-    {
-        vol.Optional("latA", default="latA"): cv.col_use,
-        vol.Optional("latB", default="latB"): cv.col_use,
-        vol.Optional("lonA", default="lonA"): cv.col_use,
-        vol.Optional("lonB", default="lonB"): cv.col_use,
-        vol.Optional("error", default="22 -22"): str,
-        vol.Optional("linestring", default="linestring"): cv.col_add,
-    },
-    tables=1,
-)
-def task_linestring(table, opt):
+@task
+def linestring(
+    table: Table,
+    lat_a: str = "latA",
+    lat_b: str = "latB",
+    lon_a: str = "lonA",
+    lon_b: str = "lonB",
+    linestring_column: str = "linestring",
+    error: str = "22 -22",
+) -> Table:
     """Add a linestring column to a table."""
     for row in table:
         try:
-            lla = "{:4d} {:4d}".format(row[opt.lonA], row[opt.latA])
+            lla = "{:4d} {:4d}".format(row[lon_a], row[lat_a])
         except IndexError:
-            lla = opt.error
+            lla = error
 
         try:
-            llb = "{:4d} {:4d}".format(row[opt.lonB], row[opt.latB])
+            llb = "{:4d} {:4d}".format(row[lon_b], row[lat_b])
         except IndexError:
-            llb = opt.error
+            llb = error
 
-        row[opt.linestring] = "linestring({}, {})".format(lla, llb)
+        row[linestring_column] = "linestring({}, {})".format(lla, llb)

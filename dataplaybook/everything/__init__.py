@@ -10,9 +10,7 @@ from pathlib import Path
 
 import requests
 
-SANE = (
-    r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$" r" !C:\program !c:\$R"
-)
+SANE = r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$ !C:\program !c:\$R"
 SERVER = "http://localhost:8881"
 
 Result = namedtuple("Result", ["total", "files", "folders"])
@@ -31,11 +29,11 @@ def _everything_result(json, class_):
     return Result(**result)
 
 
-def search(*terms, params={}, sane=True, sort=True, max_results=50, class_=Path):
+def search(*terms, params=None, sane=True, sort=True, max_results=50, class_=Path):
     """Search for files."""
     params = dict(
         {"s": " ".join(terms), "path_column": 1, "json": 1, "count": max_results},
-        **params
+        **(params or {})
     )
     if sane:
         params["s"] += SANE

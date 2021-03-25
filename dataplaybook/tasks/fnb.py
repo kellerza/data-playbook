@@ -4,11 +4,12 @@ import csv
 from datetime import datetime
 import logging
 import os
+from pathlib import Path
 import re
 import traceback
+from typing import List, Optional
 
-import dataplaybook.config_validation as cv
-import voluptuous as vol
+from dataplaybook import ENV, Table, task
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ MONTH_MAP = {
 CHANGE_DAY = 7  # The day at which the months change for budget purposes
 
 
-def budget_date(date):
+def _budget_date(date):
     """Get a budget month date from the actual date."""
     if isinstance(date, datetime):
         if date.day > 7:
@@ -51,7 +52,7 @@ def budget_date(date):
     raise TypeError("Invalid date {}".format(date))
 
 
-def str_to_date(text, year_month=None):
+def _str_to_date(text, year_month=None):
     """Convert statement text date to date."""
     if text is None:
         raise ValueError("Could not parse date '{}'".format(text))
@@ -87,8 +88,8 @@ class InvalidFile(Exception):
     """Invalid file."""
 
 
-@cv.task_schema({vol.Required("filename"): str}, target=1)
-def task_read_cheque_csv(filename):
+@task
+def read_cheque_csv(filename: str) -> Table:
     """Read an FNB cheque csv file."""
     fields = [
         "type",
@@ -122,7 +123,7 @@ def task_read_cheque_csv(filename):
                     data["id"] = int(row[fields[1]])
                 except (ValueError, TypeError):
                     continue
-                data["date"] = str_to_date(row[fields[2]])
+                data["date"] = _str_to_date(row[fields[2]])
 
             if rowtype != 5:  # Standard transactions
                 continue
@@ -132,7 +133,7 @@ def task_read_cheque_csv(filename):
             except (ValueError, TypeError):
                 continue
 
-            tdate = str_to_date(row["date"], data["date"])
+            tdate = _str_to_date(row["date"], data["date"])
             if tdate is None:
                 continue
 
@@ -165,7 +166,7 @@ def task_read_cheque_csv(filename):
 TX_IDS = {}
 
 
-def get_id(acc, month):
+def _get_id(acc, month):
     """Return an ID."""
     if acc is None:
         acc = "0"
@@ -189,20 +190,20 @@ def _clean(row):
     return row
 
 
-@cv.task_schema({}, tables=(1, 20), target=1)
-def task_fnb_process(*tables, opt):
+@task
+def fnb_process(table_names: List[str]) -> Table:
     """Add the budget month nd ID."""
-    for table in tables:
+    for table in ENV.tables:
         for row in table:
             try:
-                row["month"] = budget_date(row["date"])
+                row["month"] = _budget_date(row["date"])
             except TypeError:
                 _LOGGER.warning("Skip row %s", row)
                 continue
 
             if "from" in row and "to" in row:
                 # Cash transaction
-                row["id"] = get_id("custom", row["month"].month)
+                row["id"] = _get_id("custom", row["month"].month)
                 f_t = ("# " + str(row.pop("to", "")), "# " + str(row.pop("from", "")))
                 (row["extras"], row["description"]) = f_t
                 yield _clean(row)
@@ -218,7 +219,7 @@ def task_fnb_process(*tables, opt):
 
             # credit card
             else:
-                row["id"] = get_id(row.pop("card", ""), row["month"].month)
+                row["id"] = _get_id(row.pop("card", ""), row["month"].month)
                 row["extras"] = row.pop("place", "")
                 try:
                     row["amount"] = -float(str(row["amount"]).replace(",", ""))
@@ -227,7 +228,7 @@ def task_fnb_process(*tables, opt):
                 yield _clean(row)
 
 
-def count_it(gen, retval):
+def _count_it(gen, retval):
     """Count items yielded."""
     retval["count"] = 0
     for val in gen:
@@ -236,23 +237,18 @@ def count_it(gen, retval):
     retval["total"] = retval.get("total", 0) + retval["count"]
 
 
-@cv.task_schema(
-    {vol.Required("folder"): str, vol.Optional("pattern", default="*.csv"): str},
-    target=1,
-)
-def task_fnb_read_folder(tables, opt):
+@task
+def fnb_read_folder(folder: str, pattern: Optional[str] = "*.csv") -> Table:
     """Read all files in folder."""
-    from pathlib import Path
-
-    path = Path(opt.folder)
-    files = sorted(path.glob(opt.pattern))
+    path = Path(folder)
+    files = sorted(path.glob(pattern))
     _LOGGER.info("Open %s files", len(files))
 
     retval = {}
     for filename in files:
         try:
             try:
-                yield from count_it(task_read_cheque_csv(filename), retval)
+                yield from _count_it(read_cheque_csv(filename), retval)
                 _LOGGER.info("Loaded %s lines from %s", retval["count"], filename)
                 continue
             except InvalidFile:

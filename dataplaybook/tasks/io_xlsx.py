@@ -1,58 +1,53 @@
 """Read helpers."""
-import logging
-import os
 from collections import OrderedDict
 from json import dumps
+import logging
+import os
+from typing import Any, Dict, List, Optional
 
-import attr
 import openpyxl
-import q
-import voluptuous as vol
 from openpyxl.utils import get_column_letter
+import voluptuous as vol
 
+from dataplaybook import Tables, task
 import dataplaybook.config_validation as cv
+from dataplaybook.const import ATable
 from dataplaybook.utils import log_filter
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addFilter(log_filter)
 
 
-@attr.s()
-class Mylist(list):
-    """List with additional attributes."""
-
-    header = attr.ib()
-
-
-@cv.task_schema(
-    {
-        vol.Required("file"): str,
-        vol.Required("sheets"): [
-            vol.Schema(
-                {
-                    vol.Optional("name", default=None): vol.Any(str, None),
-                    vol.Optional("header"): int,
-                    vol.Optional("columns", default=None): vol.Any(
-                        None,
-                        vol.Schema(
-                            {
-                                cv.col_add: vol.Schema(
-                                    {
-                                        vol.Optional("from"): str,
-                                        vol.Optional("col"): int,
-                                    }
-                                )
-                            }
+@task(
+    validator=vol.Schema(
+        schema={
+            vol.Required("file"): str,
+            vol.Required("sheets"): [
+                vol.Schema(
+                    {
+                        vol.Optional("name", default=None): vol.Any(str, None),
+                        vol.Optional("header"): int,
+                        vol.Optional("columns", default=None): vol.Any(
+                            None,
+                            vol.Schema(
+                                {
+                                    str: vol.Schema(
+                                        {
+                                            vol.Optional("from"): str,
+                                            vol.Optional("col"): int,
+                                        }
+                                    )
+                                }
+                            ),
                         ),
-                    ),
-                    vol.Required("target"): cv.table_add,
-                }
-            )
-        ],
-    },
-    kwargs=True,
+                        vol.Required("target"): str,
+                    }
+                )
+            ],
+        }
+    )
 )
-def task_read_excel(tables, file, sheets=None):
+def read_excel(tables: Tables, file: str, sheets=List[Dict[str, Any]]) -> Tables:
     """Read excel file using openpyxl."""
 
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
@@ -69,7 +64,7 @@ def task_read_excel(tables, file, sheets=None):
 
 def _sheet_read(_sheet, columns=None, header=0):
     """Read a sheet and return a table."""
-    res = Mylist(header=header + 2)
+    res = ATable(header=header + 2)
     res.extend(_sheet_yield_rows(_sheet, columns, header))
     _LOGGER.debug("Read %s rows from sheet %s", len(res), _sheet.title)
     return res
@@ -83,7 +78,6 @@ def _sheet_yield_rows(_sheet, columns=None, header=0):
             next(rows)
             header -= 1
         header_row = [cell.value for cell in next(rows)]
-        q | header_row
     except StopIteration:
         header_row = []
 
@@ -126,7 +120,7 @@ def _sheet_yield_rows(_sheet, columns=None, header=0):
         yield record
 
 
-def get_filename(filename):
+def _get_filename(filename):
     """Get a filename to write to."""
     try:
         if os.path.isfile(filename):
@@ -161,17 +155,23 @@ def _fmt(obj):
     return obj
 
 
-@cv.task_schema(
-    {
-        vol.Required("file"): cv.endswith(".xlsx"),
-        vol.Optional("include"): vol.All(cv.ensure_list, [cv.table_use]),
-        vol.Optional("header", default=[]): vol.All(cv.ensure_list, [str]),
-        vol.Optional("headers", default=[]): vol.All(cv.ensure_list, [object]),
-    },
-    kwargs=True,
+@task(
+    validator=vol.Schema(
+        {
+            vol.Required("file"): cv.endswith(".xlsx"),
+            vol.Optional("include"): vol.All(cv.ensure_list, [str]),
+            vol.Optional("header", default=[]): vol.All(cv.ensure_list, [str]),
+            vol.Optional("headers", default=[]): vol.All(cv.ensure_list, [object]),
+        }
+    )
 )
-def task_write_excel(
-    tables, file, include=None, header=None, headers=None, ensure_string=None
+def write_excel(
+    tables: Tables,
+    file: str,
+    include=None,
+    header: Optional[List[str]] = None,
+    headers: Optional[List[Any]] = None,
+    ensure_string: bool = False,
 ):
     """Write an excel file."""
     header = header or []
@@ -234,4 +234,4 @@ def task_write_excel(
         if debugs < 0:
             _LOGGER.warning("Total %s errors", 2 - debugs)
 
-    wbk.save(get_filename(file))  # Write to disk
+    wbk.save(_get_filename(file))  # Write to disk

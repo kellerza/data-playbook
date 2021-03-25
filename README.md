@@ -7,60 +7,15 @@ Automate repetitive tasks on table based data. Include various input and output 
 
 Install: `pip install dataplaybook`
 
-Use: `dataplaybook playbook.yaml`
+Use the `@task` and `@playbook` decorators
 
-## Playbook structure
+```python
+from dataplaybook import task, playbook
+from dataplaybook.tasks.io_xlsx
 
-The playbook.yaml file allows you to load additional modules (containing tasks) and specify the tasks to execute in sequence, with all their parameters.
-
-The `tasks` to perform typically follow the the structure of read, process, write.
-
-Example yaml: (please note yaml is case sensitive)
-```yaml
-modules: [list, of, modules]
-
-tasks:
-  - task_name:  # See a list of tasks below
-      task_setting_1: 1
-    tables: # The INPUT. One of more tables used by this task
-    target: # The OUTPUT. Target table name of this function
-    debug: True/False # Print extra debug message, default: False
+@task
+def print
 ```
-
-## Templating
-
-Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simly use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word *jmespath* followed by a space.
-
-Both the `vars` and `template` tasks achieve a similar result: (this will search a table matching string "2" on the key column and return the value in the value column)
-```yaml
-  - vars:
-      res1: jmespath test[?key=='2'].value | [0]
-  # is equal to
-  - template:
-      jmespath: "test[?key=='2'].value | [0]"
-    target: res1
-
-  # ... then use it with `{{ var.res1 }}`
-```
-The JMESpath task `template` task has an advantage that you can create new variables **or tables**.
-
-If you have a lookup you use regularly you can do the following:
-```yaml
- - build_lookup_var:
-     key: key
-     columns: [value]
-   target: lookup1
-  # and then use it as follows to get a similar results to the previous example
-  - vars:
-      res1: "{{ var['lookup1']['2'].value }}"
-```
-
-When searching through a table with Jinja, a similar one-liner, using `selectattr`, seems much more complex:
-```yaml
-  - vars:
-      res1: "{{ test | selectattr('key', 'equalto', '2') | map(attribute='value') | first }}"
-```
-
 
 ## Tasks
 Tasks are implemented as simple Python functions and the modules can be found in the dataplaybook/tasks folder.
@@ -116,17 +71,75 @@ Requires pdftotext executable file on your path
 ### Module `io_xml`
 * read_xml
 
-## Special yaml functions
+## Data Playbook v0
+
+The [v0](https://github.com/kellerza/data-playbook/tree/v0) of dataplaybook used yaml files, very similar to playbooks
+
+Use: `dataplaybook playbook.yaml`
+
+### Playbook structure
+
+The playbook.yaml file allows you to load additional modules (containing tasks) and specify the tasks to execute in sequence, with all their parameters.
+
+The `tasks` to perform typically follow the the structure of read, process, write.
+
+Example yaml: (please note yaml is case sensitive)
+```yaml
+modules: [list, of, modules]
+
+tasks:
+  - task_name:  # See a list of tasks below
+      task_setting_1: 1
+    tables: # The INPUT. One of more tables used by this task
+    target: # The OUTPUT. Target table name of this function
+    debug: True/False # Print extra debug message, default: False
+```
+
+### Templating
+
+Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simly use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word *jmespath* followed by a space.
+
+Both the `vars` and `template` tasks achieve a similar result: (this will search a table matching string "2" on the key column and return the value in the value column)
+```yaml
+  - vars:
+      res1: jmespath test[?key=='2'].value | [0]
+  # is equal to
+  - template:
+      jmespath: "test[?key=='2'].value | [0]"
+    target: res1
+
+  # ... then use it with `{{ var.res1 }}`
+```
+The JMESpath task `template` task has an advantage that you can create new variables **or tables**.
+
+If you have a lookup you use regularly you can do the following:
+```yaml
+ - build_lookup_var:
+     key: key
+     columns: [value]
+   target: lookup1
+  # and then use it as follows to get a similar results to the previous example
+  - vars:
+      res1: "{{ var['lookup1']['2'].value }}"
+```
+
+When searching through a table with Jinja, a similar one-liner, using `selectattr`, seems much more complex:
+```yaml
+  - vars:
+      res1: "{{ test | selectattr('key', 'equalto', '2') | map(attribute='value') | first }}"
+```
+
+### Special yaml functions
 
 * `!re <expression>` Regular expression
 * `!es <search string>` Search a file using Everything by Voidtools
 
-## Install the development version
+### Install the development version
 
 1. Clone the repo
 2. `pip install <path> -e`
 
-## Data Playbook origins
+### Data Playbook v0 origins
 Data playbooks was created to replace various snippets of code I had lying around. They were all created to ensure repeatability of some menial task, and generally followed a similar structure of load something, process it and save it. (Process network data into GIS tools, network audits & reporting on router & NMS output, Extract IETF standards to complete SOCs, read my bank statements into my Excel budgeting tool, etc.)
 
 For many of these tasks I have specific processing code (`tasks_x.py`, loaded with `modules: [tasks_x]` in the playbook), but in almost all cases input & output tasks (and configuring these names etc) are common. The idea of the modular tasks originally came from Home Assistant, where I started learning Python and the idea of "custom components" to add your own integrations, although one could argue this also has similarities to Ansible playbooks.
