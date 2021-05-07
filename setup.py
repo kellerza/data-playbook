@@ -25,8 +25,9 @@ REQUIRES = [
     "jinja2>=2.9,<3",
     "jmespath>=0.9.4,<1",
     "openpyxl>=2.6,<3",
-    "q",
+    "typeguard",
     "icecream",
+    "varname",
 ]
 
 setup(

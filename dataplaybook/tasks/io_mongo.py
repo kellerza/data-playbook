@@ -15,17 +15,28 @@ from dataplaybook.const import PlaybookError
 _LOGGER = logging.getLogger(__name__)
 
 
+def _clean_netloc(db_netloc: str) -> str:
+    if "/" not in db_netloc:
+        return db_netloc
+    try:
+        res = urlparse(db_netloc)
+        return res.netloc
+    except AttributeError as err:
+        _LOGGER.error("could not parse URL: %s: %s", db_netloc, err)
+        raise err
+
+
 @attr.s(slots=True)
 class MongoURI:
     """MongoDB URI."""
 
-    netloc = attr.ib()
+    netloc = attr.ib(converter=_clean_netloc)
     database = attr.ib()
     collection = attr.ib()
-    set_id = attr.ib()
+    set_id = attr.ib(default="")
 
     @staticmethod
-    def new_from_string(db_uri, set_id=None):
+    def new_from_string(db_uri: str, set_id=None):
         """new mongodb uri."""
         try:
             res = urlparse(db_uri)
@@ -45,12 +56,12 @@ class MongoURI:
             netloc=res.netloc, database=pth[1], collection=pth[2], set_id=set_id,
         )
 
-    @staticmethod
-    def validate(opt):
-        """Validate MongoDB URI."""
-        if not isinstance(opt.get("db"), MongoURI):
-            opt["db"] = MongoURI.new_from_string(opt["db"], opt.pop("set_id", None))
-        return opt
+    # @staticmethod
+    # def validate(opt):
+    #     """Validate MongoDB URI."""
+    #     if not isinstance(opt.get("db"), MongoURI):
+    #         opt["db"] = MongoURI.new_from_string(opt["db"], opt.pop("set_id", None))
+    #     return opt
 
     def __str__(self):
         return f"{self.netloc}/{self.database}/{self.collection}/{self.set_id}"
@@ -60,9 +71,9 @@ class MongoURI:
         return MongoClient(self.netloc, connect=connect)
 
 
-@task(validator=MongoURI.validate)
+@task
 def read_mongo(  # pylint: disable=invalid-name
-    db: str, set_id: Optional[str] = None,
+    db: MongoURI, set_id: Optional[str] = None,
 ) -> Table:
     """Read data from a MongoDB collection."""
     client = MongoClient(db.netloc, connect=True)
@@ -78,9 +89,9 @@ def read_mongo(  # pylint: disable=invalid-name
         yield result
 
 
-@task(validator=MongoURI.validate)
+@task
 def write_mongo(  # pylint: disable=invalid-name
-    table: Table, db: str, set_id: Optional[str] = None, force=False
+    table: Table, db: MongoURI, set_id: Optional[str] = None, force=False
 ):
     """Write data to a MongoDB collection."""
     try:
@@ -132,9 +143,9 @@ def list_to_columns(table: Table, list_column: str, columns: Columns):
         del row[list_column]
 
 
-@task(validator=MongoURI.validate)
+@task
 def mongo_list_sids(  # pylint: disable=invalid-name
-    db: str, set_id: Optional[str] = None
+    db: MongoURI, set_id: Optional[str] = None
 ) -> List[str]:
     """Return a list of _sid's"""
     client = MongoClient(db.netloc, connect=True)
@@ -146,9 +157,9 @@ def mongo_list_sids(  # pylint: disable=invalid-name
     return other
 
 
-@task(validator=MongoURI.validate)  # pylint: disable=invalid-name
+@task  # pylint: disable=invalid-name
 def mongo_delete_sids(
-    sids: List[str], db: str, set_id: Optional[str] = None
+    sids: List[str], db: MongoURI, set_id: Optional[str] = None
 ):  # pylint: disable=invalid-name
     """Delete a specific _sid."""
     client = MongoClient(db.netloc, connect=True)
