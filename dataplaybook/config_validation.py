@@ -6,6 +6,7 @@ from typing import Any, Sequence, TypeVar, Union
 
 import voluptuous as vol
 
+
 # typing typevar
 T = TypeVar("T")  # pylint: disable=invalid-name
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
@@ -99,3 +100,17 @@ def endswith(parts):
         raise vol.Invalid("{} does not end with {}".format(_str, parts))
 
     return _check
+
+
+def ensure_tables(value):
+    """Ensure you have a dict of tables."""
+    if not isinstance(value, dict):
+        raise vol.Invalid("tables need to be a dict")
+    for key, val in value.items():
+        if key == "var":
+            continue
+        if not isinstance(val, list):
+            raise vol.Invalid(
+                f"tables need to contain lists {key} contains {type(val)}"
+            )
+    return value

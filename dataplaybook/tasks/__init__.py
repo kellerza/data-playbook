@@ -2,10 +2,10 @@
 import json
 import logging
 import shutil
-from typing import List, Optional, Union, Dict
+from typing import List, Optional, Union, Dict, Sequence
 
 from dataplaybook import Columns, Table, Tables, task
-import dataplaybook.config_validation as cv
+from dataplaybook.config_validation import ensure_list_csv as _ensure_list_csv
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,25 +60,31 @@ def combine(
 
 
 @task
-def ensure_list(table: Table, columns: Columns):
-    """Ensure list."""
-    for row in table:
-        for col in columns:
-            val = row.get(col)
-            if not val:
-                row[col] = []
-                continue
-            if not isinstance(val, str):
-                _LOGGER.warning("%s %s", type(val), val)
-                continue
-            if val.startswith("["):
-                # try json
-                try:
-                    row[col] = json.loads(val)
+def ensure_lists(tables: Sequence[Table], columns: Sequence[str]):
+    """Recursively run ensure_list on columns in all tables."""
+    for table in tables:
+        for row in table:
+            for col in columns:
+                if col not in row:
                     continue
-                except ValueError:
-                    pass
-            row[col] = cv.ensure_list_csv(val.strip("[").strip("]"))
+                # row[col] = ensure_list(row[col])
+                val = row.get(col)
+                if isinstance(val, (list, tuple)):
+                    continue
+                if not val:
+                    row[col] = []
+                    continue
+                if not isinstance(val, str):
+                    _LOGGER.warning("ensure_lists: %s %s", type(val), val)
+                    continue
+                if val.startswith("["):
+                    # try json
+                    try:
+                        row[col] = json.loads(val)
+                        continue
+                    except ValueError:
+                        pass
+                row[col] = _ensure_list_csv(val.strip("[").strip("]"))
 
 
 @task
@@ -146,12 +152,23 @@ def print_table(*, table: Optional[Table], tables: Optional[Tables]):
                 print(" ", row)
 
 
-# @cv.task_schema({}, tables=(1, 10), kwargs=True)
 @task
-def remove_null(*tables):
-    """Ensure list."""
+def remove_null(tables: Sequence[Table]):
+    """Remove nulls."""
     for table in tables:
+        if not isinstance(table, list):
+            _LOGGER.warning(
+                "remove_null expected a list of tables, got %s %.100s",
+                type(table),
+                table,
+            )
+
         for row in table:
+            if not isinstance(row, dict):
+                _LOGGER.warning(
+                    "remove_null expected dict, got %s %.100s", type(row), row
+                )
+                continue
             for col in list(row.keys()):
                 if row[col] is None:
                     del row[col]

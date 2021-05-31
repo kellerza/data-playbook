@@ -7,14 +7,23 @@ from pathlib import Path
 import sys
 from timeit import default_timer
 from traceback import format_exception
-from typing import Any, Dict, List
+from importlib import import_module
+from typing import Any, Dict, List, Sequence
+from functools import wraps
 
 from icecream import ic
 
 from dataplaybook.config_validation import util_slugify
-from dataplaybook.const import PlaybookError
+
 
 _LOGGER = logging.getLogger(__name__)
+
+# Cop of const...
+Table = List[Dict[str, Any]]
+
+
+class PlaybookError(Exception):
+    """Playbook Exception. These typically have warnings and can be ignored."""
 
 
 class DataVars(dict):
@@ -109,10 +118,23 @@ class DataEnvironment(dict):
     def __setitem__(self, key: str, val: Any):
         if key == "var":
             raise Exception("Cannot set vaiables directly. Use .var.")
-        if isinstance(val, list):
-            dict.__setitem__(self, key, val)
         else:
-            self._var[key] = val
+            raise Exception("Cannot set vaiables directly. Use set")
+
+    def set(self, key: str, val: Any) -> Any:
+        _LOGGER.debug("%s = %.50s", key, val)
+        if isinstance(self, DataEnvironment):
+            if isinstance(val, list):
+                dict.__setitem__(self, key, val)
+            else:
+                self._var[key] = val
+        else:
+            self[key] = val
+        return val
+
+    def get(self, *table_names: str) -> Sequence[Table]:
+        """Return a list of Tables."""
+        return [self[n] for n in table_names if n in self]
 
 
 def get_logger(logger=None):
@@ -152,7 +174,7 @@ def setup_logger():
     logging.basicConfig(level=logging.DEBUG)
     # fmt = ("%(asctime)s %(levelname)s (%(threadName)s) "
     #        "[%(name)s] %(message)s")
-    fmt = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+    fmt = "%(asctime)s %(levelname)s [%(name)s] %(message).500s"
     colorfmt = "%(log_color)s{}%(reset)s".format(fmt)
     datefmt = "%H:%M:%S"
 
@@ -248,3 +270,49 @@ def time_it(name=None, delta=2, logger=None):
         get_logger(logger).warning("Execution time for %s: %.2fs", name, total)
     elif total > delta / 2:
         get_logger(logger).debug("Execution time for %s: %.2fs", name, total)
+
+
+def complete_import(mod_name):
+    try:
+        mod_obj = import_module(mod_name)
+        return mod_obj
+    except ModuleNotFoundError as err:
+        if err.name != mod_name:
+            _LOGGER.error(
+                "No module named '%s' found while trying to import '%s'",
+                err.name,
+                mod_name,
+            )
+            raise
+        pass
+
+    path = Path(mod_name + ".py").resolve(strict=True)
+    mod_name = path.stem
+
+    sys.path.insert(0, str(path.parent))
+    try:
+        mod_obj = import_module(mod_name)
+        return mod_obj
+    finally:
+        if sys.path[0] == path.parent:
+            sys.path.pop(0)
+
+
+def doublewrap(f):
+    """
+    a decorator decorator, allowing the decorator to be used as:
+    @decorator(with, arguments, and=kwargs)
+    or
+    @decorator
+    """
+
+    @wraps(f)
+    def new_dec(*args, **kwargs):
+        if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
+            # actual decorated function
+            return f(args[0])
+        else:
+            # decorator arguments
+            return lambda realf: f(realf, *args, **kwargs)
+
+    return new_dec

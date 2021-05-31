@@ -8,7 +8,6 @@ from pathlib import Path
 import re
 import traceback
 from typing import List, Optional
-
 from dataplaybook import ENV, Table, task
 
 _LOGGER = logging.getLogger(__name__)
@@ -193,8 +192,10 @@ def _clean(row):
 @task
 def fnb_process(table_names: List[str]) -> Table:
     """Add the budget month nd ID."""
-    for table in ENV.tables:
-        for row in table:
+    for table in table_names:
+        for row in ENV[table]:
+            if not any(row.values()):
+                continue
             try:
                 row["month"] = _budget_date(row["date"])
             except TypeError:
@@ -248,7 +249,7 @@ def fnb_read_folder(folder: str, pattern: Optional[str] = "*.csv") -> Table:
     for filename in files:
         try:
             try:
-                yield from _count_it(read_cheque_csv(filename), retval)
+                yield from _count_it(read_cheque_csv(filename=str(filename)), retval)
                 _LOGGER.info("Loaded %s lines from %s", retval["count"], filename)
                 continue
             except InvalidFile:

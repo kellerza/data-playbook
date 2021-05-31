@@ -12,7 +12,7 @@ import voluptuous as vol
 from dataplaybook import Tables, task
 import dataplaybook.config_validation as cv
 from dataplaybook.const import ATable
-from dataplaybook.utils import log_filter
+from dataplaybook.utils import DataEnvironment, log_filter
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.addFilter(log_filter)
@@ -21,6 +21,7 @@ _LOGGER.addFilter(log_filter)
 @task(
     validator=vol.Schema(
         schema={
+            vol.Required("tables"): cv.ensure_tables,
             vol.Required("file"): str,
             vol.Required("sheets"): [
                 vol.Schema(
@@ -47,7 +48,7 @@ _LOGGER.addFilter(log_filter)
         }
     )
 )
-def read_excel(tables: Tables, file: str, sheets=List[Dict[str, Any]]) -> Tables:
+def read_excel(*, tables: Tables, file: str, sheets=List[Dict[str, Any]]):
     """Read excel file using openpyxl."""
 
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
@@ -57,9 +58,8 @@ def read_excel(tables: Tables, file: str, sheets=List[Dict[str, Any]]) -> Tables
         name = sht.get("name") or sht["target"]
         # default_sheet = *
         the_sheet = wbk.active if name == "*" else wbk[name]
-        tables[sht["target"]] = _sheet_read(
-            the_sheet, sht.get("columns"), sht.get("header", 0)
-        )
+        tbl = _sheet_read(the_sheet, sht.get("columns"), sht.get("header", 0))
+        DataEnvironment.set(tables, sht["target"], tbl)
 
 
 def _sheet_read(_sheet, columns=None, header=0):
@@ -158,6 +158,7 @@ def _fmt(obj):
 @task(
     validator=vol.Schema(
         {
+            vol.Required("tables"): cv.ensure_tables,
             vol.Required("file"): cv.endswith(".xlsx"),
             vol.Optional("include"): vol.All(cv.ensure_list, [str]),
             vol.Optional("header", default=[]): vol.All(cv.ensure_list, [str]),
@@ -166,6 +167,7 @@ def _fmt(obj):
     )
 )
 def write_excel(
+    *,
     tables: Tables,
     file: str,
     include=None,

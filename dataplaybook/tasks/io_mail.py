@@ -6,14 +6,14 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from socket import gaierror
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from dataplaybook import task
 
 
 @task
 def mail(
-    to_addrs: List[str],
+    to_addrs: Union[List[str], str],
     from_addr: str,
     subject: str,
     files: Optional[List[str]] = None,

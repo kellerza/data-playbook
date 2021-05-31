@@ -6,6 +6,7 @@ from typing import List
 from xml.etree import ElementTree
 
 from dataplaybook import Tables, task
+from dataplaybook.utils import DataEnvironment
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,9 +28,10 @@ def read_xml(tables: Tables, file: str, targets: List[str]):
         for key, val in _t1.items():
             key = key.replace("-", "_")
             if isinstance(val, list):
-                tables[key] = val
                 if key in _notok:
                     _notok.remove(key)
+                DataEnvironment.set(tables, key, val)
+                # tables[key] = val
             else:
                 _LOGGER.warning("Ignored %s: %s", key, str(val)[:20])
 

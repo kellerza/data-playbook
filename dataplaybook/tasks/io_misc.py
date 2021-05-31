@@ -1,4 +1,5 @@
 """Misc IO tasks."""
+from csv import DictReader, DictWriter
 from json import dump, load
 from os import getenv
 from pathlib import Path
@@ -6,9 +7,8 @@ import time
 from typing import List, Optional, Pattern
 from urllib.parse import urlparse
 import urllib.request
-from csv import DictReader, DictWriter
 
-from dataplaybook import Columns, Table, Tables, task
+from dataplaybook import Columns, Table, task
 
 
 @task
@@ -22,24 +22,21 @@ def glob(patterns: List[str]) -> Table:
 
 
 @task
-def file_rotate(file: str, count: int = 3) -> None:
+def file_rotate(file: str, count: int = 3):
     """Rotate some file fn.ext --> fn.1.ext --> fn.2.ext."""
-
-    __f = Path(file)
-
-    def _rename(start_fn, target_n):
-        if not start_fn.exists():
-            return
-        target_fn = __f.with_suffix(f".{target_n}{__f.suffix}")
-        if target_fn.exists():
-            if target_n < count:
-                _rename(target_fn, target_n + 1)
-            else:
-                target_fn.unlink()
-                return
-        start_fn.rename(target_fn)
-
-    _rename(__f, 1)
+    f_n = Path(file)
+    if not f_n.exists():
+        return
+    t_f = f_n.with_suffix(f".{count}{f_n.suffix}")
+    # Remove last file
+    t_f.unlink(missing_ok=True)
+    for idx in range(count - 1, 0, -1):
+        s_f = f_n.with_suffix(f".{idx}{f_n.suffix}")
+        if s_f.exists():
+            s_f.rename(t_f)
+        t_f = s_f
+    # Rename first file
+    f_n.rename(t_f)
 
 
 @task
@@ -72,14 +69,14 @@ def read_json(file) -> Table:
 
 
 @task
-def write_json(tables: Tables, file: str, only_var=False) -> None:
+def write_json(tables, file: str, only_var=False) -> None:
     """Write into a json file."""
     with Path(file).open("w") as __f:
         dump(tables.var if only_var else tables, __f, indent="  ")
 
 
 @task
-def read_tab_delim(tables: Tables, file, headers: Columns) -> Table:
+def read_tab_delim(file, headers: Columns) -> Table:
     """Read xml file."""
     with open(file, "r", encoding="utf-8") as fle:
         header = headers
@@ -91,7 +88,7 @@ def read_tab_delim(tables: Tables, file, headers: Columns) -> Table:
                 header = line.split("\t")
                 continue
             line = line.split("\t")
-            yield zip(header, line)
+            yield dict(zip(header, line))
 
 
 @task
