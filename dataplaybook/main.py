@@ -56,7 +56,7 @@ def _repr_function(*, target, args, kwargs):
     repr_call = f"{target.__name__}({', '.join(repr_args + repr_kwargs)})"
     if "return" in type_hints:
         repr_call = f"_ = {repr_call}"
-    _LOGGER.info(f"Calling {repr_call}")
+    _LOGGER.info("Calling %s", repr_call)
 
 
 @doublewrap

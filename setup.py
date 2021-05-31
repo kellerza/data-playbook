@@ -21,13 +21,12 @@ REQUIRES = [
     "colorlog",
     "attrs>=17.4.0",
     "voluptuous>=0.11.5",
-    "pyyaml>=3.13,<4",
+    # "pyyaml>=3.13,<4",
     "jinja2>=2.9,<3",
     "jmespath>=0.9.4,<1",
     "openpyxl>=2.6,<3",
     "typeguard",
     "icecream",
-    "varname",
 ]
 
 setup(
