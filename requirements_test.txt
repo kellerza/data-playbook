@@ -22,6 +22,7 @@ bottle
 
 # fuzzy search
 fuzzywuzzy<1
+python-Levenshtein
 
 # Optional requirements
 # pandas

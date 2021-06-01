@@ -1,7 +1,6 @@
 # Data Playbook
 
 :book: Playbooks for data. Open, process and save table based data.
-
 [![Workflow Status](https://github.com/kellerza/data-playbook/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/kellerza/data-playbook/actions)
 [![codecov](https://codecov.io/gh/kellerza/data-playbook/branch/master/graph/badge.svg)](https://codecov.io/gh/kellerza/data-playbook)
 
@@ -60,7 +59,7 @@ tasks:
 
 ### Templating
 
-Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simly use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word _jmespath_ followed by a space.
+Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simply use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word _jmespath_ followed by a space.
 
 Both the `vars` and `template` tasks achieve a similar result: (this will search a table matching string "2" on the key column and return the value in the value column)
 

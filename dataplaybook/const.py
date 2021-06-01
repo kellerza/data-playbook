@@ -6,7 +6,7 @@ from dataplaybook.utils import (  # noqa, pylint: disable=unused-import
     Table,
 )
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 
 
 Columns = List[str]

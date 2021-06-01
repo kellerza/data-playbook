@@ -90,8 +90,8 @@ def ensure_lists(tables: Sequence[Table], columns: Sequence[str]):
 @task
 def filter_rows(
     table: Table,
-    include: Optional[List[str]] = None,
-    exclude: Optional[List[str]] = None,
+    include: Optional[Dict[str, str]] = None,
+    exclude: Optional[Dict[str, str]] = None,
 ) -> Table:
     """Filter rows from a table."""
 
@@ -107,21 +107,20 @@ def filter_rows(
 
         return False
 
-    if include:
-        for row in table:
-            if _match(exclude, row):
+    for row in table:
+        if include:
+            if exclude and _match(exclude, row):
                 continue
             if _match(include, row):
                 yield row
-        return
-
-    for row in table:
-        if not _match(exclude, row):
+        elif exclude and _match(exclude, row):
+            continue
+        else:
             yield row
 
 
 @task
-def print_table(*, table: Optional[Table], tables: Optional[Tables]):
+def print_table(*, table: Optional[Table] = None, tables: Optional[Tables] = None):
     """Print a table."""
     if not tables:
         tables = {}
@@ -136,13 +135,13 @@ def print_table(*, table: Optional[Table], tables: Optional[Tables]):
         size = shutil.get_terminal_size()
         pd.set_option("display.width", size.columns)
 
-        for tbl, nme in tables:
+        for tbl, nme in tables.items():
             dframe = pd.DataFrame(tbl)
             print(f"Table {nme}".strip())
             print(dframe)
         return
 
-    for tbl, nme in tables:
+    for tbl, nme in tables.items():
         print(f"Table {nme} first 10 rows".strip())
         for row in tbl[:10]:
             print(" ", row)

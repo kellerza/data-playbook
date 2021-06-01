@@ -1,9 +1,15 @@
 """Tests for main tasks"""
-# import re
+import re
 
-# from dataplaybook import DataPlaybook
 from dataplaybook import DataEnvironment
-from dataplaybook.tasks import build_lookup, replace
+from dataplaybook.tasks import (
+    build_lookup,
+    filter_rows,
+    print_table,
+    replace,
+    unique,
+    vlookup,
+)
 
 
 def _streets():
@@ -43,59 +49,43 @@ def test_task_build_lookup():
 #     test_templateSchema_readme_example()
 
 
-# def test_task_filter():
-#     """Test filter."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     _table_add(dpb)
+def test_task_filter():
+    """Test filter."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
+    # Include
+    tables["X"] = filter_rows(table=tables.streets, include={"street": "X"})
 
-#     # Include
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'X',
-#         'filter': {
-#             'include': {'street': 'X'},
-#         }})
-#     assert dpb.tables.X == [dict(street='X', suburb='B', postcode=2002)]
+    assert tables.X == [dict(street="X", suburb="B", postcode=2002)]
 
-#     # Inlude and exclude some
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'X2',
-#         'filter': {
-#             'include': {'suburb': 'B'},
-#             'exclude': {'street': 'Y'},
-#         }})
-#     assert dpb.tables.X2 == [dict(street='X', suburb='B', postcode=2002)]
+    # Include and exclude some
+    tables["X2"] = filter_rows(
+        table=tables.streets,
+        include={"suburb": "B"},
+        exclude={"street": "Y"},
+    )
+    assert tables.X2 == [dict(street="X", suburb="B", postcode=2002)]
 
-#     # Exclude
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'X3',
-#         'filter': {
-#             'exclude': {'street': 'X'},
-#         }})
-#     assert len(dpb.tables.X3) == 3
+    # Exclude
+    tables["X3"] = filter_rows(
+        table=tables.streets,
+        exclude={"street": "X"},
+    )
+    assert len(tables.X3) == 3
 
-#     # List in terms...
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'X4',
-#         'filter': {
-#             'exclude': {'street': ['Y', 'W', 'Z']},
-#         }})
-#     assert dpb.tables.X4 == [dict(street='X', suburb='B', postcode=2002)]
+    # List in terms...
+    tables["X4"] = filter_rows(
+        table=tables.streets,
+        exclude={"street": ["Y", "W", "Z"]},
+    )
+    assert tables.X4 == [dict(street="X", suburb="B", postcode=2002)]
 
-#     # Regular expression in terms
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'X5',
-#         'filter': {
-#             'exclude': {'street': re.compile('[YWZ]')},
-#         }})
-#     assert dpb.tables.X5 == [dict(street='X', suburb='B', postcode=2002)]
-
-
-# def test_task_fuzzy_match():
-#     """Test fuzzy_match."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     # test fuzzy
+    # Regular expression in terms
+    tables["X5"] = filter_rows(
+        table=tables.streets,
+        exclude={"street": re.compile("[YWZ]")},
+    )
+    assert tables.X5 == [dict(street="X", suburb="B", postcode=2002)]
 
 
 def test_task_replace():
@@ -111,59 +101,46 @@ def test_task_replace():
     assert _ss == set(["A_", "B_"])
 
 
-# def test_task_print():
-#     """Test print."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     dpb.tables['street2'] = _streets()
-#     _table_add(dpb)
+def test_task_print():
+    """Test print."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
+    tables["streets2"] = _streets()
 
-#     # Include
-#     dpb.execute_task({
-#         'tables': ['streets', 'street2'],
-#         'print': {'title': 'title'},
-#     })
+    print_table(tables=tables.as_dict("streets", "streets2"))
 
 
-# def test_task_unique():
-#     """Test unique."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     _table_add(dpb)
+def test_task_unique():
+    """Test unique."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
 
-#     # Include
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'X',
-#         'unique': {
-#             'key': 'suburb',
-#         }})
-#     assert dpb.tables.X == [
-#         dict(street='W', suburb='A', postcode=1001),
-#         dict(street='X', suburb='B', postcode=2002),
-#     ]
+    tables["X"] = unique(table=tables.streets, key="suburb")
+
+    assert tables.X == [
+        dict(street="W", suburb="A", postcode=1001),
+        dict(street="X", suburb="B", postcode=2002),
+    ]
 
 
-# def test_task_vlookup():
-#     """Test vlookup."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     _table_add(dpb)
+def test_task_vlookup():
+    """Test vlookup."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
 
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'area',
-#         'build_lookup': {
-#             'key': 'postcode',
-#             'columns': ['suburb'],
-#         }})
-#     dpb.execute_task({
-#         'tables': ['streets', 'area'],
-#         'vlookup': {
-#             'columns': ['postcode', 'postcode', 'suburb'],
-#         }})
+    tables["area"] = build_lookup(
+        table=tables.streets, key="postcode", columns=["suburb"]
+    )
 
-#     assert dpb.tables.streets == [
-#         dict(postcode='A', street='W'),
-#         dict(postcode='B', street='X'),
-#         dict(postcode='B', street='Y'),
-#         dict(postcode='A', street='Z'),
-#     ]
+    vlookup(
+        table0=tables.streets,
+        acro=tables.area,
+        columns=["postcode", "postcode", "suburb"],
+    )
+
+    assert tables.streets == [
+        dict(postcode="A", street="W"),
+        dict(postcode="B", street="X"),
+        dict(postcode="B", street="Y"),
+        dict(postcode="A", street="Z"),
+    ]
