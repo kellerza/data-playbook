@@ -25,3 +25,5 @@ fuzzywuzzy<1
 
 # Optional requirements
 # pandas
+
+pytest
