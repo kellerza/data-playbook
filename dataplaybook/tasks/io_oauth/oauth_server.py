@@ -2,8 +2,9 @@
 import logging
 import os
 import signal
-from wsgiref.simple_server import make_server, WSGIRequestHandler
 from threading import Thread
+from wsgiref.simple_server import WSGIRequestHandler, make_server
+
 import bottle
 
 _LOGGER = logging.getLogger(__name__)

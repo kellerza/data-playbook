@@ -108,12 +108,12 @@ def read_cheque_csv(filename: str) -> Table:
         for row in csvreader:
             try:
                 rowtype = int(row[fields[0]])
-            except ValueError:
+            except ValueError as err:
                 raise InvalidFile(
                     "read_cheque not a cheque file [{}]".format(
                         os.path.basename(filename)
                     )
-                )
+                ) from err
 
             if rowtype == 2:  # Account number
                 data["account"] = row[fields[1]]
@@ -226,7 +226,7 @@ def fnb_process(table_names: List[str]) -> Table:
                 try:
                     row["amount"] = -float(str(row["amount"]).replace(",", ""))
                 except ValueError as exc:
-                    raise ValueError("Error in {}: {}".format(row["id"], exc))
+                    raise ValueError("Error in {}: {}".format(row["id"], exc)) from exc
                 yield _clean(row)
 
 

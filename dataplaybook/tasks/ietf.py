@@ -98,12 +98,6 @@ def _extract_standards(val):
             )
 
 
-# def _copy_table_es(opt):
-#     _LOGGER.warning(str(opt))
-#     opt["extract_standards"]["tables"] = opt["tables"]
-#     return opt
-
-
 @task
 def extract_standards_from_table(
     table: Table, extract_columns: Columns, include_columns: Optional[Columns] = None

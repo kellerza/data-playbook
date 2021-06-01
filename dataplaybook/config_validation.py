@@ -25,8 +25,8 @@ class AttrDict(dict):
     def __getattr__(self, key):
         try:
             value = self[key]
-        except KeyError:
-            raise AttrKeyError(f"Key '{key}' not found in dict {self}")
+        except KeyError as err:
+            raise AttrKeyError(f"Key '{key}' not found in dict {self}") from err
         return AttrDict(value) if isinstance(value, dict) else value
 
     def __setattr__(self, key, value):

@@ -118,8 +118,8 @@ def write_mongo(
         col.delete_many(filtr)
         if table:
             col.insert_many([dict(d, _sid=set_id) for d in table])
-    except ServerSelectionTimeoutError:
-        raise PlaybookError(f"Could not open connection to mdb {mdb}")
+    except ServerSelectionTimeoutError as err:
+        raise PlaybookError(f"Could not open connection to mdb {mdb}") from err
 
 
 @task
