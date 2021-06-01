@@ -188,6 +188,8 @@ def setup_logger():
     colorfmt = "%(log_color)s{}%(reset)s".format(fmt)
     datefmt = "%H:%M:%S"
 
+    logging.getLogger().handlers[0].addFilter(log_filter)
+
     try:
         from colorlog import ColoredFormatter  # pylint: disable=import-outside-toplevel
 
@@ -218,7 +220,7 @@ def log_filter(record):
     res = []
     for arg in record.args:
         sarg = str(arg)
-        if len(arg) < 150:
+        if len(sarg) < 150:
             res.append(arg)
             continue
         res.append(f"{sarg[:130]}...{sarg[-20:]} len={len(sarg)} type={type(arg)}")

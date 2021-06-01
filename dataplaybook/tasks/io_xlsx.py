@@ -12,10 +12,8 @@ import voluptuous as vol
 from dataplaybook import Tables, task
 import dataplaybook.config_validation as cv
 from dataplaybook.const import ATable
-from dataplaybook.utils import log_filter
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.addFilter(log_filter)
 
 
 @task(

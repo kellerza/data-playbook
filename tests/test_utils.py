@@ -1,9 +1,11 @@
 """DataEnvironment class."""
+import logging
 import os
 
 import pytest
 
 import dataplaybook.utils as utils
+from dataplaybook.config_validation import AttrDict
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
 
@@ -88,3 +90,17 @@ def test_logger():
     """Test logger."""
     utils.setup_logger()
     utils.set_logger_level({"dataplaybook": "debug"})
+
+
+def test_filter():
+    """Test log filter."""
+
+    rec = logging.makeLogRecord({"args": [1, "aa", [1, 2], {"a": 1}]})
+    assert utils.log_filter(rec) is True
+
+    rec.args[1] = "aa" * 1000
+    assert len(rec.args[1]) > 200
+    res = utils.log_filter(rec)
+    assert res.args[1].startswith("aa")
+    assert "..." in res.args[1]
+    assert len(res.args[1]) < 200
