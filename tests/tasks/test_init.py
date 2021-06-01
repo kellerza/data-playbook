@@ -1,48 +1,40 @@
-# """Tests for main tasks"""
+"""Tests for main tasks"""
 # import re
 
-# import dataplaybook.config_validation as cv
 # from dataplaybook import DataPlaybook
+from dataplaybook.tasks import build_lookup, replace
+from dataplaybook import DataEnvironment
 
 
-# def _table_add(dpb):
-#     for key in dpb.tables:
-#         if key != 'var':
-#             cv.table_add(key)
+def _streets():
+    return [
+        dict(street="W", suburb="A", postcode=1001),
+        dict(street="X", suburb="B", postcode=2002),
+        dict(street="Y", suburb="B", postcode=2002),
+        dict(street="Z", suburb="A", postcode=1001),
+    ]
 
 
-# def _streets():
-#     return [
-#         dict(street='W', suburb='A', postcode=1001),
-#         dict(street='X', suburb='B', postcode=2002),
-#         dict(street='Y', suburb='B', postcode=2002),
-#         dict(street='Z', suburb='A', postcode=1001),
-#     ]
+def test_task_build_lookup():
+    """Test build_lookup."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
 
+    tables["area"] = build_lookup(
+        table=tables["streets"], key="postcode", columns=["suburb"]
+    )
 
-# def test_task_build_lookup():
-#     """Test build_lookup."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     _table_add(dpb)
+    assert tables.area == [
+        dict(postcode=1001, suburb="A"),
+        dict(postcode=2002, suburb="B"),
+    ]
 
-#     dpb.execute_task({
-#         'tables': 'streets', 'target': 'area',
-#         'build_lookup': {
-#             'key': 'postcode',
-#             'columns': ['suburb'],
-#         }})
-
-#     assert dpb.tables.area == [
-#         dict(postcode=1001, suburb='A'),
-#         dict(postcode=2002, suburb='B'),
-#     ]
-#     assert dpb.tables.streets == [
-#         dict(street='W', postcode=1001),
-#         dict(street='X', postcode=2002),
-#         dict(street='Y', postcode=2002),
-#         dict(street='Z', postcode=1001),
-#     ]
+    assert tables.streets == [
+        dict(street="W", postcode=1001),
+        dict(street="X", postcode=2002),
+        dict(street="Y", postcode=2002),
+        dict(street="Z", postcode=1001),
+    ]
 
 
 # def test_task_build_lookup_var():
@@ -106,23 +98,17 @@
 #     # TODO: test fuzzy
 
 
-# def test_task_replace():
-#     """Test replace."""
-#     dpb = DataPlaybook(modules='dataplaybook.tasks')
-#     dpb.tables['streets'] = _streets()
-#     _table_add(dpb)
+def test_task_replace():
+    """Test replace."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
 
-#     # Include
-#     dpb.execute_task({
-#         'tables': 'streets',
-#         'replace': {
-#             'columns': 'suburb',
-#             'replace': {
-#                 'A': 'A_',
-#                 'B': 'B_',
-#             }}})
-#     _ss = {s['suburb'] for s in dpb.tables.streets}
-#     assert _ss == set(['A_', 'B_'])
+    replace(
+        table=tables.streets, replace_dict={"A": "A_", "B": "B_",}, columns=["suburb"]
+    )
+
+    _ss = {s["suburb"] for s in tables.streets}
+    assert _ss == set(["A_", "B_"])
 
 
 # def test_task_print():

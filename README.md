@@ -1,7 +1,8 @@
 # Data Playbook
 
 :book: Playbooks for data. Open, process and save table based data.
-[![CircleCI](https://circleci.com/gh/kellerza/data-playbook/tree/master.svg?style=svg)](https://circleci.com/gh/kellerza/data-playbook/tree/master)
+
+[![Workflow Status](https://github.com/kellerza/data-playbook/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/kellerza/data-playbook/actions)
 [![codecov](https://codecov.io/gh/kellerza/data-playbook/branch/master/graph/badge.svg)](https://codecov.io/gh/kellerza/data-playbook)
 
 Automate repetitive tasks on table based data. Include various input and output tasks. Can be extended with custom modules.
@@ -22,15 +23,15 @@ def print
 
 Tasks are implemented as simple Python functions and the modules can be found in the dataplaybook/tasks folder.
 
-|Module       |Functions   |
-|:--          |:--         |
-| Generic function to work on tables<br>`dataplaybook.tasks` | build_lookup, build_lookup_var, combine, drop, extend, filter, print, replace, unique, vlookup |
-| Fuzzy string matching <br>`dataplaybook.taksk.fuzzy`<br> Requires *pip install fuzzywuzzy* | |
-| Read/write excel files ()<br>`dataplaybook.tasks.io_xlsx` | read_excel, write_excel |
-| Misc IO tasks<br>`dataplaybook.tasks.io_misc` | read_csv, read_tab_delim, read_text_regex, wget, write_csv |
-| MongoDB functions<br>`dataplaybook.tasks.io_mongo` |read_mongo, write_mongo, columns_to_list, list_to_columns |
-| PDF functions. Requires *pdftotext* on your path<br>`dataplaybook.tasks.io_pdf` | read_pdf_pages, read_pdf_files |
-| Read XML<br>`dataplaybook.tasks.io_xml` | Read XML | read_xml |
+| Module                                                                                     | Functions                                                                                      |
+| :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | -------- |
+| Generic function to work on tables<br>`dataplaybook.tasks`                                 | build_lookup, build_lookup_var, combine, drop, extend, filter, print, replace, unique, vlookup |
+| Fuzzy string matching <br>`dataplaybook.taksk.fuzzy`<br> Requires _pip install fuzzywuzzy_ |                                                                                                |
+| Read/write excel files ()<br>`dataplaybook.tasks.io_xlsx`                                  | read_excel, write_excel                                                                        |
+| Misc IO tasks<br>`dataplaybook.tasks.io_misc`                                              | read_csv, read_tab_delim, read_text_regex, wget, write_csv                                     |
+| MongoDB functions<br>`dataplaybook.tasks.io_mongo`                                         | read_mongo, write_mongo, columns_to_list, list_to_columns                                      |
+| PDF functions. Requires _pdftotext_ on your path<br>`dataplaybook.tasks.io_pdf`            | read_pdf_pages, read_pdf_files                                                                 |
+| Read XML<br>`dataplaybook.tasks.io_xml`                                                    | Read XML                                                                                       | read_xml |
 
 ## Data Playbook v0
 
@@ -50,7 +51,7 @@ Example yaml: (please note yaml is case sensitive)
 modules: [list, of, modules]
 
 tasks:
-  - task_name:  # See a list of tasks below
+  - task_name: # See a list of tasks below
       task_setting_1: 1
     tables: # The INPUT. One of more tables used by this task
     target: # The OUTPUT. Target table name of this function
@@ -59,19 +60,18 @@ tasks:
 
 ### Templating
 
-Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simly use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word *jmespath* followed by a space.
+Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simly use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word _jmespath_ followed by a space.
 
 Both the `vars` and `template` tasks achieve a similar result: (this will search a table matching string "2" on the key column and return the value in the value column)
 
 ```yaml
-  - vars:
-      res1: jmespath test[?key=='2'].value | [0]
-  # is equal to
-  - template:
-      jmespath: "test[?key=='2'].value | [0]"
-    target: res1
-
-  # ... then use it with `{{ var.res1 }}`
+- vars:
+    res1: jmespath test[?key=='2'].value | [0]
+# is equal to
+- template:
+    jmespath: "test[?key=='2'].value | [0]"
+  target: res1
+# ... then use it with `{{ var.res1 }}`
 ```
 
 The JMESpath task `template` task has an advantage that you can create new variables **or tables**.
@@ -91,14 +91,14 @@ If you have a lookup you use regularly you can do the following:
 When searching through a table with Jinja, a similar one-liner, using `selectattr`, seems much more complex:
 
 ```yaml
-  - vars:
-      res1: "{{ test | selectattr('key', 'equalto', '2') | map(attribute='value') | first }}"
+- vars:
+    res1: "{{ test | selectattr('key', 'equalto', '2') | map(attribute='value') | first }}"
 ```
 
 ### Special yaml functions
 
-* `!re <expression>` Regular expression
-* `!es <search string>` Search a file using Everything by Voidtools
+- `!re <expression>` Regular expression
+- `!es <search string>` Search a file using Everything by Voidtools
 
 ### Install the development version
 
@@ -122,9 +122,9 @@ Although new variables can be created using **register:** in Ansible, data playb
 
 Data playbook tasks are different form Ansible's **actions**:
 
-* They are mostly not idempotent, since the intention is to modify tables as we go along,
-* they can return lists containing rows or be Python iterators (that `yield` rows of a table)
-* if they dont return any tabular data (a list), the return value will be added to the `var` table in the environment
-* Each have a strict voluptuous schema, evaluated when loading and during runtime (e.g. to expand templates) to allow quick troubleshooting
+- They are mostly not idempotent, since the intention is to modify tables as we go along,
+- they can return lists containing rows or be Python iterators (that `yield` rows of a table)
+- if they dont return any tabular data (a list), the return value will be added to the `var` table in the environment
+- Each have a strict voluptuous schema, evaluated when loading and during runtime (e.g. to expand templates) to allow quick troubleshooting
 
 You could argue I can do this with Ansible, but it won't be as elegant with single item hosts files, `gather_facts: no` and `delegate_to: localhost` throughout the playbooks. It will likely only be half as much fun trying to force it into my way of thinking.
