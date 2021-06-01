@@ -5,7 +5,6 @@ import os
 import pytest
 
 import dataplaybook.utils as utils
-from dataplaybook.config_validation import AttrDict
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
 

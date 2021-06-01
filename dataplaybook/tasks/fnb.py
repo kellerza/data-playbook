@@ -7,9 +7,9 @@ import os
 from pathlib import Path
 import re
 import traceback
-from typing import List, Optional
+from typing import Dict, Optional
 
-from dataplaybook import ENV, Table, task
+from dataplaybook import Table, task
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -191,10 +191,10 @@ def _clean(row):
 
 
 @task
-def fnb_process(table_names: List[str]) -> Table:
-    """Add the budget month nd ID."""
-    for table in table_names:
-        for row in ENV[table]:
+def fnb_process(tables: Dict[str, Table]) -> Table:
+    """Add the budget month and ID."""
+    for _, t_table in tables.items():
+        for row in t_table:
             if not any(row.values()):
                 continue
             try:
