@@ -4,10 +4,10 @@ from typing import List, Optional
 from urllib.parse import urlparse
 
 import attr
+from icecream import ic  # noqa pylint: disable=unused-import
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 import voluptuous as vol
-from icecream import ic  # noqa pylint: disable=unused-import
 
 from dataplaybook import Columns, Table, task
 from dataplaybook.utils import PlaybookError

@@ -1,18 +1,17 @@
 """DataEnvironment class."""
 from configparser import ConfigParser
 from contextlib import contextmanager
+from functools import wraps
+from importlib import import_module
 import logging
 from os import getenv
 from pathlib import Path
 import sys
 from timeit import default_timer
 from traceback import format_exception
-from importlib import import_module
 from typing import Any, Dict, List, Sequence
-from functools import wraps
 
 from dataplaybook.config_validation import util_slugify
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -322,8 +321,7 @@ def doublewrap(fun):
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # actual decorated function
             return fun(args[0])
-        else:
-            # decorator arguments
-            return lambda realf: fun(realf, *args, **kwargs)
+        # decorator arguments
+        return lambda realf: fun(realf, *args, **kwargs)
 
     return new_dec

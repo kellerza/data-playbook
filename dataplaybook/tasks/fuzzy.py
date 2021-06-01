@@ -1,7 +1,7 @@
 """Fuzzy matching."""
 from fuzzywuzzy import fuzz
 
-from dataplaybook import task, Table, Column
+from dataplaybook import Column, Table, task
 
 
 @task

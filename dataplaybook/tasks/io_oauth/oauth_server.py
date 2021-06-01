@@ -2,7 +2,8 @@
 import logging
 import os
 import signal
-
+from wsgiref.simple_server import make_server, WSGIRequestHandler
+from threading import Thread
 import bottle
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,14 +61,13 @@ class MyWSGIRefServer(bottle.WSGIRefServer):
 
     def run(self, handler):  # pylint: disable=W0221
         """Run the server."""
-        from wsgiref.simple_server import make_server, WSGIRequestHandler
 
         if self.quiet:
 
             class QuietHandler(WSGIRequestHandler):
                 """Quiet handler."""
 
-                def log_request(self, *_, **__):  # pylint: disable=W0221
+                def log_request(self, *_, **__):  # pylint: disable=signature-differs
                     pass
 
             self.options["handler_class"] = QuietHandler
@@ -76,7 +76,5 @@ class MyWSGIRefServer(bottle.WSGIRefServer):
 
     def shutdown(self):
         """Shutdown the server in another thread."""
-        import threading
-
-        threading.Thread(target=self.server.shutdown).start()
+        Thread(target=self.server.shutdown).start()
         return "BYE"

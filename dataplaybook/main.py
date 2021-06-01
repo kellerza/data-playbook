@@ -15,9 +15,9 @@ from typeguard import _CallMemo, check_argument_types, check_return_type
 from dataplaybook.const import VERSION, ATable, Table, Tables
 from dataplaybook.utils import (
     DataEnvironment,
-    setup_logger,
     doublewrap,
     local_import_module,
+    setup_logger,
 )
 
 _LOGGER = logging.getLogger(__name__)

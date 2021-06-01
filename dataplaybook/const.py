@@ -1,5 +1,5 @@
 """Constants."""
-from typing import List, Union, Any, Dict
+from typing import Any, Dict, List, Union
 
 from dataplaybook.utils import (  # noqa, pylint: disable=unused-import
     DataEnvironment,

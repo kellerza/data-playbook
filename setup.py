@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """dataplaybook setup."""
-import re
 from pathlib import Path
+import re
 
 from setuptools import setup
 
@@ -27,6 +27,7 @@ REQUIRES = [
     "openpyxl>=3,<4",
     "typeguard",
     "icecream",
+    "fuzzywuzzy",
 ]
 
 setup(

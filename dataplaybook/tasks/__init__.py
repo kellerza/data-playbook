@@ -2,7 +2,7 @@
 import json
 import logging
 import shutil
-from typing import List, Optional, Union, Dict, Sequence
+from typing import Dict, List, Optional, Sequence, Union
 
 from dataplaybook import Columns, Table, Tables, task
 from dataplaybook.config_validation import ensure_list_csv as _ensure_list_csv

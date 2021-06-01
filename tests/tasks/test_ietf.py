@@ -1,6 +1,6 @@
 """Tests for ietf.py"""
-import dataplaybook.tasks.ietf as ietf
 from dataplaybook.const import ATable
+import dataplaybook.tasks.ietf as ietf
 
 
 def test_extract_standards():

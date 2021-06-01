@@ -1,5 +1,6 @@
 """DataEnvironment class."""
 import os
+
 import pytest
 
 import dataplaybook.utils as utils

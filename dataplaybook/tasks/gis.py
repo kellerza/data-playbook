@@ -1,5 +1,5 @@
 """GIS / QGIS tasks."""
-from dataplaybook import task, Table
+from dataplaybook import Table, task
 
 
 @task

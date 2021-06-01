@@ -2,8 +2,8 @@
 # import re
 
 # from dataplaybook import DataPlaybook
-from dataplaybook.tasks import build_lookup, replace
 from dataplaybook import DataEnvironment
+from dataplaybook.tasks import build_lookup, replace
 
 
 def _streets():
@@ -95,7 +95,7 @@ def test_task_build_lookup():
 #     """Test fuzzy_match."""
 #     dpb = DataPlaybook(modules='dataplaybook.tasks')
 #     dpb.tables['streets'] = _streets()
-#     # TODO: test fuzzy
+#     # test fuzzy
 
 
 def test_task_replace():
@@ -104,7 +104,7 @@ def test_task_replace():
     tables["streets"] = _streets()
 
     replace(
-        table=tables.streets, replace_dict={"A": "A_", "B": "B_",}, columns=["suburb"]
+        table=tables.streets, replace_dict={"A": "A_", "B": "B_"}, columns=["suburb"]
     )
 
     _ss = {s["suburb"] for s in tables.streets}

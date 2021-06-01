@@ -6,7 +6,6 @@ from typing import Any, Sequence, TypeVar, Union
 
 import voluptuous as vol
 
-
 # typing typevar
 T = TypeVar("T")  # pylint: disable=invalid-name
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
