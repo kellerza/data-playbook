@@ -53,7 +53,10 @@ class MongoURI:
             set_id = pth[3]
 
         return MongoURI(
-            netloc=res.netloc, database=pth[1], collection=pth[2], set_id=set_id,
+            netloc=res.netloc,
+            database=pth[1],
+            collection=pth[2],
+            set_id=set_id,
         )
 
     # @staticmethod
@@ -72,7 +75,11 @@ class MongoURI:
 
 
 @task()
-def read_mongo(mdb: MongoURI, *, set_id: Optional[str] = None,) -> Table:
+def read_mongo(
+    mdb: MongoURI,
+    *,
+    set_id: Optional[str] = None,
+) -> Table:
     """Read data from a MongoDB collection."""
     client = MongoClient(mdb.netloc, connect=True)
     if mdb.set_id:

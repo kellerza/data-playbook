@@ -10,7 +10,10 @@ _LOGGER = logging.getLogger(__name__)
 
 REGEX = (
     re.compile(r"(?=[^-]|^)((draft-[\w-]+?)(?:-\d{2})?)-*(?![-\w])", re.I),
-    (r"RFC\1", re.compile(r"RFC\s*(\d{1,5})(?:\D|$)", re.I),),
+    (
+        r"RFC\1",
+        re.compile(r"RFC\s*(\d{1,5})(?:\D|$)", re.I),
+    ),
     (r"IEEE \1", re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)),
     (r"IEEE \1", re.compile(r"(80[12].\d\w+)", re.I)),
     (r"ITU-T \1", re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)),
