@@ -1,14 +1,18 @@
 """Constants."""
-from typing import Dict, List, Any, Union
+from typing import List, Union, Any, Dict
 
-from dataplaybook.utils import DataEnvironment
+from dataplaybook.utils import (  # noqa, pylint: disable=unused-import
+    DataEnvironment,
+    Table,
+)
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 
-Table = List[Dict[str, Any]]
 Columns = List[str]
 Column = str
+# Defined in utils
+# Table = List[Dict[str, Any]]
 Tables = Union[Dict[str, List[Dict[str, Any]]], DataEnvironment]
 
 

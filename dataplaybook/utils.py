@@ -11,14 +11,11 @@ from importlib import import_module
 from typing import Any, Dict, List, Sequence
 from functools import wraps
 
-from icecream import ic
-
 from dataplaybook.config_validation import util_slugify
 
 
 _LOGGER = logging.getLogger(__name__)
 
-# Cop of const...
 Table = List[Dict[str, Any]]
 
 
@@ -44,11 +41,9 @@ class DataVars(dict):
     def __setitem__(self, key, val):
         """Ensure key is slug."""
         if key == "env":
-            raise PlaybookError("var.env is read-only")
+            raise KeyError("var.env is read-only")
         if key != util_slugify(key):
-            raise PlaybookError(
-                f"Invalid variable name '{key}' use '{util_slugify(key)}"
-            )
+            raise KeyError(f"Invalid variable name '{key}' use '{util_slugify(key)}")
         dict.__setitem__(self, key, val)
 
     def as_table(self) -> List[Dict[str, Any]]:
@@ -118,23 +113,39 @@ class DataEnvironment(dict):
     def __setitem__(self, key: str, val: Any):
         if key == "var":
             raise Exception("Cannot set vaiables directly. Use .var.")
+        if isinstance(val, list):
+            dict.__setitem__(self, key, val)
+            _LOGGER.debug("tables[%s] = %s", key, val)
         else:
-            raise Exception("Cannot set vaiables directly. Use set")
+            self._var[key] = val
+            _LOGGER.debug("tables.var[%s] = %s", key, val)
 
-    def set(self, key: str, val: Any) -> Any:
-        _LOGGER.debug("%s = %.50s", key, val)
-        if isinstance(self, DataEnvironment):
-            if isinstance(val, list):
-                dict.__setitem__(self, key, val)
+    def _check_keys(self, *table_names: str) -> Sequence[str]:
+        res = []
+        for name in table_names:
+            if name in self:
+                if isinstance(self[name], list):
+                    res.append(name)
+                else:
+                    _LOGGER.warning("Table {%s} is not a list: %s", name, self[name])
             else:
-                self._var[key] = val
-        else:
-            self[key] = val
-        return val
+                _LOGGER.warning("Table {%s} does not exist", name)
+        if not table_names:
+            res = [k for k in self.keys() if isinstance(self[k], list)]
+        return res
 
-    def get(self, *table_names: str) -> Sequence[Table]:
+    def as_dict(self, *table_names: str) -> Dict[str, Table]:
+        """Return an ordered dict."""
+        keys = self._check_keys(*table_names)
+        res = {}
+        for key in keys:
+            res[key] = self[key]
+        return res
+
+    def as_list(self, *table_names: str) -> Sequence[Table]:
         """Return a list of Tables."""
-        return [self[n] for n in table_names if n in self]
+        keys = self._check_keys(*table_names)
+        return [self[k] for k in keys]
 
 
 def get_logger(logger=None):
@@ -204,19 +215,18 @@ def log_filter(record):
 
     https://relaxdiego.com/2014/07/logging-in-python.html
     """
-    if any(len(str(arg)) > 100 for arg in record.args):
-        ic(record, record.args)
-        res = []
-        for arg in record.args:
-            if len(str(arg)) < 100:
-                res.append(arg)
-                continue
-            idx = len(res)
-            res.append(f"{str(arg)[:100]}...q...len={len(arg)}")
-            ic(record.args[idx], type(record.args[idx]))
+    changed = False
+    res = []
+    for arg in record.args:
+        sarg = str(arg)
+        if len(arg) < 150:
+            res.append(arg)
+            continue
+        res.append(f"{sarg[:130]}...{sarg[-20:]} len={len(sarg)} type={type(arg)}")
+        changed = True
+    if changed:
         record.args = tuple(res)
         return record
-
     return True
 
 
@@ -272,7 +282,8 @@ def time_it(name=None, delta=2, logger=None):
         get_logger(logger).debug("Execution time for %s: %.2fs", name, total)
 
 
-def complete_import(mod_name):
+def local_import_module(mod_name):
+    """import_module that searches local path."""
     try:
         mod_obj = import_module(mod_name)
         return mod_obj
@@ -298,7 +309,7 @@ def complete_import(mod_name):
             sys.path.pop(0)
 
 
-def doublewrap(f):
+def doublewrap(fun):
     """
     a decorator decorator, allowing the decorator to be used as:
     @decorator(with, arguments, and=kwargs)
@@ -306,13 +317,13 @@ def doublewrap(f):
     @decorator
     """
 
-    @wraps(f)
+    @wraps(fun)
     def new_dec(*args, **kwargs):
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # actual decorated function
-            return f(args[0])
+            return fun(args[0])
         else:
             # decorator arguments
-            return lambda realf: f(realf, *args, **kwargs)
+            return lambda realf: fun(realf, *args, **kwargs)
 
     return new_dec

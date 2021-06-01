@@ -2,7 +2,6 @@
 import os
 import pytest
 
-from dataplaybook.const import PlaybookError
 import dataplaybook.utils as utils
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
@@ -24,7 +23,7 @@ def test_dataenvironment():
     assert isinstance(env["var"], list)
     assert isinstance(env.var, dict)
 
-    with pytest.raises(PlaybookError):
+    with pytest.raises(KeyError):
         env.var["non slug"] = 1
 
     with pytest.raises(Exception):
@@ -34,6 +33,22 @@ def test_dataenvironment():
         env.var = "notallowed"
 
     assert list(env.keys()) == ["var", "tab"]
+
+
+def test_dataenvironment_as():
+    """Test dataenvironment."""
+
+    env = utils.DataEnvironment()
+    env["t1"] = [{"a": 1}]
+
+    assert len(env.as_dict("b", "c")) == 0
+    assert len(env.as_list("b", "c")) == 0
+
+    assert len(env.as_dict("t1", "c")) == 1
+    assert len(env.as_list("t1", "c")) == 1
+
+    assert env.as_list("t1") == [[{"a": 1}]]
+    assert env.as_dict("t1")["t1"] == [{"a": 1}]
 
 
 def test_env():
@@ -52,7 +67,7 @@ def test_env():
     assert "HOME" in dataenv.var.env
     assert dataenv.var.env.HOME == "/home/me"
 
-    with pytest.raises(PlaybookError):
+    with pytest.raises(KeyError):
         dataenv.var["env"] = 1
 
 

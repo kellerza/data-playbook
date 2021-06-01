@@ -17,7 +17,7 @@ from dataplaybook.utils import (
     DataEnvironment,
     setup_logger,
     doublewrap,
-    complete_import,
+    local_import_module,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -199,7 +199,7 @@ def run_playbooks(dataplaybook_cmd=False):
         _LOGGER.info("Loading: %s (%s)", spath.name, spath.parent)
         chdir(spath.parent)
         try:
-            complete_import(spath.stem)
+            local_import_module(spath.stem)
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.error("Unable to import %s: %s", spath.stem, err)
             sys.exit(-1)

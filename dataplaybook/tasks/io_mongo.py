@@ -43,7 +43,7 @@ class MongoURI:
         except AttributeError as err:
             _LOGGER.error("could not parse URL: %s: %s", db_uri, err)
             raise err
-        if res.scheme not in ["mdb", "mongodb"]:
+        if res.scheme not in ["mdb", "mongodb", "db"]:
             raise vol.Invalid("mdb://host:port/database/collection/[set_id]")
         pth = res.path.split("/")
 
