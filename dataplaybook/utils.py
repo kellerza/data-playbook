@@ -8,7 +8,6 @@ from os import getenv
 from pathlib import Path
 import sys
 from timeit import default_timer
-from traceback import format_exception
 from typing import Any, Dict, List, Sequence
 
 from dataplaybook.config_validation import util_slugify
@@ -111,7 +110,7 @@ class DataEnvironment(dict):
 
     def __setitem__(self, key: str, val: Any):
         if key == "var":
-            raise Exception("Cannot set vaiables directly. Use .var.")
+            raise Exception("Cannot set variables directly. Use .var.")
         if isinstance(val, list):
             dict.__setitem__(self, key, val)
             _LOGGER.debug("tables[%s] = %s", key, val)
@@ -231,46 +230,6 @@ def log_filter(record):
     return True
 
 
-def print_exception(task_name=None, mod_name=None, logger="dataplaybook"):
-    """Print last exception."""
-    exc_type, exc_value, traceback = sys.exc_info()
-    res = format_exception(exc_type, exc_value, traceback)
-    if mod_name:
-        res[0] += f" Module: {mod_name}"
-    if task_name:
-        res[0] += f" Task: {task_name}"
-    get_logger(logger).error("".join(res))
-
-    #     _, exc, traceback = sys.exc_info()
-    #     tb_all = extract_tb(traceback)
-
-    #     if mod_name:
-    #         mod_name = mod_name.replace(".", "/")
-    #         tb_show = list((fs for fs in tb_all if fs.filename and mod_name in fs.filename))
-    #         if tb_show:
-    #             tb_all = tb_show
-
-    #     if task_name:
-    #         res = [
-    #             "Exception in task {}: {}: {}".format(
-    #                 task_name, exc.__class__.__name__, exc
-    #             )
-    #         ]
-    #     else:
-    #         res = ["Exception {}: {}".format(exc.__class__.__name__, exc)]
-
-    #     res.insert(0, "Tracebcak (most recent call last)")
-
-    #     for frame in tb_all:
-    #         res.insert(
-    #             0,
-    #             " File {} line {} in method {}".format(
-    #                 frame.filename, frame.lineno, frame.name
-    #             ),
-    #         )
-    # get_logger(logger).error(",\n ".join(res))
-
-
 @contextmanager
 def time_it(name=None, delta=2, logger=None):
     """Context manager to time execution and report if too high."""
@@ -298,7 +257,9 @@ def local_import_module(mod_name):
             raise
         pass
 
-    path = Path(mod_name + ".py").resolve(strict=True)
+    path = Path(mod_name + ".py").resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Cannot find {path} CWD={Path.cwd()}")
     mod_name = path.stem
 
     sys.path.insert(0, str(path.parent))

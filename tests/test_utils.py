@@ -36,6 +36,9 @@ def test_dataenvironment():
 
     assert list(env.keys()) == ["var", "tab"]
 
+    env["v"] = 1
+    assert env.var.v == 1
+
 
 def test_dataenvironment_as():
     """Test dataenvironment."""
@@ -103,3 +106,19 @@ def test_filter():
     assert res.args[1].startswith("aa")
     assert "..." in res.args[1]
     assert len(res.args[1]) < 200
+
+
+def test_local_import():
+    """Test local import."""
+    os.chdir("tests")
+    try:
+        tcom = utils.local_import_module("common")
+        assert tcom.COMMON is True
+    finally:
+        os.chdir("..")
+
+
+def test_timeit():
+    """Test timeit context manager."""
+    with utils.time_it():
+        print("a")
