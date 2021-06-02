@@ -4,7 +4,7 @@ import atexit
 from functools import wraps
 from inspect import isgeneratorfunction, signature
 import logging
-from os import chdir
+import os
 from pathlib import Path
 import sys
 from typing import get_type_hints
@@ -148,7 +148,7 @@ _EXECUTED = False
 
 
 def get_default_playbook():
-    """Get the name of the defualt playbook, if any."""
+    """Get the name of the default playbook, if any."""
     if _DEFAULT_PLAYBOOK:
         return _DEFAULT_PLAYBOOK
     if len(_ALL_PLAYBOOKS) == 1:
@@ -156,13 +156,7 @@ def get_default_playbook():
     return None
 
 
-def run_playbooks(dataplaybook_cmd=False):
-    """Execute playbooks, or prompt for one."""
-    global _EXECUTED
-    if _EXECUTED:
-        return
-    _EXECUTED = True
-
+def _parseargs(dataplaybook_cmd):
     parser = argparse.ArgumentParser(
         description="Data Playbook v{}. Playbooks for tabular data.".format(VERSION)
     )
@@ -179,6 +173,20 @@ def run_playbooks(dataplaybook_cmd=False):
     )
     parser.add_argument("-v", action="count", help="Debug level")
     args = parser.parse_args()
+    if not dataplaybook_cmd:
+        args.files = [""]
+        args.all = False
+    return args
+
+
+def run_playbooks(dataplaybook_cmd=False):
+    """Execute playbooks, or prompt for one."""
+    global _EXECUTED
+    if _EXECUTED:
+        return
+    _EXECUTED = True
+
+    args = _parseargs(dataplaybook_cmd)
 
     setup_logger()
 
@@ -188,45 +196,51 @@ def run_playbooks(dataplaybook_cmd=False):
     if args.v and args.v > 2:
         print_tasks()
 
-    if dataplaybook_cmd:
-        spath = Path(args.files[0]).resolve()
-        if not spath.exists():
-            if spath.suffix != "" or not spath.with_suffix(".py").exists():
-                _LOGGER.error("%s not found", spath)
-                sys.exit(-1)
-            spath = spath.with_suffix(".py")
-
-        _LOGGER.info("Loading: %s (%s)", spath.name, spath.parent)
-        chdir(spath.parent)
-        try:
-            local_import_module(spath.stem)
-        except Exception as err:  # pylint: disable=broad-except
-            _LOGGER.error("Unable to import %s: %s", spath.stem, err)
-            sys.exit(-1)
-
-    else:
-        # Ensure we are in the calling script's folder
-        chdir(Path(sys.argv[0]).resolve().parent)
-
-    if not args.playbook:
-        args.playbook = get_default_playbook()
-
-    if args.playbook not in _ALL_PLAYBOOKS:
-        _LOGGER.error("Playbook %s not found in %s", args.playbook, args.files[0])
-        sys.exit(-1)
+    cwd = os.getcwd()
 
     try:
-        retval = _ALL_PLAYBOOKS[args.playbook](_ENV)
-    except Exception as err:  # pylint: disable=broad-except
-        _LOGGER.error(
-            "Error while running playbook '%s' - %s: %s",
-            args.playbook,
-            type(err).__name__,
-            err,
-        )
-        raise err
-    else:
-        if args.v:
-            ic(_ENV)
 
-        sys.exit(retval)
+        if dataplaybook_cmd:
+            spath = Path(args.files[0]).resolve()
+            if not spath.exists():
+                if spath.suffix != "" or not spath.with_suffix(".py").exists():
+                    _LOGGER.error("%s not found", spath)
+                    sys.exit(-1)
+                spath = spath.with_suffix(".py")
+
+            _LOGGER.info("Loading: %s (%s)", spath.name, spath.parent)
+            os.chdir(spath.parent)
+            try:
+                local_import_module(spath.stem)
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.error("Unable to import %s: %s", spath.stem, err)
+                sys.exit(-1)
+
+        else:
+            # Ensure we are in the calling script's folder
+            os.chdir(Path(sys.argv[0]).resolve().parent)
+
+        if not args.playbook:
+            args.playbook = get_default_playbook()
+
+        if args.playbook not in _ALL_PLAYBOOKS:
+            _LOGGER.error("Playbook %s not found in %s", args.playbook, args.files[0])
+            sys.exit(-1)
+
+        try:
+            retval = _ALL_PLAYBOOKS[args.playbook](_ENV)
+        except Exception as err:  # pylint: disable=broad-except
+            _LOGGER.error(
+                "Error while running playbook '%s' - %s: %s",
+                args.playbook,
+                type(err).__name__,
+                err,
+            )
+            raise err
+        else:
+            if args.v:
+                ic(_ENV)
+
+            sys.exit(retval)
+    finally:
+        os.chdir(cwd)
