@@ -4,7 +4,7 @@ from json import dump, load
 from os import getenv
 from pathlib import Path
 import time
-from typing import List, Optional, Pattern
+from typing import List, Optional, Pattern, Sequence
 from urllib.parse import urlparse
 import urllib.request
 
@@ -42,8 +42,8 @@ def file_rotate(file: str, count: int = 3):
 @task
 def read_csv(file: str, columns: Optional[Columns] = None) -> Table:
     """Read csv file."""
-    with open(file, "r", encoding="utf-8") as fle:
-        csvf = DictReader(fle)
+    with open(file, "r", encoding="utf-8") as __f:
+        csvf = DictReader(__f)
         # header = opt.headers if 'headers' in opt else None
         for line in csvf:
             if columns:
@@ -78,9 +78,9 @@ def write_json(tables, file: str, only_var=False) -> None:
 @task
 def read_tab_delim(file, headers: Columns) -> Table:
     """Read xml file."""
-    with open(file, "r", encoding="utf-8") as fle:
+    with open(file, "r", encoding="utf-8") as __f:
         header = headers
-        for line in fle:
+        for line in __f:
             line = line.strip()
             if line.startswith("#") or not line:
                 continue
@@ -92,7 +92,7 @@ def read_tab_delim(file, headers: Columns) -> Table:
 
 
 @task
-def task_read_text_regex(
+def read_text_regex(
     filename: str, newline: Pattern, fields: Optional[Pattern]
 ) -> Table:
     """Much regular expressions into a table."""
@@ -142,11 +142,15 @@ def wget(url: str, file: str, age: int = 48 * 60 * 60):
 
 
 @task
-def write_csv(table: Table, file: str) -> None:
+def write_csv(table: Table, file: str, header: Sequence[str] = None) -> None:
     """Write a csv file."""
     fieldnames = list(table[0].keys())
+    for hdr in reversed(header):
+        if hdr in fieldnames:
+            fieldnames.remove(hdr)
+        fieldnames.insert(0, hdr)
 
-    with open(file, "w", newline="") as csvfile:
+    with open(file, "w", encoding="utf-8-sig", errors="replace", newline="") as csvfile:
         writer = DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()

@@ -4,7 +4,7 @@
 [![Workflow Status](https://github.com/kellerza/data-playbook/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/kellerza/data-playbook/actions)
 [![codecov](https://codecov.io/gh/kellerza/data-playbook/branch/master/graph/badge.svg)](https://codecov.io/gh/kellerza/data-playbook)
 
-Automate repetitive tasks on table based data. Include various input and output tasks. Can be extended with custom modules.
+Automate repetitive tasks on table based data. Include various input and output tasks.
 
 Install: `pip install dataplaybook`
 
@@ -23,14 +23,14 @@ def print
 Tasks are implemented as simple Python functions and the modules can be found in the dataplaybook/tasks folder.
 
 | Module                                                                                     | Functions                                                                                      |
-| :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | -------- |
+| :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
 | Generic function to work on tables<br>`dataplaybook.tasks`                                 | build_lookup, build_lookup_var, combine, drop, extend, filter, print, replace, unique, vlookup |
 | Fuzzy string matching <br>`dataplaybook.taksk.fuzzy`<br> Requires _pip install fuzzywuzzy_ |                                                                                                |
 | Read/write excel files ()<br>`dataplaybook.tasks.io_xlsx`                                  | read_excel, write_excel                                                                        |
 | Misc IO tasks<br>`dataplaybook.tasks.io_misc`                                              | read_csv, read_tab_delim, read_text_regex, wget, write_csv                                     |
 | MongoDB functions<br>`dataplaybook.tasks.io_mongo`                                         | read_mongo, write_mongo, columns_to_list, list_to_columns                                      |
 | PDF functions. Requires _pdftotext_ on your path<br>`dataplaybook.tasks.io_pdf`            | read_pdf_pages, read_pdf_files                                                                 |
-| Read XML<br>`dataplaybook.tasks.io_xml`                                                    | Read XML                                                                                       | read_xml |
+| Read XML<br>`dataplaybook.tasks.io_xml`                                                    | read_xml                                                                                       |
 
 ## Data Playbook v0
 

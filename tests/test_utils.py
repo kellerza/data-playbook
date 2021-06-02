@@ -1,12 +1,15 @@
 """DataEnvironment class."""
 import logging
 import os
+from pathlib import Path
 
 import pytest
 
 import dataplaybook.utils as utils
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def test_dataenvironment():
@@ -122,3 +125,19 @@ def test_timeit():
     """Test timeit context manager."""
     with utils.time_it():
         print("a")
+
+
+def _glob_import(path):
+    cwd = os.getcwd()
+    try:
+        for file in path.glob("**/*.py"):
+            os.chdir(file.parent)
+            _LOGGER.info(str(file))
+            utils.local_import_module(file.stem)
+    finally:
+        os.chdir(cwd)
+
+
+def test_local_import_all():
+    """Test local import."""
+    _glob_import(Path("./dataplaybook").resolve(strict=True))

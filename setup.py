@@ -26,6 +26,7 @@ REQUIRES = [
     "typeguard",
     "icecream",
     "fuzzywuzzy",
+    "python-Levenshtein",
     "requests",
 ]
 
