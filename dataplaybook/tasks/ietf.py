@@ -23,9 +23,17 @@ def _re_proto(match):
     return f"{key} version {ver}", key
 
 
+def _re_af(match):
+    key = match.group(2).upper()
+    ver = match.group(3)
+    if ver is None:
+        return key, None
+    return f"{key} version {ver}", key
+
+
 def _re_mfa(match):
     ver = match.group(2)
-    return f"MFA Forum {ver}", "MFA Forum"
+    return f"MFA Forum {ver}", f"MFA Forum {ver}"
 
 
 REGEX = (
@@ -39,14 +47,18 @@ REGEX = (
     (r"ITU-T \1", re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)),
     re.compile(r"(GR-\d+-\w+)", re.I),
     re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
-    re.compile(r"(3GPP \w+ \d+(\.\d+)*)"),
-    re.compile(r"3GPP\s*\d{1,3}\.\d+"),
+    re.compile(r"(3GPP\s*\d{1,3}\.\d+|3GPP \w+ \d+(\.\d+)*)"),
     re.compile(r"((?:\w+-)+mib)", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
     re.compile(r"(FRF[\.\d]+)"),
     re.compile(r"(ANSI \S+)"),
-    (_re_proto, re.compile(r"((\w{3,7}\.proto)(?:\s+version (\d+(?:\.\d)+))?)", re.I)),
+    (
+        _re_proto,
+        re.compile(r"((\w{3,7}\.proto)(?:\s+version\s+(\d+(?:\.\d)+))?)", re.I),
+    ),
     (_re_mfa, re.compile(r"(MFA forum (\d+(?:\.\d+)+))", re.I)),
+    (_re_af, re.compile(r"((AF(?:-\w+)+\.\d+)(?:\s+version\s+(\d+\.\d+))?)", re.I)),
+    re.compile(r"(\w{2,5} \w{2}-\d+(?!\w))"),  # BBF TR-x
 )
 
 
@@ -120,9 +132,12 @@ def _extract_standards(val):
             continue
 
         for match in rex.finditer(val):
-            yield KeyStr(
-                match[1], match[2 if rex.groups > 1 else 1], start=match.start()
-            )
+            try:
+                yield KeyStr(
+                    match[1], match[2 if rex.groups > 1 else 1], start=match.start()
+                )
+            except IndexError as err:
+                _LOGGER.error("Check Regex %s: %s", rex, err)
 
 
 @task
