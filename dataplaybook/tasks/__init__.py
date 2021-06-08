@@ -2,7 +2,7 @@
 import json
 import logging
 import shutil
-from typing import Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from dataplaybook import Columns, Table, Tables, task
 from dataplaybook.config_validation import ensure_list_csv as _ensure_list_csv
@@ -26,7 +26,7 @@ def build_lookup(table: Table, key: str, columns: Columns) -> Table:
 
 
 @task
-def build_lookup_var(table: Table, key: str, columns: Columns) -> Table:
+def build_lookup_var(table: Table, key: str, columns: Columns) -> Dict[str, Any]:
     """Build lookup tables {key: columns}."""
     lookup = {}
     for row in table:

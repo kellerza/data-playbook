@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from dataplaybook.main import ALL_TASKS
 import dataplaybook.utils as utils
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
@@ -135,6 +136,7 @@ def _glob_import(path):
             _LOGGER.info(str(file))
             utils.local_import_module(file.stem)
     finally:
+        ALL_TASKS.clear()
         os.chdir(cwd)
 
 

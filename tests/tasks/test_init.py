@@ -4,6 +4,8 @@ import re
 from dataplaybook import DataEnvironment
 from dataplaybook.tasks import (
     build_lookup,
+    build_lookup_var,
+    ensure_lists,
     filter_rows,
     print_table,
     replace,
@@ -43,10 +45,24 @@ def test_task_build_lookup():
     ]
 
 
-# def test_task_build_lookup_var():
-#     """Test build_lookup_var."""
-#     from tests.tasks.test_templates import test_templateSchema_readme_example
-#     test_templateSchema_readme_example()
+def test_task_build_lookup_var():
+    """Test build_lookup_var."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
+
+    hse = build_lookup_var(
+        table=tables["streets"], key="street", columns=["suburb", "postcode"]
+    )
+    assert hse["W"] == dict(suburb="A", postcode=1001)
+
+
+def test_task_ensure_lists():
+    """Test ensure_list."""
+    tables = DataEnvironment()
+    tables["streets"] = _streets()
+
+    ensure_lists(tables=tables.as_list("streets"), columns=["suburb"])
+    assert tables["streets"][0] == dict(street="W", suburb=["A"], postcode=1001)
 
 
 def test_task_filter():
