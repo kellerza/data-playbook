@@ -145,7 +145,7 @@ def test_extract_standards_case():
 
     assert std[0].key == "gnmi.proto"
     assert std[1].key == "file.proto"
-    assert std[2].key == "MFA Forum"
+    assert std[2].key == "MFA Forum 0.0.0"
     assert std == [
         "gnmi.proto version 0.1.0",
         "file.proto version 0.0.1",

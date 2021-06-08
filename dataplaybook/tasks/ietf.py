@@ -47,7 +47,7 @@ REGEX = (
     (r"ITU-T \1", re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)),
     re.compile(r"(GR-\d+-\w+)", re.I),
     re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
-    re.compile(r"(3GPP\s*\d{1,3}\.\d+|3GPP \w+ \d+(\.\d+)*)"),
+    re.compile(r"(3GPP *\d{1,3}\.\d+|3GPP \w+ \d+(\.\d+)*)"),
     re.compile(r"((?:\w+-)+mib)", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
     re.compile(r"(FRF[\.\d]+)"),
@@ -58,7 +58,7 @@ REGEX = (
     ),
     (_re_mfa, re.compile(r"(MFA forum (\d+(?:\.\d+)+))", re.I)),
     (_re_af, re.compile(r"((AF(?:-\w+)+\.\d+)(?:\s+version\s+(\d+\.\d+))?)", re.I)),
-    re.compile(r"(\w{2,5} \w{2}-\d+(?!\w))"),  # BBF TR-x
+    re.compile(r"([A-Za-z]\w{2,5} [A-Za-z]{2}-\d+(?!\w))"),  # BBF TR-x
 )
 
 
