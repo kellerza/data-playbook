@@ -173,6 +173,8 @@ def _parseargs(dataplaybook_cmd):
     )
     parser.add_argument("-v", action="count", help="Debug level")
     args = parser.parse_args()
+    if not args:
+        sys.exit(-1)
     if not dataplaybook_cmd:
         args.files = [""]
         args.all = False
