@@ -1,4 +1,6 @@
 """Tests for ietf.py"""
+from pathlib import Path
+
 from dataplaybook.const import ATable
 import dataplaybook.tasks.ietf as ietf
 
@@ -19,10 +21,10 @@ def test_extract_standards():
 
 def test_extract_standards_pad():
     """Test starting from string."""
-    txt = "RFC1 RFC11 RFC111 RFC1111"
+    txt = "RFC1 RFC11 RFC111 RFC1111 RFC11116"
     std = list(ietf.extract_standards(txt))
 
-    assert std == ["RFC0001", "RFC0011", "RFC0111", "RFC1111"]
+    assert std == ["RFC0001", "RFC0011", "RFC0111", "RFC1111", "RFC11116"]
 
 
 def test_extract_standards_version():
@@ -66,7 +68,7 @@ def test_extract_x_all():
         "3GPP Release 11",
         "GR-1111-CORE",
         "ITU-T I.111",
-        "gnmi.proto",
+        "gnmi.proto version 0.0.1",
         "a-something-mib",
         "openconfig-a-global.yang version 1.1.1",
         "ANSI T1.101.11",
@@ -100,7 +102,7 @@ def test_task_add_std_col():
 def test_extract_std():
     """Extract std."""
 
-    table = [{"ss": "rfc 1234 rfc 5678"}, {"ss": "rfc 9999"}]
+    table = [{"ss": "rfc 1234 rfc 5678 rfc 3GPP Release 10"}, {"ss": "rfc 9999"}]
 
     resttt = ietf.extract_standards_from_table(
         table=table, extract_columns=["ss"]  # , include_columns=[],  # rfc_col="r",
@@ -110,13 +112,14 @@ def test_extract_std():
 
     res = list(resttt)
 
-    assert len(res) == 3
+    assert len(res) == 4
     assert "name" in res[0]
     assert "key" in res[0]
     assert "lineno" in res[0]
     assert res[0] == {"name": "RFC1234", "key": "RFC1234", "lineno": 1}
     assert res[1] == {"name": "RFC5678", "key": "RFC5678", "lineno": 1}
-    assert res[2] == {"name": "RFC9999", "key": "RFC9999", "lineno": 2}
+    assert res[2] == {"name": "3GPP Release 10", "key": "3GPP Release 10", "lineno": 1}
+    assert res[3] == {"name": "RFC9999", "key": "RFC9999", "lineno": 2}
 
     table = ATable(table)
     table.name = "ttt"
@@ -126,4 +129,31 @@ def test_extract_std():
 
     assert res[0] == {"name": "RFC1234", "key": "RFC1234", "table": "ttt", "lineno": 1}
     assert res[1] == {"name": "RFC5678", "key": "RFC5678", "table": "ttt", "lineno": 1}
-    assert res[2] == {"name": "RFC9999", "key": "RFC9999", "table": "ttt", "lineno": 2}
+    assert res[2] == {
+        "name": "3GPP Release 10",
+        "key": "3GPP Release 10",
+        "table": "ttt",
+        "lineno": 1,
+    }
+    assert res[3] == {"name": "RFC9999", "key": "RFC9999", "table": "ttt", "lineno": 2}
+
+
+def test_extract_standards_case():
+    """Test starting from string."""
+    txt = "mfa fORUM 0.0.0 gNMI.Proto vERSION 0.1.0 file.Proto vERSION 0.0.1"
+    std = list(ietf.extract_standards(txt))
+
+    assert std[0].key == "gnmi.proto"
+    assert std[1].key == "file.proto"
+    assert std[2].key == "MFA Forum"
+    assert std == [
+        "gnmi.proto version 0.1.0",
+        "file.proto version 0.0.1",
+        "MFA Forum 0.0.0",
+    ]
+
+
+def test_compliance_file():
+    """Test a local compliance file."""
+    Path("../../testcases.xlsx").resolve()
+    # Path("../../testcases.xlsx").resolve(strict=True)

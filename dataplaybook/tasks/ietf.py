@@ -8,11 +8,31 @@ from dataplaybook import Columns, Table, task
 _LOGGER = logging.getLogger(__name__)
 
 
+def _re_rfc(match):
+    template = r"RFC\1"
+    if len(match.group(1)) < 4:
+        template = r"RFC" + r"\1".zfill(6 - len(match.group(1)))
+    return match.expand(template), None
+
+
+def _re_proto(match):
+    key = match.group(2).lower()
+    ver = match.group(3)
+    if ver is None:
+        return key, None
+    return f"{key} version {ver}", key
+
+
+def _re_mfa(match):
+    ver = match.group(2)
+    return f"MFA Forum {ver}", "MFA Forum"
+
+
 REGEX = (
     re.compile(r"(?=[^-]|^)((draft-[\w-]+?)(?:-\d{2})?)-*(?![-\w])", re.I),
     (
-        r"RFC\1",
-        re.compile(r"RFC\s*(\d{1,5})(?:\D|$)", re.I),
+        _re_rfc,
+        re.compile(r"RFC\s*(\d{1,5})(?!\w)", re.I),
     ),
     (r"IEEE \1", re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)),
     (r"IEEE \1", re.compile(r"(80[12].\d\w+)", re.I)),
@@ -20,11 +40,13 @@ REGEX = (
     re.compile(r"(GR-\d+-\w+)", re.I),
     re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
     re.compile(r"(3GPP \w+ \d+(\.\d+)*)"),
+    re.compile(r"3GPP\s*\d{1,3}\.\d+"),
     re.compile(r"((?:\w+-)+mib)", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
     re.compile(r"(FRF[\.\d]+)"),
     re.compile(r"(ANSI \S+)"),
-    re.compile(r"(gnmi(\.\w+)*)", re.I),
+    (_re_proto, re.compile(r"((\w{3,7}\.proto)(?:\s+version (\d+(?:\.\d)+))?)", re.I)),
+    (_re_mfa, re.compile(r"(MFA forum (\d+(?:\.\d+)+))", re.I)),
 )
 
 
@@ -85,11 +107,13 @@ def _extract_standards(val):
         if isinstance(rex, tuple):
             for match in rex[1].finditer(val):
                 # _LOGGER.debug("%s groups: %s", rex, match.groups())
-                template = rex[0]
-                if template.startswith("RFC") and len(match.group(1)) < 4:
-                    template = r"RFC" + r"\1".zfill(6 - len(match.group(1)))
+                if callable(rex[0]):
+                    text, key = rex[0](match)
+                    yield KeyStr(text, key=key, start=match.start())
+                    continue
+
                 yield KeyStr(
-                    match.expand(template),
+                    match.expand(rex[0]),
                     match.expand(rex[2]) if len(rex) > 2 else None,
                     start=match.start(),
                 )

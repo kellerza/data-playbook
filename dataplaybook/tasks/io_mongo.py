@@ -1,6 +1,6 @@
 """MongoDB IO tasks."""
 import logging
-from typing import List, Optional
+from typing import List, Optional, Sequence
 from urllib.parse import urlparse
 
 import attr
@@ -82,8 +82,10 @@ def read_mongo(
 ) -> Table:
     """Read data from a MongoDB collection."""
     client = MongoClient(mdb.netloc, connect=True)
-    if mdb.set_id:
-        cursor = client[mdb.database][mdb.collection].find({"_sid": mdb.set_id})
+    if not set_id:
+        set_id = mdb.set_id
+    if set_id:
+        cursor = client[mdb.database][mdb.collection].find({"_sid": set_id})
     else:
         cursor = client[mdb.database][mdb.collection].find()
 
@@ -142,7 +144,7 @@ def columns_to_list(table: Table, *, list_column: str, columns: Columns) -> None
 
 @task
 def list_to_columns(table: Table, *, list_column: str, columns: Columns) -> None:
-    """Convert a list with values to columns wth True."""
+    """Convert a list with values to columns with True."""
     for row in table:
         for col in columns:
             if col in row[list_column]:
@@ -172,3 +174,32 @@ def mongo_delete_sids(mdb: MongoURI, sids: List[str]):
             cursor.delete_many({"_sid": {"$exists": False}})
         else:
             cursor.delete_many({"_sid": sid})
+
+
+@task
+def mongo_sync_sids(
+    mdb_local: MongoURI, mdb_remote: MongoURI, ignore_remote: Sequence[str] = None
+):
+    """Sync two MongoDB collections. Only sync _sid's where the count is different.
+    Dont delete additional SIDs from th remote if in ignore_remote
+    """
+    agg = [{"$group": {"_id": "$_sid", "count": {"$sum": 1}}}]
+    # get local
+    l_db = mdb_local.get_client()[mdb_local.database][mdb_local.collection]
+    lsc = {i["_id"]: i["count"] for i in l_db.aggregate(agg)}
+    # get remote
+    r_db = mdb_remote.get_client()[mdb_remote.database][mdb_remote.collection]
+    rsc = {i["_id"]: i["count"] for i in r_db.aggregate(agg)}
+
+    for sid, lval in lsc.items():
+        rval = rsc.pop(sid, None)
+        if rval != lval:
+            # counts are different!
+            mdb_local.set_id = sid
+            lcl = read_mongo(mdb=mdb_local)
+            write_mongo(mdb=mdb_remote, table=lcl, set_id=sid)
+
+    extra = list(set(rsc.keys()) - set(ignore_remote))
+    ic(extra)
+    if extra:
+        mongo_delete_sids(mdb_remote, extra)
