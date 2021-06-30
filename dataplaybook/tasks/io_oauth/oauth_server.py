@@ -60,7 +60,7 @@ class MyWSGIRefServer(bottle.WSGIRefServer):
 
     server = None
 
-    def run(self, handler):  # pylint: disable=W0221
+    def run(self, app):
         """Run the server."""
 
         if self.quiet:
@@ -72,7 +72,7 @@ class MyWSGIRefServer(bottle.WSGIRefServer):
                     pass
 
             self.options["handler_class"] = QuietHandler
-        self.server = make_server(self.host, self.port, handler, **self.options)
+        self.server = make_server(self.host, self.port, app, **self.options)
         self.server.serve_forever(poll_interval=0.5)
 
     def shutdown(self):

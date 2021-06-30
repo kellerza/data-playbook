@@ -129,7 +129,7 @@ class DataEnvironment(dict):
             else:
                 _LOGGER.warning("Table {%s} does not exist", name)
         if not table_names:
-            res = [k for k in self.keys() if isinstance(self[k], list)]
+            res = [k for k, v in self.items() if isinstance(v, list)]
         return res
 
     def as_dict(self, *table_names: str) -> Dict[str, Table]:
