@@ -199,7 +199,7 @@ def mongo_sync_sids(
             lcl = read_mongo(mdb=mdb_local)
             write_mongo(mdb=mdb_remote, table=lcl, set_id=sid)
 
-    extra = list(set(rsc.keys()) - set(ignore_remote))
+    extra = list(set(rsc.keys()) - set(ignore_remote or []))
     ic(extra)
     if extra:
         mongo_delete_sids(mdb_remote, extra)

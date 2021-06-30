@@ -46,7 +46,10 @@ REGEX = (
     (r"IEEE \1", re.compile(r"(80[12].\d\w+)", re.I)),
     (r"ITU-T \1", re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)),
     re.compile(r"(GR-\d+-\w+)", re.I),
-    re.compile(r"((openconfig(?:-\w+)*.yang)(?: version \d(?:\.\d)+)?)"),
+    (
+        _re_proto,
+        re.compile(r"((openconfig(?:-\w+)*.yang)(?: version (\d(?:\.\d)+))?)", re.I),
+    ),
     re.compile(r"(3GPP *\d{1,3}\.\d+|3GPP \w+ \d+(\.\d+)*)"),
     re.compile(r"((?:\w+-)+mib)", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),

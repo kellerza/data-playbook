@@ -152,6 +152,12 @@ def test_extract_standards_case():
         "MFA Forum 0.0.0",
     ]
 
+    txt = "rfc openconfig-isis-policy.yang vErsion 0.3.0, a"
+    std = list(ietf.extract_standards(txt))
+
+    assert std[0].key == "openconfig-isis-policy.yang"
+    assert std[0] == "openconfig-isis-policy.yang version 0.3.0"
+
 
 def test_compliance_file():
     """Test a local compliance file."""
