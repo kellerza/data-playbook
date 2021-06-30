@@ -29,12 +29,13 @@ def test_extract_standards_pad():
 
 def test_extract_standards_version():
     """Test starting from string."""
-    txt = "draft-ietf-standard-01  draft-ietf-std--"
+    txt = "draft-ietf-standard-01  draft-ietf-std--zz   draft-ietf-std-01--zz"
     std = list(ietf.extract_standards(txt))
 
-    assert std == ["draft-ietf-standard-01", "draft-ietf-std"]
+    assert std == ["draft-ietf-standard-01", "draft-ietf-std", "draft-ietf-std-01"]
     assert std[0].key == "draft-ietf-standard"
     assert std[1].key == "draft-ietf-std"
+    assert std[2].key == "draft-ietf-std"
 
 
 def test_extract_standards_ordered():

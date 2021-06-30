@@ -37,7 +37,8 @@ def _re_mfa(match):
 
 
 REGEX = (
-    re.compile(r"(?=[^-]|^)((draft-[\w-]+?)(?:-\d{2})?)-*(?![-\w])", re.I),
+    # re.compile(r"(?=[^-]|^)((draft-[\w-]+?)(?:-\d{2})?)-*(?![-\w])", re.I),
+    re.compile(r"(?=[^-]|^)((draft(?:-\w+)+?)(?:-\d{2})?)(?!-\w|\w)", re.I),
     (
         _re_rfc,
         re.compile(r"RFC\s*(\d{1,5})(?!\w)", re.I),
