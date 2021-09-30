@@ -6,8 +6,6 @@ from typing import Any, Callable, Sequence, TypeVar, Union
 
 import voluptuous as vol
 
-from dataplaybook.const import Tables
-
 # typing typevar
 T = TypeVar("T")  # pylint: disable=invalid-name
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
@@ -106,7 +104,7 @@ def endswith(parts: str) -> Callable[[Any], Any]:
     return _check
 
 
-def ensure_tables(value: Tables) -> Tables:
+def ensure_tables(value: Any) -> Any:
     """Ensure you have a dict of tables."""
     if not isinstance(value, dict):
         raise vol.Invalid("tables need to be a dict")
