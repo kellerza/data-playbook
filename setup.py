@@ -17,23 +17,19 @@ def find_version():
 
 VERSION = find_version()
 
-REQUIRES = [
-    "colorlog",
-    "attrs>=17.4.0",
-    "voluptuous>=0.11.5",
-    "jinja2>=3,<4",
-    "openpyxl>=3,<4",
-    "typeguard",
-    "icecream",
-    "fuzzywuzzy",
-    "python-Levenshtein",
-    "requests",
-]
+desc = Path("README.md").read_text()
+
+req = [r.strip() for r in Path("requirements.txt").read_text().splitlines()]
+req = [r for r in req if r and not r.startswith("#")]
 
 setup(
     name="dataplaybook",
     version=VERSION,
-    install_requires=REQUIRES,
+    long_description=desc,
+    long_description_content_type="text/markdown",
+    author="Johann Kellerman",
+    author_email="kellerza@gmail.com",
+    install_requires=req,
     test_suite="tests",
     entry_points={"console_scripts": ["dataplaybook = dataplaybook.__main__:main"]},
 )
