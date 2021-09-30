@@ -47,9 +47,8 @@ _LOGGER = logging.getLogger(__name__)
         }
     )
 )
-def read_excel(*, tables: Tables, file: str, sheets=List[Dict[str, Any]]):
+def read_excel(*, tables: Tables, file: str, sheets=List[Dict[str, Any]]) -> None:
     """Read excel file using openpyxl."""
-
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
@@ -72,7 +71,7 @@ def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[Dict[str,
 def _column_map(
     columns: Optional[Dict], header_row: Sequence[str]
 ) -> Sequence[Tuple[int, str, Optional[Any]]]:
-    """A list of (idx, nme, val)."""
+    """List of (idx, nme, val)."""
     res = []
     if not columns:
         for idx, key in enumerate(header_row):
@@ -85,12 +84,12 @@ def _column_map(
             fromc = str(val["from"])
             if fromc not in header_row:
                 _LOGGER.error("%s not found in header %s", fromc, list(header_row))
-                raise ValueError("{} not found in header".format(fromc))
+                raise ValueError(f"{fromc} not found in header")
             res.append((list(header_row).index(fromc), nme, val))
         elif "col" in val:
             res.append((val["col"], nme, val))
         else:
-            raise ValueError("Bad column definition: {}".format(val))
+            raise ValueError(f"Bad column definition: {val}")
     return res
 
 

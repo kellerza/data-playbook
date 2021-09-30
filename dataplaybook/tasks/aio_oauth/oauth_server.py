@@ -3,6 +3,7 @@ import logging
 import os
 import signal
 from threading import Thread
+from typing import Any, NoReturn
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 
 import bottle
@@ -15,7 +16,7 @@ SERVER = None
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 
-def start(connection):
+def start(connection) -> None:
     """Start the local websever for auth callbacks."""
     # Allow Ctrl-C break
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -32,9 +33,9 @@ def start(connection):
 
 
 @bottle.route("/")
-def login():
+def login() -> NoReturn:
     """Prompt user to authenticate."""
-    redirect_uri = "http://{}:{}/login/authorized".format(SERVER.host, SERVER.port)
+    redirect_uri = f"http://{SERVER.host}:{SERVER.port}/login/authorized"
 
     (auth_url, _) = CON.get_authorization_url(redirect_uri=redirect_uri)
 
@@ -44,10 +45,11 @@ def login():
 
 
 @bottle.route("/login/authorized")
-def callback():
-    """Handler for the application's Redirect Uri.
+def callback() -> str:
+    """Handle the application's Redirect Uri.
 
-    Request the token, some data to test the token and shutdown the server."""
+    Request the token, some data to test the token and shutdown the server.
+    """
     CON.request_token(bottle.request.url)
 
     res = CON.get("https://graph.microsoft.com/v1.0/me").json()
@@ -60,9 +62,8 @@ class MyWSGIRefServer(bottle.WSGIRefServer):
 
     server = None
 
-    def run(self, app):
+    def run(self, app: Any) -> None:
         """Run the server."""
-
         if self.quiet:
 
             class QuietHandler(WSGIRequestHandler):
@@ -75,7 +76,7 @@ class MyWSGIRefServer(bottle.WSGIRefServer):
         self.server = make_server(self.host, self.port, app, **self.options)
         self.server.serve_forever(poll_interval=0.5)
 
-    def shutdown(self):
+    def shutdown(self) -> str:
         """Shutdown the server in another thread."""
         Thread(target=self.server.shutdown).start()
         return "BYE"

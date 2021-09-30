@@ -15,13 +15,14 @@ def linestring(
     """Add a linestring column to a table."""
     for row in table:
         try:
-            lla = "{:4d} {:4d}".format(row[lon_a], row[lat_a])
+            lla = f"{row[lon_a]:4d} {row[lat_a]:4d}"
         except IndexError:
             lla = error
 
         try:
-            llb = "{:4d} {:4d}".format(row[lon_b], row[lat_b])
+            llb = f"{row[lon_b]:4d} {row[lat_b]:4d}"
         except IndexError:
             llb = error
 
-        row[linestring_column] = "linestring({}, {})".format(lla, llb)
+        row[linestring_column] = f"linestring({lla}, {llb})"
+    return table

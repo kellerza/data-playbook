@@ -75,7 +75,7 @@ def read_json(file) -> Table:
             raise
     # Extra data, so try load line by line
     res = []
-    for line in Path(file).read_text().splitlines():
+    for line in Path(file).read_text(encoding="utf8").splitlines():
         try:
             if line.strip() == "":
                 continue
@@ -90,7 +90,7 @@ def read_json(file) -> Table:
 @task
 def write_json(tables, file: str, only_var=False) -> None:
     """Write into a json file."""
-    with Path(file).open("w") as __f:
+    with Path(file).open("w", encoding="utf8") as __f:
         dump(tables.var if only_var else tables, __f, indent="  ")
 
 
@@ -116,7 +116,7 @@ def read_text_regex(
 ) -> Table:
     """Much regular expressions into a table."""
     res = None
-    with open(filename) as file:
+    with open(filename, encoding="utf8") as file:
         for line in file:
             match_obj = newline.search(line)
             if match_obj:
@@ -151,7 +151,7 @@ def wget(url: str, file: str, age: int = 48 * 60 * 60):
     if proxy:
         dburl = urlparse(proxy)
         # create the object, assign it to a variable
-        prx = "{}:{}".format(dburl.hostname, dburl.port)
+        prx = f"{dburl.hostname}:{dburl.port}"
         proxy = urllib.request.ProxyHandler({"http": prx, "https": prx, "ftp": prx})
         # construct a new opener using your proxy settings
         opener = urllib.request.build_opener(proxy)

@@ -7,7 +7,7 @@ import logging
 import os
 from pathlib import Path
 import sys
-from typing import get_type_hints
+from typing import Callable, Dict, Optional, Sequence, get_type_hints
 
 from icecream import colorizedStderrPrint, ic  # noqa pylint: disable=unused-import
 from typeguard import _CallMemo, check_argument_types, check_return_type
@@ -27,7 +27,7 @@ ALL_TASKS = {}
 _ENV = DataEnvironment()
 
 
-def print_tasks():
+def print_tasks() -> None:
     """Print all_tasks."""
 
     def sign(func):
@@ -48,8 +48,8 @@ def print_tasks():
     #    _LOGGER.debug("%s: %s", mod_name, ", ".join(items))
 
 
-def _repr_function(*, target, args, kwargs):
-    """Function repr."""
+def _repr_function(*, target: Callable, args: Sequence, kwargs: Dict) -> None:
+    """Represent the caller."""
     type_hints = get_type_hints(target)
     repr_args = [repr(a)[:50] for a in args]
     repr_kwargs = [f"{k}={v!r}" for k, v in kwargs.items()]
@@ -127,9 +127,13 @@ _DEFAULT_PLAYBOOK = None
 
 
 @doublewrap
-def playbook(target=None, name=None, default=False, run=False):
+def playbook(
+    target: Callable = None,
+    name: Optional[str] = None,
+    default: bool = False,
+    run: bool = False,
+) -> Callable:
     """Verify parameters & execute task."""
-
     if default:
         global _DEFAULT_PLAYBOOK
         if _DEFAULT_PLAYBOOK:
@@ -147,7 +151,7 @@ def playbook(target=None, name=None, default=False, run=False):
 _EXECUTED = False
 
 
-def get_default_playbook():
+def get_default_playbook() -> Optional[str]:
     """Get the name of the default playbook, if any."""
     if _DEFAULT_PLAYBOOK:
         return _DEFAULT_PLAYBOOK
@@ -156,9 +160,9 @@ def get_default_playbook():
     return None
 
 
-def _parseargs(dataplaybook_cmd):
+def _parseargs(dataplaybook_cmd) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Data Playbook v{}. Playbooks for tabular data.".format(VERSION)
+        description=f"Data Playbook v{VERSION}. Playbooks for tabular data."
     )
     if dataplaybook_cmd:
         parser.add_argument("files", type=str, nargs=1, help="The playbook py file")

@@ -2,9 +2,11 @@
 import logging
 import os
 import re
-from typing import Any, Sequence, TypeVar, Union
+from typing import Any, Callable, Sequence, TypeVar, Union
 
 import voluptuous as vol
+
+from dataplaybook.const import Tables
 
 # typing typevar
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -22,17 +24,20 @@ class AttrKeyError(KeyError):
 class AttrDict(dict):
     """Simple recursive read-only attribute access (i.e. Munch)."""
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> Any:
+        """Get attribute."""
         try:
             value = self[key]
         except KeyError as err:
             raise AttrKeyError(f"Key '{key}' not found in dict {self}") from err
         return AttrDict(value) if isinstance(value, dict) else value
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any) -> None:
+        """Set attribute."""
         raise IOError("Read only")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
+        """Represent."""
         lst = [
             ("{}='{}'" if isinstance(v, str) else "{}={}").format(k, v)
             for k, v in self.items()
@@ -53,7 +58,7 @@ def isfile(value: Any) -> str:
     return file_in
 
 
-def slug(value):
+def slug(value: str) -> str:
     """Validate value is a valid slug."""
     if value is None:
         raise vol.Invalid("Slug should not be None")
@@ -61,7 +66,7 @@ def slug(value):
     slg = util_slugify(value)
     if value == slg:
         return value
-    raise vol.Invalid("invalid slug {} (try {})".format(value, slg))
+    raise vol.Invalid(f"invalid slug {value} (try {slg})")
 
 
 def ensure_list_csv(value: Any) -> Sequence:
@@ -71,11 +76,11 @@ def ensure_list_csv(value: Any) -> Sequence:
     return ensure_list(value)
 
 
-def ensure_list(value: Union[T, Sequence[T]]) -> Sequence[T]:
+def ensure_list(value: Union[T, Sequence[T], None]) -> Sequence[T]:
     """Wrap value in list if it is not one."""
     if value is None:
         return []
-    return value if isinstance(value, list) else [value]
+    return value if isinstance(value, list) else [value]  # typing: ignore
 
 
 def util_slugify(text: str) -> str:
@@ -89,19 +94,19 @@ def util_slugify(text: str) -> str:
     return text
 
 
-def endswith(parts):
+def endswith(parts: str) -> Callable[[Any], Any]:
     """Ensure a string ends with specified part."""
 
-    def _check(_str):
+    def _check(_str: str) -> str:
         """Return the validator."""
         if _str.endswith(parts):
             return _str
-        raise vol.Invalid("{} does not end with {}".format(_str, parts))
+        raise vol.Invalid(f"{_str} does not end with {parts}")
 
     return _check
 
 
-def ensure_tables(value):
+def ensure_tables(value: Tables) -> Tables:
     """Ensure you have a dict of tables."""
     if not isinstance(value, dict):
         raise vol.Invalid("tables need to be a dict")

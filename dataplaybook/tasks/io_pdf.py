@@ -3,7 +3,7 @@ import functools
 import logging
 import os
 from pathlib import Path
-import subprocess
+from subprocess import call
 import tempfile
 
 from dataplaybook import Table, task
@@ -37,9 +37,9 @@ def read_pdf_pages(filename: str) -> Table:
         params = ["pdftotext", "-layout", filename, to_name]
         _LOGGER.info("Converting %s", filename)
         _LOGGER.debug("Calling with %s", params)
-        subprocess.call(params)
-        with open(to_name, "r") as fle:
-            for _no, text in enumerate(_myreadlines(fle, chr(12)), 1):
+        call(params, shell=False)
+        with open(to_name, "r", encoding="utf8") as __f:
+            for _no, text in enumerate(_myreadlines(__f, chr(12)), 1):
                 yield {"page": _no, "text": text}
     finally:
         os.close(_fd)

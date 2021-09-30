@@ -1,4 +1,5 @@
 """Merge FNB statement."""
+# pylint: disable=consider-using-f-string
 from calendar import monthrange
 import csv
 from datetime import datetime
@@ -103,7 +104,7 @@ def read_cheque_csv(filename: str) -> Table:
         "koste",
     ]
     data = {}
-    with open(filename, newline="") as csvfile:
+    with open(filename, newline="", encoding="utf8") as csvfile:
         csvreader = csv.DictReader(csvfile, fields)
         for row in csvreader:
             try:
