@@ -1,12 +1,15 @@
 """Misc IO tasks."""
 from csv import DictReader, DictWriter
-from json import dump, load
+from json import dump, load, loads
+from json.decoder import JSONDecodeError
 from os import getenv
 from pathlib import Path
 import time
 from typing import List, Optional, Pattern, Sequence
 from urllib.parse import urlparse
 import urllib.request
+
+from icecream import ic
 
 from dataplaybook import Columns, Table, task
 
@@ -62,10 +65,26 @@ def read_csv(file: str, columns: Optional[Columns] = None) -> Table:
 @task
 def read_json(file) -> Table:
     """Read json from a file."""
-    with Path(file).open("r", encoding="utf-8") as __f:
-        res = load(__f)
-        print(str(res)[:100])
-        return res
+    try:
+        with Path(file).open("r", encoding="utf-8") as __f:
+            res = load(__f)
+            print(str(res)[:100])
+            return res
+    except JSONDecodeError as err:
+        if err.msg != "Extra data":
+            raise
+    # Extra data, so try load line by line
+    res = []
+    for line in Path(file).read_text().splitlines():
+        try:
+            if line.strip() == "":
+                continue
+            res.append(loads(line))
+        except Exception:
+            ic(line)
+            ic("exc2")
+            raise
+    return res
 
 
 @task
@@ -122,10 +141,11 @@ def read_text_regex(
 @task
 def wget(url: str, file: str, age: int = 48 * 60 * 60):
     """Download a file."""
-    path = Path(file)
-    if path.exists():
-        if time.time() - path.stat().st_mtime < age:
-            return
+    if file:
+        path = Path(file)
+        if path.exists():
+            if time.time() - path.stat().st_mtime < age:
+                return
 
     proxy = getenv("HTTP_PROXY")
     if proxy:
@@ -138,7 +158,10 @@ def wget(url: str, file: str, age: int = 48 * 60 * 60):
         # install the openen on the module-level
         urllib.request.install_opener(opener)
 
-    urllib.request.urlretrieve(url, file)
+    if file:
+        urllib.request.urlretrieve(url, file)
+    else:
+        return urllib.request.urlopen(url)
 
 
 @task

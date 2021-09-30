@@ -3,10 +3,11 @@ from collections import OrderedDict
 from json import dumps
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import openpyxl
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 import voluptuous as vol
 
 from dataplaybook import Tables, task
@@ -60,7 +61,7 @@ def read_excel(*, tables: Tables, file: str, sheets=List[Dict[str, Any]]):
         tables[sht["target"]] = tbl
 
 
-def _sheet_read(_sheet, columns=None, header=0):
+def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[Dict[str, Any]]:
     """Read a sheet and return a table."""
     res = ATable(header=header + 2)
     res.extend(_sheet_yield_rows(_sheet, columns, header))
@@ -68,7 +69,32 @@ def _sheet_read(_sheet, columns=None, header=0):
     return res
 
 
-def _sheet_yield_rows(_sheet, columns=None, header=0):
+def _column_map(
+    columns: Optional[Dict], header_row: Sequence[str]
+) -> Sequence[Tuple[int, str, Optional[Any]]]:
+    """A list of (idx, nme, val)."""
+    res = []
+    if not columns:
+        for idx, key in enumerate(header_row):
+            if key:
+                res.append((idx, str(key), None))
+        return res
+
+    for nme, val in columns.items():
+        if "from" in val:
+            fromc = str(val["from"])
+            if fromc not in header_row:
+                _LOGGER.error("%s not found in header %s", fromc, list(header_row))
+                raise ValueError("{} not found in header".format(fromc))
+            res.append((list(header_row).index(fromc), nme, val))
+        elif "col" in val:
+            res.append((val["col"], nme, val))
+        else:
+            raise ValueError("Bad column definition: {}".format(val))
+    return res
+
+
+def _sheet_yield_rows(_sheet: Worksheet, columns=None, header=0) -> Dict[str, Any]:
     """Read the sheet and yield the rows."""
     rows = _sheet.rows
     try:
@@ -78,47 +104,26 @@ def _sheet_yield_rows(_sheet, columns=None, header=0):
         header_row = [cell.value for cell in next(rows)]
     except StopIteration:
         header_row = []
-
-    rstrip = 0
-    for itm in reversed(header_row):
-        if itm is None:
-            rstrip = +1
-        else:
-            break
-    if rstrip:
-        header_row = header_row[:-rstrip]
-
+    while len(header_row) > 1 and header_row[-1] is None:
+        header_row.pop()
     _LOGGER.debug("Header row: %s", header_row)
-    _map = []  # idx, nme, val
-    if columns:
-        for nme, val in columns.items():
-            if "from" in val:
-                fromc = str(val["from"])
-                if fromc not in header_row:
-                    _LOGGER.error("%s not found in header %s", fromc, list(header_row))
-                    raise ValueError("{} not found in header".format(fromc))
-                _map.append((list(header_row).index(fromc), nme, val))
-            elif "col" in val:
-                _map.append((val["col"], nme, val))
-            else:
-                raise ValueError("Bad column definition: {}".format(val))
-    else:
-        for idx, key in enumerate(header_row):
-            if key:
-                _map.append((idx, str(key), None))
 
-    for row in rows:
+    colmap = _column_map(columns, header_row)
+
+    row = None
+    while True:
+        try:
+            row = next(rows)
+        except StopIteration:
+            return
         record = {}
-        for idx, key, _ in _map:
-            cell = row[idx]
-            if cell.data_type == "s":
-                record[key] = cell.value.strip()
-            else:
-                record[key] = cell.value
+        for idx, key, _ in colmap:
+            _cv = row[idx].value
+            record[key] = _cv.strip() if isinstance(_cv, str) else _cv
         yield record
 
 
-def _get_filename(filename):
+def _get_filename(filename: str) -> str:
     """Get a filename to write to."""
     try:
         if os.path.isfile(filename):
@@ -135,7 +140,7 @@ def _get_filename(filename):
         raise
 
 
-def _fmt(obj):
+def _fmt(obj: Any) -> str:
     """Format an object for Excel."""
     if callable(obj):
         return str(obj)

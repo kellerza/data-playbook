@@ -165,7 +165,7 @@ def mongo_list_sids(mdb: MongoURI) -> List[str]:
 
 
 @task
-def mongo_delete_sids(mdb: MongoURI, sids: List[str]):
+def mongo_delete_sids(*, mdb: MongoURI, sids: List[str]):
     """Delete a specific _sid."""
     client = MongoClient(mdb.netloc, connect=True)
     cursor = client[mdb.database][mdb.collection]
@@ -178,7 +178,7 @@ def mongo_delete_sids(mdb: MongoURI, sids: List[str]):
 
 @task
 def mongo_sync_sids(
-    mdb_local: MongoURI, mdb_remote: MongoURI, ignore_remote: Sequence[str] = None
+    *, mdb_local: MongoURI, mdb_remote: MongoURI, ignore_remote: Sequence[str] = None
 ):
     """Sync two MongoDB collections. Only sync _sid's where the count is different.
     Dont delete additional SIDs from th remote if in ignore_remote
@@ -202,4 +202,4 @@ def mongo_sync_sids(
     extra = list(set(rsc.keys()) - set(ignore_remote or []))
     ic(extra)
     if extra:
-        mongo_delete_sids(mdb_remote, extra)
+        mongo_delete_sids(mdb=mdb_remote, sids=extra)

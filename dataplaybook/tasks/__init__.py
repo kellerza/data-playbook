@@ -25,13 +25,22 @@ def build_lookup(table: Table, key: str, columns: Columns) -> Table:
             row.pop(col)
 
 
-@task
 def build_lookup_var(table: Table, key: str, columns: Columns) -> Dict[str, Any]:
+    """DEPRECATED,use build_lookup_dict."""
+    return build_lookup_dict(table, key, columns)
+
+
+@task
+def build_lookup_dict(
+    table: Table, key: Union[str, List[str]], columns: Columns = None
+) -> Dict[str, Any]:
     """Build lookup tables {key: columns}."""
     lookup = {}
+    strk = isinstance(key, str)
     for row in table:
-        if not lookup.get(row[key]):
-            lookup[row[key]] = {c: row.get(c) for c in columns}
+        keyv = row.get(key) if strk else tuple(row.get(k, "") for k in key)
+        if not lookup.get(keyv):
+            lookup[keyv] = {c: row.get(c) for c in columns} if columns else row
     return lookup
 
 
