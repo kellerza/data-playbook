@@ -38,7 +38,7 @@ def read_pdf_pages(filename: str) -> Table:
         _LOGGER.info("Converting %s", filename)
         _LOGGER.debug("Calling with %s", params)
         call(params, shell=False)
-        with open(to_name, "r", encoding="utf8") as __f:
+        with open(to_name, "r", encoding="utf-8", errors="replace") as __f:
             for _no, text in enumerate(_myreadlines(__f, chr(12)), 1):
                 yield {"page": _no, "text": text}
     finally:
