@@ -2,9 +2,9 @@
 import functools
 import logging
 import os
+import tempfile
 from pathlib import Path
 from subprocess import call
-import tempfile
 
 from dataplaybook import Table, task
 
@@ -41,6 +41,11 @@ def read_pdf_pages(filename: str) -> Table:
         with open(to_name, "r", encoding="utf-8", errors="replace") as __f:
             for _no, text in enumerate(_myreadlines(__f, chr(12)), 1):
                 yield {"page": _no, "text": text}
+    except FileNotFoundError:
+        _LOGGER.error(
+            "Could not find pdftotext executable. "
+            "Download from https://www.xpdfreader.com/download.html"
+        )
     finally:
         os.close(_fd)
         os.remove(to_name)

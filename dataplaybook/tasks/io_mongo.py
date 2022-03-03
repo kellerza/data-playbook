@@ -4,10 +4,10 @@ from typing import List, Optional, Sequence
 from urllib.parse import urlparse
 
 import attr
+import voluptuous as vol
 from icecream import ic  # noqa pylint: disable=unused-import
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-import voluptuous as vol
 
 from dataplaybook import Columns, Table, task
 from dataplaybook.utils import PlaybookError
@@ -37,7 +37,7 @@ class MongoURI:
 
     @staticmethod
     def new_from_string(db_uri: str, set_id=None):
-        """new mongodb uri."""
+        """Mongodb URI from a string."""
         try:
             res = urlparse(db_uri)
         except AttributeError as err:
@@ -67,6 +67,7 @@ class MongoURI:
     #     return opt
 
     def __str__(self) -> str:
+        """As string."""
         return f"{self.netloc}/{self.database}/{self.collection}/{self.set_id}"
 
     def get_client(self, connect=True) -> MongoClient:
@@ -112,7 +113,7 @@ def write_mongo(
             return
 
         filtr = {"_sid": set_id}
-        existing_count = col.count(filtr)
+        existing_count = col.count_documents(filtr)
         if not force and existing_count > 0 and not table:
             _LOGGER.error(
                 "Trying to replace %s documents with an empty set", existing_count
@@ -154,7 +155,7 @@ def list_to_columns(table: Table, *, list_column: str, columns: Columns) -> None
 
 @task
 def mongo_list_sids(mdb: MongoURI) -> List[str]:
-    """Return a list of _sid's"""
+    """Return a list of _sids."""
     client = MongoClient(mdb.netloc, connect=True)
     cursor = client[mdb.database][mdb.collection]
     # non = cursor.find_one({"_sid": {"$exists": False}})
@@ -178,9 +179,15 @@ def mongo_delete_sids(*, mdb: MongoURI, sids: List[str]):
 
 @task
 def mongo_sync_sids(
-    *, mdb_local: MongoURI, mdb_remote: MongoURI, ignore_remote: Sequence[str] = None
+    *,
+    mdb_local: MongoURI,
+    mdb_remote: MongoURI,
+    ignore_remote: Sequence[str] = None,
+    only_sync_sids: Sequence[str] = None,
 ):
-    """Sync two MongoDB collections. Only sync _sid's where the count is different.
+    """Sync two MongoDB collections.
+
+    Only sync _sid's where the count is different.
     Dont delete additional SIDs from th remote if in ignore_remote
     """
     agg = [{"$group": {"_id": "$_sid", "count": {"$sum": 1}}}]
@@ -194,10 +201,16 @@ def mongo_sync_sids(
     for sid, lval in lsc.items():
         rval = rsc.pop(sid, None)
         if rval != lval:
+            if only_sync_sids and sid not in only_sync_sids:
+                continue
             # counts are different!
             mdb_local.set_id = sid
             lcl = read_mongo(mdb=mdb_local)
             write_mongo(mdb=mdb_remote, table=lcl, set_id=sid)
+
+    if only_sync_sids:
+        _LOGGER.info("Will not remove extra remote _sids")
+        return
 
     extra = list(set(rsc.keys()) - set(ignore_remote or []))
     ic(extra)
