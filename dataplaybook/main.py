@@ -1,12 +1,12 @@
 """Dataplaybook tasks."""
 import argparse
 import atexit
-from functools import wraps
-from inspect import isgeneratorfunction, signature
 import logging
 import os
-from pathlib import Path
 import sys
+from functools import wraps
+from inspect import isgeneratorfunction, signature
+from pathlib import Path
 from typing import Callable, Dict, Optional, Sequence, get_type_hints
 
 from icecream import colorizedStderrPrint, ic  # noqa pylint: disable=unused-import

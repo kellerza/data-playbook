@@ -3,8 +3,8 @@ import atexit
 
 import pytest
 
-from dataplaybook.__main__ import main as __main
 import dataplaybook.main as main  # noqa # pylint: disable=unused-import
+from dataplaybook.__main__ import main as __main
 
 
 def test_print():

@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from dataplaybook.main import ALL_TASKS
 import dataplaybook.utils as utils
+from dataplaybook.main import ALL_TASKS
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
 

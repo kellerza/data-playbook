@@ -1,13 +1,13 @@
 """Merge FNB statement."""
 # pylint: disable=consider-using-f-string
-from calendar import monthrange
 import csv
-from datetime import datetime
 import logging
 import os
-from pathlib import Path
 import re
 import traceback
+from calendar import monthrange
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 from dataplaybook import Table, task

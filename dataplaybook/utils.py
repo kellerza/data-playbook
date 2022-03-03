@@ -1,12 +1,12 @@
 """DataEnvironment class."""
+import logging
+import sys
 from configparser import ConfigParser
 from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
-import logging
 from os import getenv
 from pathlib import Path
-import sys
 from timeit import default_timer
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Sequence

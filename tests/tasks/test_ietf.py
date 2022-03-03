@@ -1,8 +1,8 @@
 """Tests for ietf.py"""
 from pathlib import Path
 
-from dataplaybook.const import ATable
 import dataplaybook.tasks.ietf as ietf
+from dataplaybook.const import ATable
 
 
 def test_extract_standards():

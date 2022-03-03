@@ -1,10 +1,10 @@
 """Sending files."""
+import smtplib
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
-import smtplib
 from socket import gaierror
 from typing import List, Optional, Union
 

@@ -1,13 +1,13 @@
 """Misc IO tasks."""
+import time
+import urllib.request
 from csv import DictReader, DictWriter
 from json import dump, load, loads
 from json.decoder import JSONDecodeError
 from os import getenv
 from pathlib import Path
-import time
 from typing import List, Optional, Pattern, Sequence
 from urllib.parse import urlparse
-import urllib.request
 
 from icecream import ic
 
