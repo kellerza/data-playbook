@@ -1,14 +1,14 @@
 """Data validation helpers for voluptuous."""
 import logging
 import os
-import re
 from typing import Any, Callable, Sequence, TypeVar, Union
 
 import voluptuous as vol
 
+from dataplaybook.utils import slugify as util_slugify
+
 # typing typevar
 T = TypeVar("T")  # pylint: disable=invalid-name
-RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
@@ -79,17 +79,6 @@ def ensure_list(value: Union[T, Sequence[T], None]) -> Sequence[T]:
     if value is None:
         return []
     return value if isinstance(value, list) else [value]  # typing: ignore
-
-
-def util_slugify(text: str) -> str:
-    """Slugify a given text."""
-    # text = normalize('NFKD', text)
-    text = text.lower()
-    text = text.replace(" ", "_")
-    # text = text.translate(TBL_SLUGIFY)
-    text = RE_SLUGIFY.sub("", text)
-
-    return text
 
 
 def endswith(parts: str) -> Callable[[Any], Any]:

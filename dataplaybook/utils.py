@@ -1,5 +1,6 @@
 """DataEnvironment class."""
 import logging
+import re
 import sys
 from configparser import ConfigParser
 from contextlib import contextmanager
@@ -11,11 +12,20 @@ from timeit import default_timer
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from dataplaybook.config_validation import util_slugify
-
 _LOGGER = logging.getLogger(__name__)
-
+RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
 Table = List[Dict[str, Any]]
+
+
+def slugify(text: str) -> str:
+    """Slugify a given text."""
+    # text = normalize('NFKD', text)
+    text = text.lower()
+    text = text.replace(" ", "_")
+    # text = text.translate(TBL_SLUGIFY)
+    text = RE_SLUGIFY.sub("", text)
+
+    return text
 
 
 class PlaybookError(Exception):
@@ -43,8 +53,8 @@ class DataVars(dict):
         """Ensure key is slug."""
         if key == "env":
             raise KeyError("var.env is read-only")
-        if key != util_slugify(key):
-            raise KeyError(f"Invalid variable name '{key}' use '{util_slugify(key)}")
+        if key != slugify(key):
+            raise KeyError(f"Invalid variable name '{key}' use '{slugify(key)}")
         dict.__setitem__(self, key, val)
 
     def as_table(self) -> List[Dict[str, Any]]:
