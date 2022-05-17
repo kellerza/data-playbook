@@ -178,18 +178,18 @@ def _parseargs(dataplaybook_cmd) -> argparse.Namespace:
     parser.add_argument("-v", action="count", help="Debug level")
     args = parser.parse_args()
     if not args:
-        sys.exit(-1)
+        sys.exit("No arguments supplied")
     if not dataplaybook_cmd:
         args.files = [""]
         args.all = False
     return args
 
 
-def run_playbooks(dataplaybook_cmd=False):
+def run_playbooks(dataplaybook_cmd=False) -> int:
     """Execute playbooks, or prompt for one."""
     global _EXECUTED
     if _EXECUTED:
-        return
+        return 0
     _EXECUTED = True
 
     args = _parseargs(dataplaybook_cmd)
@@ -211,7 +211,7 @@ def run_playbooks(dataplaybook_cmd=False):
             if not spath.exists():
                 if spath.suffix != "" or not spath.with_suffix(".py").exists():
                     _LOGGER.error("%s not found", spath)
-                    sys.exit(-1)
+                    return -1
                 spath = spath.with_suffix(".py")
 
             _LOGGER.info("Loading: %s (%s)", spath.name, spath.parent)
@@ -220,7 +220,7 @@ def run_playbooks(dataplaybook_cmd=False):
                 local_import_module(spath.stem)
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error("Unable to import %s: %s", spath.stem, err)
-                sys.exit(-1)
+                return -1
 
         else:
             # Ensure we are in the calling script's folder
@@ -231,7 +231,7 @@ def run_playbooks(dataplaybook_cmd=False):
 
         if args.playbook not in _ALL_PLAYBOOKS:
             _LOGGER.error("Playbook %s not found in %s", args.playbook, args.files[0])
-            sys.exit(-1)
+            return -1
 
         try:
             retval = _ALL_PLAYBOOKS[args.playbook](_ENV)
@@ -247,6 +247,6 @@ def run_playbooks(dataplaybook_cmd=False):
             if args.v:
                 ic(_ENV)
 
-            sys.exit(retval)
+            return retval
     finally:
         os.chdir(cwd)
