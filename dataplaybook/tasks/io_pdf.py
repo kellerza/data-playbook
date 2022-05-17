@@ -32,8 +32,8 @@ def read_pdf_pages(filename: str) -> Table:
     """Read pdf as text pages."""
     if not filename.lower().endswith(".pdf"):
         return
+    _fd, to_name = tempfile.mkstemp()
     try:
-        _fd, to_name = tempfile.mkstemp()
         params = ["pdftotext", "-layout", filename, to_name]
         _LOGGER.info("Converting %s", filename)
         _LOGGER.debug("Calling with %s", params)
