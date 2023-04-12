@@ -6,7 +6,7 @@ from json import dump, load, loads
 from json.decoder import JSONDecodeError
 from os import getenv
 from pathlib import Path
-from typing import List, Optional, Pattern, Sequence
+from typing import Optional, Pattern, Sequence
 from urllib.parse import urlparse
 
 from icecream import ic
@@ -15,7 +15,7 @@ from dataplaybook import Columns, Table, task
 
 
 @task
-def glob(patterns: List[str]) -> Table:
+def glob(patterns: list[str]) -> Table:
     """Search for files matching certain patterns."""
     for val in patterns:
         fol, _, pat = val.partition("/*")
@@ -155,7 +155,7 @@ def wget(url: str, file: str, age: int = 48 * 60 * 60):
         proxy = urllib.request.ProxyHandler({"http": prx, "https": prx, "ftp": prx})
         # construct a new opener using your proxy settings
         opener = urllib.request.build_opener(proxy)
-        # install the openen on the module-level
+        # install the opener on the module-level
         urllib.request.install_opener(opener)
 
     if file:

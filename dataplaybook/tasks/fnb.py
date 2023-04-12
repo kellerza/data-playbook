@@ -8,7 +8,7 @@ import traceback
 from calendar import monthrange
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Optional
 
 from dataplaybook import Table, task
 
@@ -192,7 +192,7 @@ def _clean(row):
 
 
 @task
-def fnb_process(tables: Dict[str, Table]) -> Table:
+def fnb_process(tables: dict[str, Table]) -> Table:
     """Add the budget month and ID."""
     for _, t_table in tables.items():
         for row in t_table:

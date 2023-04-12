@@ -1,21 +1,21 @@
 """Telecoms related tasks."""
 import logging
 import re
-from typing import Any, List, Match, Optional, Tuple
+from typing import Any, Match, Optional
 
 from dataplaybook import Columns, Table, task
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _re_rfc(match: Match) -> Tuple[str, Optional[str]]:
+def _re_rfc(match: Match) -> tuple[str, Optional[str]]:
     template = r"RFC\1"
     if len(match.group(1)) < 4:
         template = r"RFC" + r"\1".zfill(6 - len(match.group(1)))
     return match.expand(template), None
 
 
-def _re_proto(match: Match) -> Tuple[str, Optional[str]]:
+def _re_proto(match: Match) -> tuple[str, Optional[str]]:
     key = match.group(2).lower()
     ver = match.group(3)
     if ver is None:
@@ -23,7 +23,7 @@ def _re_proto(match: Match) -> Tuple[str, Optional[str]]:
     return f"{key} version {ver}", key
 
 
-def _re_af(match: Match) -> Tuple[str, Optional[str]]:
+def _re_af(match: Match) -> tuple[str, Optional[str]]:
     key = match.group(2).upper()
     ver = match.group(3)
     if ver is None:
@@ -31,7 +31,7 @@ def _re_af(match: Match) -> Tuple[str, Optional[str]]:
     return f"{key} version {ver}", key
 
 
-def _re_mfa(match: Match) -> Tuple[str, Optional[str]]:
+def _re_mfa(match: Match) -> tuple[str, Optional[str]]:
     ver = match.group(2)
     return f"MFA Forum {ver}", f"MFA Forum {ver}"
 
@@ -115,7 +115,7 @@ class KeyStr(str):
         return res
 
 
-def extract_standards(val: str) -> List[str]:
+def extract_standards(val: str) -> list[str]:
     """Ensure it is unique."""
     match = {}
     for itm in _extract_standards(val):
@@ -125,7 +125,7 @@ def extract_standards(val: str) -> List[str]:
         yield itm
 
 
-def extract_standards_ordered(val: str) -> List[str]:
+def extract_standards_ordered(val: str) -> list[str]:
     """Ensure sorted."""
     return sorted(extract_standards(val), key=lambda x: x.start)
 

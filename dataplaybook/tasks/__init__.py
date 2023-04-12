@@ -2,7 +2,7 @@
 import json
 import logging
 import shutil
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from dataplaybook import Columns, Table, Tables, task
 from dataplaybook.config_validation import ensure_list_csv as _ensure_list_csv
@@ -25,15 +25,15 @@ def build_lookup(table: Table, key: str, columns: Columns) -> Table:
             row.pop(col)
 
 
-def build_lookup_var(table: Table, key: str, columns: Columns) -> Dict[str, Any]:
+def build_lookup_var(table: Table, key: str, columns: Columns) -> dict[str, Any]:
     """DEPRECATED,use build_lookup_dict."""
     return build_lookup_dict(table, key, columns)
 
 
 @task
 def build_lookup_dict(
-    table: Table, key: Union[str, List[str]], columns: Columns = None
-) -> Dict[str, Any]:
+    table: Table, key: Union[str, list[str]], columns: Columns = None
+) -> dict[str, Any]:
     """Build lookup tables {key: columns}."""
     lookup = {}
     strk = isinstance(key, str)
@@ -46,7 +46,7 @@ def build_lookup_dict(
 
 @task
 def combine(
-    tables: List[Table], key: str, columns: Columns, value: Union[bool, str] = True
+    tables: list[Table], key: str, columns: Columns, value: Union[bool, str] = True
 ) -> Table:
     """Combine multiple tables on key.
 
@@ -99,8 +99,8 @@ def ensure_lists(tables: Sequence[Table], columns: Sequence[str]):
 @task
 def filter_rows(
     table: Table,
-    include: Optional[Dict[str, str]] = None,
-    exclude: Optional[Dict[str, str]] = None,
+    include: Optional[dict[str, str]] = None,
+    exclude: Optional[dict[str, str]] = None,
 ) -> Table:
     """Filter rows from a table."""
 
@@ -183,7 +183,7 @@ def remove_null(tables: Sequence[Table]):
 
 
 @task
-def replace(table: Table, replace_dict: Dict[str, str], columns: Columns) -> None:
+def replace(table: Table, replace_dict: dict[str, str], columns: Columns) -> None:
     """Replace word in a column."""
     col = columns[0]
     for row in table:
@@ -198,7 +198,7 @@ def replace(table: Table, replace_dict: Dict[str, str], columns: Columns) -> Non
 
 @task
 def unique(table: Table, key: str) -> Table:
-    """Unique based on a key."""
+    """Return rows with unique keys."""
     seen = {}
     for row in table:
         _key = row.get(key, None)

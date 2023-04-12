@@ -2,7 +2,6 @@
 import json
 import logging
 from collections import defaultdict
-from typing import List
 from xml.etree import ElementTree
 
 from dataplaybook import Tables, task
@@ -11,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 @task
-def read_xml(tables: Tables, file: str, targets: List[str]):
+def read_xml(tables: Tables, file: str, targets: list[str]):
     """Read xml file.
 
     https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python

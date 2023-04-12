@@ -10,11 +10,11 @@ from os import getenv
 from pathlib import Path
 from timeit import default_timer
 from types import ModuleType
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 _LOGGER = logging.getLogger(__name__)
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
-Table = List[Dict[str, Any]]
+Table = list[dict[str, Any]]
 
 
 def slugify(text: str) -> str:
@@ -57,7 +57,7 @@ class DataVars(dict):
             raise KeyError(f"Invalid variable name '{key}' use '{slugify(key)}")
         dict.__setitem__(self, key, val)
 
-    def as_table(self) -> List[Dict[str, Any]]:
+    def as_table(self) -> list[dict[str, Any]]:
         """Return as a table."""
         return [{"name": k, "value": v} for k, v in self.items()]
 
@@ -153,7 +153,7 @@ class DataEnvironment(dict):
             res = [k for k, v in self.items() if isinstance(v, list)]
         return res
 
-    def as_dict(self, *table_names: str) -> Dict[str, Table]:
+    def as_dict(self, *table_names: str) -> dict[str, Table]:
         """Return an ordered dict."""
         keys = self._check_keys(*table_names)
         res = {}

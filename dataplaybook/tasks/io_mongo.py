@@ -1,6 +1,6 @@
 """MongoDB IO tasks."""
 import logging
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 from urllib.parse import urlparse
 
 import attr
@@ -154,7 +154,7 @@ def list_to_columns(table: Table, *, list_column: str, columns: Columns) -> None
 
 
 @task
-def mongo_list_sids(mdb: MongoURI) -> List[str]:
+def mongo_list_sids(mdb: MongoURI) -> list[str]:
     """Return a list of _sids."""
     client = MongoClient(mdb.netloc, connect=True)
     cursor = client[mdb.database][mdb.collection]
@@ -166,7 +166,7 @@ def mongo_list_sids(mdb: MongoURI) -> List[str]:
 
 
 @task
-def mongo_delete_sids(*, mdb: MongoURI, sids: List[str]):
+def mongo_delete_sids(*, mdb: MongoURI, sids: list[str]):
     """Delete a specific _sid."""
     client = MongoClient(mdb.netloc, connect=True)
     cursor = client[mdb.database][mdb.collection]

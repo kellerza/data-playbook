@@ -6,23 +6,23 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from socket import gaierror
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from dataplaybook import task
 
 
 @task
 def mail(
-    to_addrs: Union[List[str], str],
+    to_addrs: Union[list[str], str],
     from_addr: str,
     subject: str,
-    files: Optional[List[str]] = None,
+    files: Optional[list[str]] = None,
     priority: int = 4,
     body: Optional[str] = "",
     html: Optional[str] = "",
     server: Optional[str] = None,
-    cc_addrs: Optional[List[str]] = None,
-    bcc_addrs: Optional[List[str]] = None,
+    cc_addrs: Optional[list[str]] = None,
+    bcc_addrs: Optional[list[str]] = None,
 ):
     """Send a mail."""
     cc_addrs = cc_addrs or []
@@ -82,7 +82,7 @@ def _attach(message, path):
         return
 
     # Open file in binary mode
-    # with path.open('rb') as fpt:
+    # with path.open('rb') as f_pt:
     # Add file as application/octet-stream
     # Email client can usually download this automatically as attachment
     part = MIMEBase("application", "octet-stream")

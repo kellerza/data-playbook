@@ -1,5 +1,5 @@
 """Constants."""
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from dataplaybook.utils import (  # noqa, pylint: disable=unused-import
     DataEnvironment,
@@ -9,11 +9,11 @@ from dataplaybook.utils import (  # noqa, pylint: disable=unused-import
 VERSION = "1.0.11"
 
 
-Columns = List[str]
+Columns = list[str]
 Column = str
 # Defined in utils
-# Table = List[Dict[str, Any]]
-Tables = Union[Dict[str, List[Dict[str, Any]]], DataEnvironment]
+# Table = list[dict[str, Any]]
+Tables = Union[dict[str, list[dict[str, Any]]], DataEnvironment]
 
 
 class ATable(list):

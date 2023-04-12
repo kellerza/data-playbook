@@ -7,7 +7,7 @@ import sys
 from functools import wraps
 from inspect import isgeneratorfunction, signature
 from pathlib import Path
-from typing import Callable, Dict, Optional, Sequence, get_type_hints
+from typing import Callable, Optional, Sequence, get_type_hints
 
 from icecream import colorizedStderrPrint, ic  # noqa pylint: disable=unused-import
 from typeguard import _CallMemo, check_argument_types, check_return_type
@@ -48,7 +48,7 @@ def print_tasks() -> None:
     #    _LOGGER.debug("%s: %s", mod_name, ", ".join(items))
 
 
-def _repr_function(*, target: Callable, args: Sequence, kwargs: Dict) -> None:
+def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
     """Represent the caller."""
     type_hints = get_type_hints(target)
     repr_args = [repr(a)[:50] for a in args]

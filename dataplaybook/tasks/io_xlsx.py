@@ -3,7 +3,7 @@ import logging
 import os
 from collections import OrderedDict
 from json import dumps
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Optional, Sequence
 
 import openpyxl
 import voluptuous as vol
@@ -47,7 +47,7 @@ _LOGGER = logging.getLogger(__name__)
         }
     )
 )
-def read_excel(*, tables: Tables, file: str, sheets=List[Dict[str, Any]]) -> None:
+def read_excel(*, tables: Tables, file: str, sheets=list[dict[str, Any]]) -> None:
     """Read excel file using openpyxl."""
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
@@ -60,7 +60,7 @@ def read_excel(*, tables: Tables, file: str, sheets=List[Dict[str, Any]]) -> Non
         tables[sht["target"]] = tbl
 
 
-def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[Dict[str, Any]]:
+def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[dict[str, Any]]:
     """Read a sheet and return a table."""
     res = ATable(header=header + 2)
     res.extend(_sheet_yield_rows(_sheet, columns, header))
@@ -69,8 +69,8 @@ def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[Dict[str,
 
 
 def _column_map(
-    columns: Optional[Dict], header_row: Sequence[str]
-) -> Sequence[Tuple[int, str, Optional[Any]]]:
+    columns: Optional[dict], header_row: Sequence[str]
+) -> Sequence[tuple[int, str, Optional[Any]]]:
     """List of (idx, nme, val)."""
     res = []
     if not columns:
@@ -93,7 +93,7 @@ def _column_map(
     return res
 
 
-def _sheet_yield_rows(_sheet: Worksheet, columns=None, header=0) -> Dict[str, Any]:
+def _sheet_yield_rows(_sheet: Worksheet, columns=None, header=0) -> dict[str, Any]:
     """Read the sheet and yield the rows."""
     rows = _sheet.rows
     try:
@@ -173,8 +173,8 @@ def write_excel(
     tables: Tables,
     file: str,
     include=None,
-    header: Optional[List[str]] = None,
-    headers: Optional[List[Any]] = None,
+    header: Optional[list[str]] = None,
+    headers: Optional[list[Any]] = None,
     ensure_string: bool = False,
 ):
     """Write an excel file."""

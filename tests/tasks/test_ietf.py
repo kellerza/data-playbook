@@ -3,6 +3,8 @@ import logging
 import re
 from pathlib import Path
 
+import pytest
+
 import dataplaybook.tasks.ietf as ietf
 from dataplaybook import DataEnvironment
 from dataplaybook.const import ATable
@@ -168,9 +170,9 @@ def test_extract_standards_case():
 
 def test_compliance_file():
     """Test a local compliance file."""
-    file = Path("../test_ietf.xlsx").resolve(strict=False)  # True to force
-    if not file:
-        return
+    file = Path("../test_ietf.xlsx").resolve()
+    if not file.exists():
+        pytest.skip("Local test file not found.")
     env = DataEnvironment()
     read_excel(
         tables=env, file=str(file), sheets=[{"name": "default", "target": "rfc"}]
