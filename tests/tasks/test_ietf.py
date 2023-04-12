@@ -169,6 +169,8 @@ def test_extract_standards_case():
 def test_compliance_file():
     """Test a local compliance file."""
     file = Path("../test_ietf.xlsx").resolve(strict=False)  # True to force
+    if not file:
+        return
     env = DataEnvironment()
     read_excel(
         tables=env, file=str(file), sheets=[{"name": "default", "target": "rfc"}]
