@@ -43,26 +43,45 @@ REGEX = (
         _re_rfc,
         re.compile(r"RFC\s*(\d{1,5})(?!\w)", re.I),
     ),
-    (r"IEEE \1", re.compile(r"IEEE *(\d{3,4}(?:\.\w+|\D\d)?(?:-\d{4})?)", re.I)),
-    (r"IEEE \1", re.compile(r"(80[12].\d\w+)", re.I)),
-    (r"ITU-T \1", re.compile(r"ITU-T *(?:recommendation *)?(\w\.\d+(?:\.\d+)?)", re.I)),
-    re.compile(r"(GR-\d+-\w+)", re.I),
+    # IEEE 802.1ax
+    (r"IEEE \1", re.compile(r"IEEE *(C?P?\d{2,5}(?:\.[0-9][0-9a-z]*){0,3})", re.I)),
+    # 802.1ax  (no IEEE)
+    (r"IEEE \1", re.compile(r"(80\d\.[0-9][0-9a-z]{0,3})", re.I)),
+    # IEEE 1588-2008
+    (
+        r"IEEE \1",
+        re.compile(r"IEEE *(\d{3,4}(?:-[a-z]{3,4}){1,3})", re.I),
+    ),
+    (
+        r"ITU-T \1",
+        re.compile(
+            r"ITU-T *(?:.recommendation *)?(\w\.\d+(?:\.\d+)?(?:\/[a-z]\.\d{3,4}| *appendix \w+)?)",
+            re.I,
+        ),
+    ),
+    re.compile(r"(GR-\d+-\w+)( issue \d+)?", re.I),
+    # openconfig-lldp.yang version 0.1.0
     (
         _re_proto,
-        re.compile(r"((openconfig(?:-\w+)*.yang)(?: version (\d(?:\.\d)+))?)", re.I),
+        re.compile(
+            r"((openconfig(?:-\w+)*.yang)(?: version (\d{1,3}(?:\.\d{1,3})+))?)", re.I
+        ),
     ),
-    re.compile(r"(3GPP *\d{1,3}\.\d+|3GPP \w+ \d+(\.\d+)*)"),
-    re.compile(r"((?:\w+-)+mib)", re.I),
+    re.compile(r"(3GPP *(?:TS *)?\d{1,3}\.\d+)( *release \d+)?", re.I),
+    re.compile(r"(3GPP *release *\d+)", re.I),
+    # IEEE8021-CFM-MIB revision 200706100000Z
+    # IANA-RTPROTO-MIB revision 200009260000Z
+    re.compile(r"((?:\w+-)+mib)( revision [0-9a-z]+)?", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
-    re.compile(r"(FRF[\.\d]+)"),
-    re.compile(r"(ANSI \S+)"),
+    re.compile(r"(FRF\.\d+)"),
+    re.compile(r"(ANSI \S{1,15})"),
     (
         _re_proto,
         re.compile(r"((\w{3,7}\.proto)(?:\s+version\s+(\d+(?:\.\d)+))?)", re.I),
     ),
     (_re_mfa, re.compile(r"(MFA forum (\d+(?:\.\d+)+))", re.I)),
     (_re_af, re.compile(r"((AF(?:-\w+)+\.\d+)(?:\s+version\s+(\d+\.\d+))?)", re.I)),
-    re.compile(r"([A-Za-z]\w{2,5} [A-Za-z]{2}-\d+(?!\w))"),  # BBF TR-x
+    re.compile(r"((?:BBF) [A-Za-z]{2}-\d+(?!\w))"),  # BBF TR-x
 )
 
 

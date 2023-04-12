@@ -1,8 +1,14 @@
 """Tests for ietf.py"""
+import logging
+import re
 from pathlib import Path
 
 import dataplaybook.tasks.ietf as ietf
+from dataplaybook import DataEnvironment
 from dataplaybook.const import ATable
+from dataplaybook.tasks.io_xlsx import read_excel
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def test_extract_standards():
@@ -162,5 +168,25 @@ def test_extract_standards_case():
 
 def test_compliance_file():
     """Test a local compliance file."""
-    Path("../../testcases.xlsx").resolve()
-    # Path("../../testcases.xlsx").resolve(strict=True)
+    file = Path("../test_ietf.xlsx").resolve(strict=False)  # True to force
+    env = DataEnvironment()
+    read_excel(
+        tables=env, file=str(file), sheets=[{"name": "default", "target": "rfc"}]
+    )
+    cnt = 0
+    for row in env["rfc"]:
+        std = row["s"]
+        rexl = []
+        for rex in ietf.REGEX:
+            if isinstance(rex, re.Pattern):
+                if rex.fullmatch(std):
+                    rexl.append(str(rex.pattern))
+                continue
+            if rex[1].fullmatch(std):
+                rexl.append(str(rex[1].pattern))
+
+        if len(rexl) != 1:
+            _LOGGER.error("S %s, matches %i", std, len(rexl))
+            cnt += 1
+    if cnt > 10:
+        assert False

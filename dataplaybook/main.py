@@ -37,11 +37,11 @@ def print_tasks() -> None:
         return sig
 
     mods = {}
-    for (name, tsk) in ALL_TASKS.items():
+    for name, tsk in ALL_TASKS.items():
         mods.setdefault(tsk["module"], []).append(f'{name} "{sign(tsk["func"])}"')
         mods[tsk["module"]].sort()
 
-    for (mod, fun) in mods.items():
+    for mod, fun in mods.items():
         colorizedStderrPrint(mod)
         colorizedStderrPrint("- " + "\n- ".join(fun))
     # for mod_name, items in mods.items():
@@ -90,15 +90,16 @@ def task(target=None, validator=None):  # noqa
             )
             raise
 
-        if isgeneratorfunction(target) or (
-            isinstance(value, list) and not isinstance(value, ATable)
-        ):
+        if isgeneratorfunction(target):
             value = ATable(value)
 
         try:
             check_return_type(value, call_memo)
         except TypeError as err:
             _LOGGER.error(err)
+
+        if isinstance(value, list) and not isinstance(value, ATable):
+            value = ATable(value)
 
         return value
 
@@ -205,7 +206,6 @@ def run_playbooks(dataplaybook_cmd=False) -> int:
     cwd = os.getcwd()
 
     try:
-
         if dataplaybook_cmd:
             spath = Path(args.files[0]).resolve()
             if not spath.exists():

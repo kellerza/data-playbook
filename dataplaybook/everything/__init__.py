@@ -1,4 +1,4 @@
-"""Search for files using Everything from voidtools.
+r"""Search for files using Everything from voidtools.
 
 Everything HTTP Example:
     http://localhost:8881/?s=zz%20xls&j=1&path_column=1
@@ -18,7 +18,7 @@ PathT = namedtuple("PathT", ["path", "name"])
 
 
 def _everything_result(json, class_):
-    """a."""
+    """Everything's return value."""
     result = {"total": -1, "files": [], "folders": []}
     result["total"] = json["totalResults"]
     for itm in json["results"]:
@@ -40,5 +40,5 @@ def search(*terms, params=None, sane=True, sort=True, max_results=50, class_=Pat
     if sort:
         params["sort"] = "date_modified"
         params["ascending"] = 0
-    res = requests.get(SERVER, params=params)
+    res = requests.get(SERVER, params=params, timeout=15)
     return _everything_result(res.json(), class_)

@@ -120,7 +120,7 @@ class DataEnvironment(dict):
 
     def __setattr__(self, key: str, val: Any) -> None:
         """Set attribute."""
-        raise Exception(f"use [{key}]")
+        raise SyntaxError(f"use [{key}]")
 
     def __getitem__(self, key: str) -> Any:
         """Get item."""
@@ -131,7 +131,7 @@ class DataEnvironment(dict):
     def __setitem__(self, key: str, val: Any) -> None:
         """Set item."""
         if key == "var":
-            raise Exception("Cannot set variables directly. Use .var.")
+            raise SyntaxError("Cannot set variables directly. Use .var.")
         if isinstance(val, list):
             dict.__setitem__(self, key, val)
             _LOGGER.debug("tables[%s] = %s", key, val)
@@ -187,7 +187,7 @@ def set_logger_level(level, module=None) -> None:
 
     if isinstance(level, dict):
         if module:
-            raise Exception(f"module should be None when setting dict, got {module}")
+            raise RuntimeError(f"module should be None when setting dict, got {module}")
         for logr, lvl in level.items():
             logging.getLogger(logr).setLevel(_level(lvl))
         return

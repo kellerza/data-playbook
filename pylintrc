@@ -22,7 +22,6 @@ good-names=i,j,k,ex,Run,_,fp
 # unnecessary-pass - readability for functions which only contain pass
 disable=
   format,
-  abstract-class-little-used,
   abstract-method,
   cyclic-import,
   duplicate-code,
@@ -31,7 +30,6 @@ disable=
   locally-disabled,
   not-an-iterable,
   not-context-manager,
-  redefined-variable-type,
   too-few-public-methods,
   too-many-arguments,
   too-many-branches,
@@ -53,6 +51,3 @@ ignored-classes=_CountingAttr
 
 [FORMAT]
 expected-line-ending-format=LF
-
-[EXCEPTIONS]
-overgeneral-exceptions=Exception,HomeAssistantError
