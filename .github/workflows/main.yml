@@ -51,7 +51,7 @@ jobs:
       - name: Add pylint
         run: pip install pylint
       - name: Install dataplaybook
-        run: pip install ".[mongodb,pptx,tests]
+        run: pip install ".[mongodb,pptx,tests]"
       - name: Run Pylint
         run: |
           pylint dataplaybook
