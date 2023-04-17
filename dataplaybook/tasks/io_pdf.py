@@ -28,13 +28,20 @@ def _myreadlines(fobj, newline):
 
 
 @task
-def read_pdf_pages(filename: str) -> Table:
+def read_pdf_pages(
+    filename: str, *, layout: bool = False, args: list[str] = []
+) -> Table:
     """Read pdf as text pages."""
     if not filename.lower().endswith(".pdf"):
         return
     _fd, to_name = tempfile.mkstemp()
     try:
-        params = ["pdftotext", "-layout", filename, to_name]
+        params = ["pdftotext"]
+        if layout:
+            params.append("-layout")
+        if args:
+            params.extend(args)
+        params.extend((filename, to_name))
         _LOGGER.info("Converting %s", filename)
         _LOGGER.debug("Calling with %s", params)
         call(params, shell=False)
