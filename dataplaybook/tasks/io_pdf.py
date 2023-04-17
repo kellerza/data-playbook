@@ -5,6 +5,7 @@ import os
 import tempfile
 from pathlib import Path
 from subprocess import call
+from typing import Optional
 
 from dataplaybook import Table, task
 
@@ -29,7 +30,7 @@ def _myreadlines(fobj, newline):
 
 @task
 def read_pdf_pages(
-    filename: str, *, layout: bool = False, args: list[str] = []
+    filename: str, *, layout: bool = False, args: Optional[list[str]] = None
 ) -> Table:
     """Read pdf as text pages."""
     if not filename.lower().endswith(".pdf"):
@@ -39,7 +40,7 @@ def read_pdf_pages(
         params = ["pdftotext"]
         if layout:
             params.append("-layout")
-        if args:
+        if args and isinstance(args, list):
             params.extend(args)
         params.extend((filename, to_name))
         _LOGGER.info("Converting %s", filename)
