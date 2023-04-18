@@ -30,7 +30,7 @@ def _myreadlines(fobj, newline):
 
 @task
 def read_pdf_pages(
-    filename: str, *, layout: bool = False, args: Optional[list[str]] = None
+    filename: str, *, layout: bool = True, args: Optional[list[str]] = None
 ) -> Table:
     """Read pdf as text pages."""
     if not filename.lower().endswith(".pdf"):
@@ -60,14 +60,20 @@ def read_pdf_pages(
 
 
 @task
-def read_pdf_files(folder: str, pattern: str = "*.pdf") -> Table:
+def read_pdf_files(
+    folder: str,
+    pattern: str = "*.pdf",
+    *,
+    layout: bool = True,
+    args: Optional[list[str]] = None
+) -> Table:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))
     _LOGGER.info("Open %s files", len(files))
 
     for filename in files:
-        page_gen = read_pdf_pages(filename=str(filename))
+        page_gen = read_pdf_pages(filename=str(filename), layout=layout, args=args)
         for row in page_gen:
             row["filename"] = str(filename.name)
             yield row

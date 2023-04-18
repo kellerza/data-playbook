@@ -81,6 +81,7 @@ def test_extract_x_all():
         "a-something-mib",
         "openconfig-a-global.yang version 1.1.1",
         "ANSI T1.101.11",
+        ("ANSI T1.101.14,", "ANSI T1.101.14"),
     )
     txt = ""
     exp = []

@@ -73,15 +73,15 @@ REGEX = (
     # IANA-RTPROTO-MIB revision 200009260000Z
     re.compile(r"((?:\w+-)+mib)( revision [0-9a-z]+)?", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
-    re.compile(r"(FRF\.\d+)"),
-    re.compile(r"(ANSI \S{1,15})"),
+    re.compile(r"(FRF\.\d+)", re.I),
+    re.compile(r"(ANSI [a-z.0-9]{1,15})", re.I),
     (
         _re_proto,
         re.compile(r"((\w{3,7}\.proto)(?:\s+version\s+(\d+(?:\.\d)+))?)", re.I),
     ),
     (_re_mfa, re.compile(r"(MFA forum (\d+(?:\.\d+)+))", re.I)),
     (_re_af, re.compile(r"((AF(?:-\w+)+\.\d+)(?:\s+version\s+(\d+\.\d+))?)", re.I)),
-    re.compile(r"((?:BBF) [A-Za-z]{2}-\d+(?!\w))"),  # BBF TR-x
+    re.compile(r"((?:BBF) [A-Za-z]{2}-\d+(?!\w))", re.I),  # BBF TR-x
 )
 
 
