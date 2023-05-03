@@ -16,9 +16,9 @@ def test_q(mock_requests):
             {
                 "type": "file",
                 "name": "filename.xlsx",
-                "path": "C:\\",
+                "path": "C:/",
             },
-            {"type": "folder", "path": "C:\\", "name": ""},
+            {"type": "folder", "path": "C:/", "name": ""},
         ],
     }
 
