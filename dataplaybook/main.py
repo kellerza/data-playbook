@@ -246,10 +246,10 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
                 err,
             )
             raise err
-        else:
-            if args.v:
-                ic(_ENV)
 
-            return int(retval)
+        if args.v:
+            ic(_ENV)
+
+        return int(retval) if retval else 0
     finally:
         os.chdir(cwd)
