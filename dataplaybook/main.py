@@ -60,7 +60,10 @@ def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
 
 
 @doublewrap
-def task(target: Callable, validator: Optional[Callable] = None) -> Callable:  # noqa
+def task(
+    target: Callable = None,  # type: ignore
+    validator: Optional[Callable] = None,
+) -> Callable:
     """Verify parameters & execute task."""
 
     @wraps(target)

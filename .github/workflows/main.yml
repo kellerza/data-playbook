@@ -10,8 +10,8 @@ jobs:
     name: Check black
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - uses: psf/black@stable
@@ -22,8 +22,8 @@ jobs:
     name: Check isort
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - uses: jamescurtin/isort-action@master
@@ -32,8 +32,8 @@ jobs:
     name: Check flake8
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - uses: TrueBrain/actions-flake8@master
@@ -42,8 +42,8 @@ jobs:
     name: Check pylint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Upgrade pip
@@ -71,8 +71,8 @@ jobs:
     env:
       PYTHON: ${{ matrix.python-version }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
       - name: Run tests and generate coverage report
@@ -81,7 +81,7 @@ jobs:
           pip install ".[mongodb,pptx,tests]"
           pytest --cov=./dataplaybook --cov-report=xml
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           env_vars: PYTHON
@@ -94,9 +94,9 @@ jobs:
     needs:
       - pytest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Install pypa/build
