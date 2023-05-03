@@ -7,7 +7,7 @@ import sys
 from functools import wraps
 from inspect import isgeneratorfunction, signature
 from pathlib import Path
-from typing import Callable, Optional, Sequence, get_type_hints
+from typing import Any, Callable, Optional, Sequence, Union, get_type_hints
 
 from icecream import colorizedStderrPrint, ic  # noqa pylint: disable=unused-import
 from typeguard import _CallMemo, check_argument_types, check_return_type
@@ -23,20 +23,20 @@ from dataplaybook.utils import (
 _LOGGER = logging.getLogger(__name__)
 
 
-ALL_TASKS = {}
+ALL_TASKS: dict = {}
 _ENV = DataEnvironment()
 
 
 def print_tasks() -> None:
     """Print all_tasks."""
 
-    def sign(func):
+    def sign(func: Callable) -> str:
         sig = str(signature(func))
         sig = sig.replace(str(Tables).replace("typing.", ""), "Tables")
         sig = sig.replace(str(Table).replace("typing.", ""), "Table")
         return sig
 
-    mods = {}
+    mods: dict = {}
     for name, tsk in ALL_TASKS.items():
         mods.setdefault(tsk["module"], []).append(f'{name} "{sign(tsk["func"])}"')
         mods[tsk["module"]].sort()
@@ -60,11 +60,11 @@ def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
 
 
 @doublewrap
-def task(target=None, validator=None):  # noqa
+def task(target: Callable, validator: Optional[Callable] = None) -> Callable:  # noqa
     """Verify parameters & execute task."""
 
     @wraps(target)
-    def taskwrapper(*args, **kwargs):
+    def taskwrapper(*args: Any, **kwargs: Any) -> Union[ATable, Any]:
         _repr_function(target=target, args=args, kwargs=kwargs)
 
         # Warning for explicit parameters
@@ -123,13 +123,13 @@ def task(target=None, validator=None):  # noqa
     return taskwrapper
 
 
-_ALL_PLAYBOOKS = {}
-_DEFAULT_PLAYBOOK = None
+_ALL_PLAYBOOKS: dict[str, Callable] = {}
+_DEFAULT_PLAYBOOK: Optional[str] = None
 
 
 @doublewrap
 def playbook(
-    target: Callable = None,
+    target: Callable,
     name: Optional[str] = None,
     default: bool = False,
     run: bool = False,
@@ -161,7 +161,7 @@ def get_default_playbook() -> Optional[str]:
     return None
 
 
-def _parseargs(dataplaybook_cmd) -> argparse.Namespace:
+def _parseargs(dataplaybook_cmd: bool) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=f"Data Playbook v{VERSION}. Playbooks for tabular data."
     )
@@ -186,7 +186,7 @@ def _parseargs(dataplaybook_cmd) -> argparse.Namespace:
     return args
 
 
-def run_playbooks(dataplaybook_cmd=False) -> int:
+def run_playbooks(dataplaybook_cmd: bool = False) -> int:
     """Execute playbooks, or prompt for one."""
     global _EXECUTED
     if _EXECUTED:
@@ -247,6 +247,6 @@ def run_playbooks(dataplaybook_cmd=False) -> int:
             if args.v:
                 ic(_ENV)
 
-            return retval
+            return int(retval)
     finally:
         os.chdir(cwd)

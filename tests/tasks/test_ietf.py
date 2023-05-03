@@ -72,16 +72,34 @@ def test_extract_x_all():
         "RFC1234",
         ("RFC 2345", "RFC2345"),
         "IEEE 802.1x",
-        ("801.2x", "IEEE 801.2x"),
+        ("801.2x", "IEEE 801.2x", "IEEE 801.2x"),
         "ITU-T G.1111.1",
         "3GPP Release 11",
         "GR-1111-CORE",
         "ITU-T I.111",
-        "gnmi.proto version 0.0.1",
+        (
+            "gnmi.proto version 0.0.1",
+            "gnmi.proto version 0.0.1",
+            "gnmi.proto",
+        ),
         "a-something-mib",
-        "openconfig-a-global.yang version 1.1.1",
+        (
+            "openconfig-a-global.yang version 1.1.1",
+            "openconfig-a-global.yang version 1.1.1",
+            "openconfig-a-global.yang",
+        ),
         "ANSI T1.101.11",
         ("ANSI T1.101.14,", "ANSI T1.101.14"),
+        (
+            "LLDP-MIB revision 200505060000Z",
+            "LLDP-MIB revision 200505060000Z",
+            "LLDP-MIB",
+        ),
+        (
+            "draft-ietf-l3vpn-2547bis-mcast-bgp-08",
+            "draft-ietf-l3vpn-2547bis-mcast-bgp-08",
+            "draft-ietf-l3vpn-2547bis-mcast-bgp",
+        ),
     )
     txt = ""
     exp = []
@@ -89,13 +107,18 @@ def test_extract_x_all():
         if isinstance(itm, tuple):
             txt += itm[0] + " "
             exp.append(itm[1])
+
         else:
             txt += itm + " "
             exp.append(itm)
 
-    std = list(ietf.extract_standards_ordered(txt))
+    res = ietf.extract_standards_ordered(txt)
 
-    assert std == exp
+    assert res == exp
+
+    for itm, std in zip(allitems, res):
+        if isinstance(itm, tuple) and len(itm) > 2:
+            assert itm[2] == std.key
 
 
 def test_task_add_std_col():

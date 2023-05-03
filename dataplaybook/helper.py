@@ -1,13 +1,18 @@
 """Helper functions."""
 from operator import itemgetter
+from typing import Optional
 
 
 # Source:
 # https://www.calazan.com/
 #     python-function-for-displaying-a-list-of-dictionaries-in-table-format/
 def format_as_table(
-    data, keys, header=None, sort_by_key=None, sort_order_reverse=False
-):
+    data: list,
+    keys: list,
+    header: Optional[list] = None,
+    sort_by_key: Optional[str] = None,
+    sort_order_reverse: bool = False,
+) -> str:
     """Text formatted table from a list of dicts.
 
     Required Parameters:
@@ -36,10 +41,8 @@ def format_as_table(
         # Create a list of dictionary from the keys and the header and
         # insert it at the beginning of the list. Do the same for the
         # divider and insert below the header.
-        header_divider = dict(zip(keys, header_divider))
-        data.insert(0, header_divider)
-        header = dict(zip(keys, header))
-        data.insert(0, header)
+        data.insert(0, dict(zip(keys, header_divider)))
+        data.insert(0, dict(zip(keys, header)))
 
     column_widths = []
     for key in keys:

@@ -1,11 +1,10 @@
 """Data validation helpers for voluptuous."""
 import logging
-import os
 from typing import Any, Callable, Sequence, TypeVar, Union
 
 import voluptuous as vol
 
-from dataplaybook.utils import slugify as util_slugify
+# from dataplaybook.utils import slugify as util_slugify
 
 # typing typevar
 T = TypeVar("T")  # pylint: disable=invalid-name
@@ -43,28 +42,28 @@ class AttrDict(dict):
         return "(" + ", ".join(lst) + ")"
 
 
-def isfile(value: Any) -> str:
-    """Validate that the value is an existing file."""
-    if value is None:
-        raise vol.Invalid("None is not file")
-    file_in = os.path.expanduser(str(value))
+# def isfile(value: Any) -> str:
+#     """Validate that the value is an existing file."""
+#     if value is None:
+#         raise vol.Invalid("None is not file")
+#     file_in = os.path.expanduser(str(value))
 
-    if not os.path.isfile(file_in):
-        raise vol.Invalid("not a file")
-    if not os.access(file_in, os.R_OK):
-        raise vol.Invalid("file not readable")
-    return file_in
+#     if not os.path.isfile(file_in):
+#         raise vol.Invalid("not a file")
+#     if not os.access(file_in, os.R_OK):
+#         raise vol.Invalid("file not readable")
+#     return file_in
 
 
-def slug(value: str) -> str:
-    """Validate value is a valid slug."""
-    if value is None:
-        raise vol.Invalid("Slug should not be None")
-    value = str(value)
-    slg = util_slugify(value)
-    if value == slg:
-        return value
-    raise vol.Invalid(f"invalid slug {value} (try {slg})")
+# def slug(value: str) -> str:
+#     """Validate value is a valid slug."""
+#     if value is None:
+#         raise vol.Invalid("Slug should not be None")
+#     value = str(value)
+#     slg = util_slugify(value)
+#     if value == slg:
+#         return value
+#     raise vol.Invalid(f"invalid slug {value} (try {slg})")
 
 
 def ensure_list_csv(value: Any) -> Sequence:
@@ -78,7 +77,7 @@ def ensure_list(value: Union[T, Sequence[T], None]) -> Sequence[T]:
     """Wrap value in list if it is not one."""
     if value is None:
         return []
-    return value if isinstance(value, list) else [value]  # typing: ignore
+    return value if isinstance(value, (list, tuple)) else [value]  # type: ignore
 
 
 def endswith(parts: str) -> Callable[[Any], Any]:

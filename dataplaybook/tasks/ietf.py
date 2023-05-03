@@ -1,7 +1,7 @@
 """Telecoms related tasks."""
 import logging
 import re
-from typing import Any, Match, Optional
+from typing import Any, Generator, Match, Optional
 
 from dataplaybook import Columns, Table, task
 
@@ -71,7 +71,7 @@ REGEX = (
     re.compile(r"(3GPP *release *\d+)", re.I),
     # IEEE8021-CFM-MIB revision 200706100000Z
     # IANA-RTPROTO-MIB revision 200009260000Z
-    re.compile(r"((?:\w+-)+mib)( revision [0-9a-z]+)?", re.I),
+    re.compile(r"(((?:\w+-)+mib)(?: +(revision [0-9a-z]+))?)", re.I),
     # re.compile(r"(\w{2}-\w+-\d+\.\d+)"),
     re.compile(r"(FRF\.\d+)", re.I),
     re.compile(r"(ANSI [a-z.0-9]{1,15})", re.I),
@@ -106,8 +106,8 @@ class KeyStr(str):
         if key:
             if not isinstance(key, str):
                 raise TypeError(f"Key must be a string, not {type(key)}")
-            if len(key) > len(text):
-                raise ValueError(f"Key[{key}] should be shorter than value[{text}]")
+            # if len(key) > len(text):
+            #     raise ValueError(f"Key[{key}] should be shorter than value[{text}]")
             setattr(res, "__key", key)
         if start:
             setattr(res, "__start", start)
@@ -115,7 +115,7 @@ class KeyStr(str):
         return res
 
 
-def extract_standards(val: str) -> list[str]:
+def extract_standards(val: str) -> Generator[KeyStr, None, None]:
     """Ensure it is unique."""
     match = {}
     for itm in _extract_standards(val):
@@ -125,18 +125,18 @@ def extract_standards(val: str) -> list[str]:
         yield itm
 
 
-def extract_standards_ordered(val: str) -> list[str]:
+def extract_standards_ordered(val: str) -> list[KeyStr]:
     """Ensure sorted."""
     return sorted(extract_standards(val), key=lambda x: x.start)
 
 
-def extract_one_standard(val: str) -> str:
+def extract_one_standard(val: str) -> KeyStr:
     """Extract a single standard."""
     lst = extract_standards_ordered(val)
     return lst[0] if lst else None
 
 
-def _extract_standards(val):
+def _extract_standards(val) -> Generator[KeyStr, None, None]:
     """Extract standards from a string."""
     for rex in REGEX:
         if isinstance(rex, tuple):

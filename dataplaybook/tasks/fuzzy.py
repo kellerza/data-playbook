@@ -11,7 +11,7 @@ def fuzzy_match(
     t1_column: Column,
     t2_column: Column,
     t1_target_column: Column,
-):
+) -> None:
     """Fuzzy matching.
 
     https://marcobonzanini.com/2015/02/25/fuzzy-string-matching-in-python/

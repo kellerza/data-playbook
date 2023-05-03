@@ -10,7 +10,7 @@ from os import getenv
 from pathlib import Path
 from timeit import default_timer
 from types import ModuleType
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Iterator, Optional, Sequence, Union
 
 _LOGGER = logging.getLogger(__name__)
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
@@ -103,6 +103,8 @@ class DataEnv(dict):
 class DataEnvironment(dict):
     """DataEnvironment supports key access and variables."""
 
+    _var: DataVars
+
     def __init__(self) -> None:
         """Init."""
         dict.__setattr__(self, "_var", DataVars())
@@ -167,7 +169,7 @@ class DataEnvironment(dict):
         return [self[k] for k in keys]
 
 
-def get_logger(logger=None) -> logging.Logger:
+def get_logger(logger: Union[str, logging.Logger, None] = None) -> logging.Logger:
     """Get a logger."""
     return (
         logger
@@ -176,12 +178,14 @@ def get_logger(logger=None) -> logging.Logger:
     )
 
 
-def set_logger_level(level, module=None) -> None:
+def set_logger_level(level: Any, module: Optional[logging.Logger] = None) -> None:
     """Set the log level."""
 
-    def _level(level=None) -> int:
+    def _level(level: Any = None) -> int:
         try:
-            return getattr(logging, level.upper()) if isinstance(level, str) else level
+            return int(
+                getattr(logging, level.upper()) if isinstance(level, str) else level
+            )
         except AttributeError:
             return logging.DEBUG if level else logging.INFO
 
@@ -254,8 +258,8 @@ def log_filter(record: Any) -> Any:
 
 @contextmanager
 def time_it(
-    name: Optional[str] = None, delta: int = 2, logger: logging.Logger = None
-) -> None:
+    name: Optional[str] = None, delta: int = 2, logger: Optional[logging.Logger] = None
+) -> Iterator[None]:
     """Context manager to time execution and report if too high."""
     t_start = default_timer()
     yield
@@ -305,10 +309,10 @@ def doublewrap(fun: Callable) -> Callable:
     """
 
     @wraps(fun)
-    def new_dec(*args, **kwargs):
+    def new_dec(*args: Any, **kwargs: Any) -> Callable:
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # actual decorated function
-            return fun(args[0])
+            return fun(args[0])  # type:ignore
         # decorator arguments
         return lambda realf: fun(realf, *args, **kwargs)
 
