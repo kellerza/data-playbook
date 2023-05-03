@@ -26,5 +26,5 @@ def test_q(mock_requests):
 
     res = search("f1")
     assert res.total == 2
-    assert res.files == [Path("c:/filename.xlsx")]
-    assert res.folders == [Path("c:/")]
+    assert res.files == [Path("C:/filename.xlsx")]
+    assert res.folders == [Path("C:/")]
