@@ -21,11 +21,9 @@ from dataplaybook.tasks.io_misc import (
 
 
 def test_file_rotate():
-    with (
-        patch.object(Path, "exists") as mock_exists,
-        patch.object(Path, "unlink") as mock_unlink,
-        patch.object(Path, "rename") as mock_rename,
-    ):
+    with patch.object(Path, "exists") as mock_exists, patch.object(
+        Path, "unlink"
+    ) as mock_unlink, patch.object(Path, "rename") as mock_rename:
         # no others
         mock_exists.return_value = False
         file_rotate("z")
