@@ -110,6 +110,7 @@ def _sheet_yield_rows(_sheet: Worksheet, columns=None, header=0) -> dict[str, An
     colmap = _column_map(columns, header_row)
 
     row = None
+    nocnt = 0
     while True:
         try:
             row = next(rows)
@@ -119,7 +120,13 @@ def _sheet_yield_rows(_sheet: Worksheet, columns=None, header=0) -> dict[str, An
         for idx, key, _ in colmap:
             _cv = row[idx].value
             record[key] = _cv.strip() if isinstance(_cv, str) else _cv
-        yield record
+        if record:
+            yield record
+            nocnt = 0
+        else:
+            nocnt += 1
+            if nocnt > 1000:
+                return
 
 
 def _get_filename(filename: str) -> str:
