@@ -12,6 +12,8 @@ from timeit import default_timer
 from types import ModuleType
 from typing import Any, Callable, Iterator, Optional, Sequence, Union
 
+from typing_extensions import Concatenate, ParamSpec
+
 _LOGGER = logging.getLogger(__name__)
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
 Table = list[dict[str, Any]]
@@ -299,7 +301,12 @@ def local_import_module(mod_name: str) -> ModuleType:
             sys.path.pop(0)
 
 
-def doublewrap(fun: Callable) -> Callable:
+P = ParamSpec("P")
+
+
+def doublewrap(
+    fun: Callable[Concatenate[Callable, P], Callable[P, Any]]
+) -> Callable[P, Any]:
     """Decorate the decorators.
 
     Allow the decorator to be used as:
@@ -311,9 +318,9 @@ def doublewrap(fun: Callable) -> Callable:
     @wraps(fun)
     def new_dec(*args: Any, **kwargs: Any) -> Callable:
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
-            # actual decorated function
-            return fun(args[0])  # type:ignore
-        # decorator arguments
+            # called as @decorator
+            return fun(args[0])
+        # called as @decorator(*args, **kwargs)
         return lambda realf: fun(realf, *args, **kwargs)
 
     return new_dec

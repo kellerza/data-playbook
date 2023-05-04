@@ -1,28 +1,64 @@
 """Main tests."""
-import atexit
+import unittest
+from unittest.mock import patch
 
 import pytest
 
-import dataplaybook.main as main  # noqa # pylint: disable=unused-import
 from dataplaybook.__main__ import main as __main
+from dataplaybook.main import _ALL_PLAYBOOKS, playbook, print_tasks, run_playbooks
 
 
-def test_print():
+def test_print(capsys):
     """Sample print."""
-    main.print_tasks()
+    print_tasks()
+    captured = capsys.readouterr()
+    # assert captured.out == "hello\n"
+    assert "read_excel" in captured.err
 
 
 def test_run_playbooks_true():
     """Test run."""
-    with pytest.raises(SystemExit) as pytest_wrapped_e:
-        __main()  # run_playbooks(True)
-    assert pytest_wrapped_e.type == SystemExit
-    # assert pytest_wrapped_e.value.code == -1
-    atexit.unregister(main.run_playbooks)
+    with pytest.raises(SystemExit):
+        __main()
+    res = run_playbooks(dataplaybook_cmd=True)
+    assert res == 0
+    # atexit.unregister(run_playbooks)
 
 
-# def test_run_playbooks():
-#     with pytest.raises(SystemExit) as pytest_wrapped_e:
-#         main.run_playbooks()
-#     assert pytest_wrapped_e.type == SystemExit
-#     assert pytest_wrapped_e.value.code == -1
+class TestPlaybook(unittest.TestCase):
+    @patch("sys.exit")
+    def test_default_playbook(self, mock_exit):
+        _ALL_PLAYBOOKS.clear()
+
+        @playbook(default=True)
+        def func1():
+            pass
+
+        @playbook(default=True)
+        def func2():
+            pass
+
+        mock_exit.assert_called_with("Multiple default playbooks")
+
+    def test_all_playbooks(self):
+        _ALL_PLAYBOOKS.clear()
+
+        @playbook
+        def func1():
+            pass
+
+        @playbook(name="func3")
+        def func2():
+            pass
+
+        self.assertEqual(_ALL_PLAYBOOKS, {"func1": func1, "func3": func2})
+
+    @patch("atexit.register")
+    def test_run_playbooks(self, mock_register):
+        _ALL_PLAYBOOKS.clear()
+
+        @playbook(run=True)
+        def func2():
+            pass
+
+        mock_register.assert_called_with(run_playbooks)
