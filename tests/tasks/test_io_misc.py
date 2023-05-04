@@ -42,7 +42,7 @@ def test_file_rotate():
 
 
 def test_glob():
-    with (patch.object(Path, "glob") as mock_glob,):
+    with patch.object(Path, "glob") as mock_glob:
         # no others
         mock_glob.return_value = ["a", "b"]
         res = list(glob("a/*b"))
