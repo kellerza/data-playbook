@@ -39,7 +39,7 @@ def read_xml(tables: Tables, file: str, targets: list[str]):
 
 def _writejson(filename, dct):
     """Write dict to file."""
-    with open(filename, "w", encoding="utf8") as __f:
+    with open(filename, "w", encoding="utf-8") as __f:
         __f.write(json.dumps(dct))
 
 

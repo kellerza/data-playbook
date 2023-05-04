@@ -75,7 +75,7 @@ class MongoURI:
         return MongoClient(self.netloc, connect=connect)
 
 
-@task()
+@task
 def read_mongo(
     mdb: MongoURI,
     *,
@@ -97,7 +97,7 @@ def read_mongo(
         yield result
 
 
-@task()
+@task
 def write_mongo(
     table: Table, mdb: MongoURI, *, set_id: Optional[str] = None, force=False
 ):

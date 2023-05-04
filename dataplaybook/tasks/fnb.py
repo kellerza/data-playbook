@@ -104,7 +104,7 @@ def read_cheque_csv(filename: str) -> Table:
         "koste",
     ]
     data = {}
-    with open(filename, newline="", encoding="utf8") as csvfile:
+    with open(filename, newline="", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile, fields)
         for row in csvreader:
             try:

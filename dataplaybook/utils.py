@@ -69,7 +69,7 @@ class DataEnv(dict):
         """Read .env."""
         dict.__init__(self)
         try:
-            self._load(Path(".env").read_text(encoding="utf8"))
+            self._load(Path(".env").read_text(encoding="utf-8"))
         except FileNotFoundError:
             pass
 

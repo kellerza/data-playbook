@@ -12,16 +12,7 @@ from urllib.parse import urlparse
 from icecream import ic
 
 from dataplaybook import Columns, Table, task
-
-
-@task
-def glob(patterns: list[str]) -> Table:
-    """Search for files matching certain patterns."""
-    for val in patterns:
-        fol, _, pat = val.partition("/*")
-        folder = Path(fol)
-        for file in folder.glob("*" + pat):
-            yield {"file": str(file)}
+from dataplaybook.config_validation import ensure_list
 
 
 @task
@@ -40,6 +31,16 @@ def file_rotate(file: str, count: int = 3):
         t_f = s_f
     # Rename first file
     f_n.rename(t_f)
+
+
+@task
+def glob(patterns: list[str]) -> Table:
+    """Search for files matching certain patterns."""
+    for val in ensure_list(patterns):
+        fol, _, pat = val.partition("/*")
+        folder = Path(fol)
+        for file in folder.glob("*" + pat):
+            yield {"file": str(file)}
 
 
 @task
@@ -66,7 +67,7 @@ def read_csv(file: str, columns: Optional[Columns] = None) -> Table:
 def read_json(file) -> Table:
     """Read json from a file."""
     try:
-        with Path(file).open("r", encoding="utf-8") as __f:
+        with Path(file).open(mode="r", encoding="utf-8") as __f:
             res = load(__f)
             print(str(res)[:100])
             return res
@@ -75,7 +76,7 @@ def read_json(file) -> Table:
             raise
     # Extra data, so try load line by line
     res = []
-    for line in Path(file).read_text(encoding="utf8").splitlines():
+    for line in Path(file).read_text(encoding="utf-8").splitlines():
         try:
             if line.strip() == "":
                 continue
@@ -90,7 +91,7 @@ def read_json(file) -> Table:
 @task
 def write_json(tables, file: str, only_var=False) -> None:
     """Write into a json file."""
-    with Path(file).open("w", encoding="utf8") as __f:
+    with Path(file).open("w", encoding="utf-8") as __f:
         dump(tables.var if only_var else tables, __f, indent="  ")
 
 
@@ -116,7 +117,7 @@ def read_text_regex(
 ) -> Table:
     """Much regular expressions into a table."""
     res = None
-    with open(filename, encoding="utf8") as file:
+    with open(filename, encoding="utf-8") as file:
         for line in file:
             match_obj = newline.search(line)
             if match_obj:
