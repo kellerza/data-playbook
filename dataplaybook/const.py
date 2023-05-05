@@ -1,10 +1,8 @@
 """Constants."""
 from typing import Any, Union
 
-from dataplaybook.utils import (  # noqa, pylint: disable=unused-import
-    DataEnvironment,
-    Table,
-)
+from dataplaybook.helpers import DataEnvironment  # noqa, pylint: disable=unused-import
+from dataplaybook.utils import Table  # noqa, pylint: disable=unused-import
 
 VERSION = "1.0.14"
 

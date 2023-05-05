@@ -1,22 +1,15 @@
-"""DataEnvironment class."""
-import logging
+"""Test Environment"""
 import os
-from pathlib import Path
 
 import pytest
 
-import dataplaybook.utils as utils
-from dataplaybook.main import ALL_TASKS
-
-# pylint: disable=unsupported-assignment-operation,no-member,protected-access
-
-_LOGGER = logging.getLogger(__name__)
+from dataplaybook.helpers.env import DataEnvironment, _DataEnv
 
 
 def test_dataenvironment():
     """Test dataenvironment."""
 
-    env = utils.DataEnvironment()
+    env = DataEnvironment()
     env["tab"] = [1]
     assert env["tab"] == [1]
 
@@ -47,7 +40,7 @@ def test_dataenvironment():
 def test_dataenvironment_as():
     """Test dataenvironment."""
 
-    env = utils.DataEnvironment()
+    env = DataEnvironment()
     env["t1"] = [{"a": 1}]
 
     assert len(env.as_dict("b", "c")) == 0
@@ -62,7 +55,7 @@ def test_dataenvironment_as():
 
 def test_env():
     """Test DataEnv."""
-    dataenv = utils.DataEnvironment()
+    dataenv = DataEnvironment()
     assert isinstance(dataenv.var, dict)
     assert dataenv.var == {}
     assert isinstance(dataenv.var.env, dict)
@@ -82,7 +75,7 @@ def test_env():
 
 def test_dataenv():
     """Test DataEnv loading."""
-    env = utils.DataEnv()
+    env = _DataEnv()
     env._load('a=1\nb="2"')
     assert env.a == "1"
     assert env.b == '"2"'
@@ -90,56 +83,3 @@ def test_dataenv():
     env._load('a: 3\nb: "4"')
     assert env.a == "3"
     assert env.b == '"4"'
-
-
-def test_logger():
-    """Test logger."""
-    utils.setup_logger()
-    utils.set_logger_level({"dataplaybook": "debug"})
-
-
-def test_filter():
-    """Test log filter."""
-
-    rec = logging.makeLogRecord({"args": [1, "aa", [1, 2], {"a": 1}]})
-    assert utils.log_filter(rec) is True
-
-    rec.args[1] = "aa" * 1000
-    assert len(rec.args[1]) > 200
-    res = utils.log_filter(rec)
-    assert res.args[1].startswith("aa")
-    assert "..." in res.args[1]
-    assert len(res.args[1]) < 200
-
-
-def test_local_import():
-    """Test local import."""
-    os.chdir("tests")
-    try:
-        tcom = utils.local_import_module("common")
-        assert tcom.COMMON is True
-    finally:
-        os.chdir("..")
-
-
-def test_timeit():
-    """Test timeit context manager."""
-    with utils.time_it():
-        print("a")
-
-
-def _glob_import(path):
-    cwd = os.getcwd()
-    try:
-        for file in path.glob("**/*.py"):
-            os.chdir(file.parent)
-            _LOGGER.info(str(file))
-            utils.local_import_module(file.stem)
-    finally:
-        ALL_TASKS.clear()
-        os.chdir(cwd)
-
-
-def test_local_import_all():
-    """Test local import."""
-    _glob_import(Path("./dataplaybook").resolve(strict=True))

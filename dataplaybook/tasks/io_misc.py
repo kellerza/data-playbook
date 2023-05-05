@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 from icecream import ic
 
 from dataplaybook import Columns, Table, task
-from dataplaybook.config_validation import ensure_list
+from dataplaybook.utils import ensure_list as _ensure_list
 
 
 @task
@@ -36,7 +36,7 @@ def file_rotate(file: str, count: int = 3):
 @task
 def glob(patterns: list[str]) -> Table:
     """Search for files matching certain patterns."""
-    for val in ensure_list(patterns):
+    for val in _ensure_list(patterns):
         fol, _, pat = val.partition("/*")
         folder = Path(fol)
         for file in folder.glob("*" + pat):

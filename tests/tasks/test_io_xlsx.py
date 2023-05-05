@@ -2,8 +2,8 @@
 from unittest.mock import MagicMock, patch
 
 from dataplaybook import DataEnvironment
-from dataplaybook.config_validation import AttrDict
 from dataplaybook.tasks.io_xlsx import read_excel, write_excel
+from dataplaybook.utils import AttrDict
 
 # from openpyxl.worksheet.worksheet import Worksheet
 

@@ -13,12 +13,9 @@ from icecream import colorizedStderrPrint, ic  # noqa pylint: disable=unused-imp
 from typeguard import _CallMemo, check_argument_types, check_return_type
 
 from dataplaybook.const import VERSION, ATable, Table, Tables
-from dataplaybook.utils import (
-    DataEnvironment,
-    doublewrap,
-    local_import_module,
-    setup_logger,
-)
+from dataplaybook.helpers import DataEnvironment
+from dataplaybook.utils import doublewrap, local_import_module
+from dataplaybook.utils.logger import setup_logger
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,7 +149,7 @@ def playbook(
     return target
 
 
-_EXECUTED = False
+_EXECUTED: list[bool] = []
 
 
 def get_default_playbook() -> Optional[str]:
@@ -191,10 +188,9 @@ def _parseargs(dataplaybook_cmd: bool) -> argparse.Namespace:
 
 def run_playbooks(dataplaybook_cmd: bool = False) -> int:
     """Execute playbooks, or prompt for one."""
-    global _EXECUTED
     if _EXECUTED:
         return 0
-    _EXECUTED = True
+    _EXECUTED.append(True)
 
     args = _parseargs(dataplaybook_cmd)
 

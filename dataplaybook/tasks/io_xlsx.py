@@ -13,6 +13,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 import dataplaybook.config_validation as cv
 from dataplaybook import Tables, task
 from dataplaybook.const import ATable
+from dataplaybook.utils import ensure_list as _ensure_list
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -169,9 +170,9 @@ def _fmt(obj: Any) -> str:
         {
             vol.Required("tables"): cv.ensure_tables,
             vol.Required("file"): cv.endswith(".xlsx"),
-            vol.Optional("include"): vol.All(cv.ensure_list, [str]),
-            vol.Optional("header", default=[]): vol.All(cv.ensure_list, [str]),
-            vol.Optional("headers", default=[]): vol.All(cv.ensure_list, [object]),
+            vol.Optional("include"): vol.All(_ensure_list, [str]),
+            vol.Optional("header", default=[]): vol.All(_ensure_list, [str]),
+            vol.Optional("headers", default=[]): vol.All(_ensure_list, [object]),
         }
     )
 )

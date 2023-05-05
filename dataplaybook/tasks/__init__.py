@@ -5,7 +5,7 @@ import shutil
 from typing import Any, Optional, Sequence, Union
 
 from dataplaybook import Columns, Table, Tables, task
-from dataplaybook.config_validation import ensure_list_csv as _ensure_list_csv
+from dataplaybook.utils import ensure_list_csv as _ensure_list_csv
 
 _LOGGER = logging.getLogger(__name__)
 

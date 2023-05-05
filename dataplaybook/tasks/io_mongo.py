@@ -3,10 +3,11 @@ import logging
 from typing import Optional, Sequence
 from urllib.parse import urlparse
 
-import attr
+import attrs
 import voluptuous as vol
 from icecream import ic  # noqa pylint: disable=unused-import
 from pymongo import MongoClient
+from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
 from dataplaybook import Columns, Table, task
@@ -26,14 +27,14 @@ def _clean_netloc(db_netloc: str) -> str:
         raise err
 
 
-@attr.s(slots=True)
+@attrs.define(slots=True)
 class MongoURI:
     """MongoDB URI."""
 
-    netloc = attr.ib(converter=_clean_netloc)
-    database = attr.ib()
-    collection = attr.ib()
-    set_id = attr.ib(default="")
+    netloc = attrs.field(converter=_clean_netloc)
+    database = attrs.field()
+    collection = attrs.field()
+    set_id = attrs.field(default="")
 
     @staticmethod
     def new_from_string(db_uri: str, set_id=None):
@@ -59,13 +60,6 @@ class MongoURI:
             set_id=set_id,
         )
 
-    # @staticmethod
-    # def validate(opt):
-    #     """Validate MongoDB URI."""
-    #     if not isinstance(opt.get("mdb"), MongoURI):
-    #         opt["mdb"] = MongoURI.new_from_string(opt["mdb"], opt.pop("set_id", None))
-    #     return opt
-
     def __str__(self) -> str:
         """As string."""
         return f"{self.netloc}/{self.database}/{self.collection}/{self.set_id}"
@@ -73,6 +67,14 @@ class MongoURI:
     def get_client(self, connect=True) -> MongoClient:
         """Return a MongoClient."""
         return MongoClient(self.netloc, connect=connect)
+
+    def get_collection(self, connect=True) -> Collection:
+        """Return the Collection from the MongoClient."""
+        return (
+            self.get_client(connect=connect)
+            .get_database(self.database)
+            .get_collection(self.collection)
+        )
 
 
 @task
@@ -82,13 +84,11 @@ def read_mongo(
     set_id: Optional[str] = None,
 ) -> Table:
     """Read data from a MongoDB collection."""
-    client = MongoClient(mdb.netloc, connect=True)
     if not set_id:
         set_id = mdb.set_id
-    if set_id:
-        cursor = client[mdb.database][mdb.collection].find({"_sid": set_id})
-    else:
-        cursor = client[mdb.database][mdb.collection].find()
+    col = mdb.get_collection()
+    args = [{"_sid": set_id}] if set_id else []
+    cursor = col.find(*args)
 
     cursor.batch_size(200)
     for result in cursor:
@@ -105,11 +105,10 @@ def write_mongo(
     if not set_id:
         set_id = mdb.set_id
     try:
-        client = MongoClient(mdb.netloc, connect=True)
-        col = client[mdb.database][mdb.collection]
+        col = mdb.get_collection()
         if not set_id:
             _LOGGER.info("Writing %s documents", len(table))
-            client[mdb.database][mdb.collection].insert_many(table)
+            col.insert_many(table)
             return
 
         filtr = {"_sid": set_id}
@@ -156,25 +155,19 @@ def list_to_columns(table: Table, *, list_column: str, columns: Columns) -> None
 @task
 def mongo_list_sids(mdb: MongoURI) -> list[str]:
     """Return a list of _sids."""
-    client = MongoClient(mdb.netloc, connect=True)
-    cursor = client[mdb.database][mdb.collection]
-    # non = cursor.find_one({"_sid": {"$exists": False}})
-    # print(non)
-    other = cursor.distinct("_sid")
-    # print(other)
-    return other
+    col = mdb.get_collection()
+    return col.distinct("_sid")
 
 
 @task
 def mongo_delete_sids(*, mdb: MongoURI, sids: list[str]):
     """Delete a specific _sid."""
-    client = MongoClient(mdb.netloc, connect=True)
-    cursor = client[mdb.database][mdb.collection]
+    col = mdb.get_collection()
     for sid in sids:
         if sid == "None" or sid is None:
-            cursor.delete_many({"_sid": {"$exists": False}})
+            col.delete_many({"_sid": None})
         else:
-            cursor.delete_many({"_sid": sid})
+            col.delete_many({"_sid": sid})
 
 
 @task
@@ -192,10 +185,10 @@ def mongo_sync_sids(
     """
     agg = [{"$group": {"_id": "$_sid", "count": {"$sum": 1}}}]
     # get local
-    l_db = mdb_local.get_client()[mdb_local.database][mdb_local.collection]
+    l_db = mdb_local.get_collection()
     lsc = {i["_id"]: i["count"] for i in l_db.aggregate(agg)}
     # get remote
-    r_db = mdb_remote.get_client()[mdb_remote.database][mdb_remote.collection]
+    r_db = mdb_remote.get_collection()
     rsc = {i["_id"]: i["count"] for i in r_db.aggregate(agg)}
 
     for sid, lval in lsc.items():
@@ -213,6 +206,6 @@ def mongo_sync_sids(
         return
 
     extra = list(set(rsc.keys()) - set(ignore_remote or []))
-    ic(extra)
     if extra:
+        _LOGGER.info("Removing sids: %s", extra)
         mongo_delete_sids(mdb=mdb_remote, sids=extra)

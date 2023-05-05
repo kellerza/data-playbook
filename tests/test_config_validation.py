@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dataplaybook.config_validation import AttrDict, AttrKeyError
+from dataplaybook.utils import AttrDict, AttrKeyError
 
 
 def test_template_runtime():
