@@ -4,7 +4,7 @@ from typing import Any, Union
 from dataplaybook.helpers import DataEnvironment  # noqa, pylint: disable=unused-import
 from dataplaybook.utils import Table  # noqa, pylint: disable=unused-import
 
-VERSION = "1.0.14"
+VERSION = "1.0.15"
 
 
 Columns = list[str]

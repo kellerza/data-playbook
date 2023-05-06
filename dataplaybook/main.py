@@ -129,7 +129,7 @@ _DEFAULT_PLAYBOOK: Optional[str] = None
 
 @doublewrap
 def playbook(
-    target: Callable,
+    target: Callable = None,  # type: ignore
     name: Optional[str] = None,
     default: bool = False,
     run: bool = False,
