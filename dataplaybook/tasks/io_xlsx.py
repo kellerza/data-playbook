@@ -63,7 +63,8 @@ def read_excel(*, tables: Tables, file: str, sheets=list[dict[str, Any]]) -> Non
 
 def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[dict[str, Any]]:
     """Read a sheet and return a table."""
-    res = ATable(header=header + 2)
+    res = ATable()
+    res.headers = header + 2
     res.extend(_sheet_yield_rows(_sheet, columns, header))
     _LOGGER.debug("Read %s rows from sheet %s", len(res), _sheet.title)
     return res
