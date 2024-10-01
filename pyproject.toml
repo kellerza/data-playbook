@@ -3,7 +3,7 @@ requires = ["poetry-core==1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "data-playbook"
+name = "dataplaybook"
 version = "1.0.18"
 description = ""
 authors = ["Johann Kellerman <kellerza@gmail.com>"]
