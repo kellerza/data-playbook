@@ -60,6 +60,9 @@ dataplaybook = "dataplaybook.__main__:main"
 
 [tool.semantic_release]
 commit = true
+tag = true
+vcs_release = true
+commit_parser = "emoji"
 version_variable = [
     "dataplaybook/const.py:__version__",
     "pyproject.toml:version",
