@@ -1,0 +1,137 @@
+[build-system]
+requires = ["poetry-core==1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "data-playbook"
+version = "1.0.18"
+description = ""
+authors = ["Johann Kellerman <kellerza@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "dataplaybook" }]
+license = "Apache-2.0"
+repository = "https://github.com/kellerza/data-playbook"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+keywords = ["data", "tables", "excel", "mongodb", "generators"]
+
+
+[tool.poetry.extras]
+mongodb = ["pymongo"]
+all = ["pymongo", "python-pptx", "O365"]
+
+[tool.poetry.dependencies]
+python = ">3.10"
+pymongo = { version = "*", optional = true }
+python-pptx = { version = "*", optional = true }
+O365 = { version = ">=1.0.4,<2", optional = true }
+
+attrs = ">21"
+colordict = "^1.2.6"
+colorlog = "*"
+voluptuous = ">=0.11.5"
+jinja2 = ">=3,<4"
+openpyxl = ">=3,<4"
+typeguard = ">=2,<3"
+icecream = "*"
+fuzzywuzzy = "*"
+python-Levenshtein = "*"
+requests = ">=2.0.0"
+typing-extensions = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+pytest-aiohttp = "*"
+pytest-cov = "*"
+pytest-github-actions-annotate-failures = "*"
+types-requests = "*"
+pylint = "*"
+
+[tool.poetry.scripts]
+dataplaybook = "dataplaybook.__main__:main"
+
+[tool.semantic_release]
+version_variable = [
+    "dataplaybook/const.py:__version__",
+    "pyproject.toml:version",
+]
+build_command = "pip install poetry && poetry build"
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+target-version = "py311"
+src = ["src", "test"]
+extend-exclude = ["src/rfr"]
+include = ["tests/*.py", "src/**/*.py"]
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I001"]
+ignore = ["E203", "E501"]
+
+[tool.ruff.lint.flake8-import-conventions]
+banned-from = ["typing"]
+
+[tool.ruff.lint.isort]
+no-lines-before = ["future", "standard-library"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = ["dataplaybook/tasks/fnb.py"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pylint.MASTER]
+ignore-paths = ['build']
+
+# https://stackoverflow.com/questions/64162504/settings-for-pylint-in-setup-cfg-are-not-getting-used
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 120
+good-names = ["db", "fr", "cr", "k", "i"]
+disable = '''line-too-long,
+    unsubscriptable-object,
+    unused-argument,
+    too-many-branches,
+    too-many-locals,
+    too-many-statements,
+    too-many-instance-attributes,
+    too-few-public-methods,
+    R0401,
+    R0801,
+    wrong-import-order,
+    R0917,
+    too-many-positional-arguments,
+'''
+
+[tool.pylint.design]
+# limiting the number of returns might discourage
+# the use of guard clauses. So we increase the
+# allowed number of returns from 6 to 8
+max-returns = 8
+
+[tool.pytest.ini_options]
+pythonpath = ["dataplaybook"]
+testpaths = ["tests"]
+filterwarnings = "ignore:.+@coroutine.+deprecated.+"
+norecursedirs = [".git", "modules"]
+log_cli = true
+log_cli_level = "DEBUG"
+asyncio_mode = "auto"

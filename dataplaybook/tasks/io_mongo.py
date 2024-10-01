@@ -1,6 +1,8 @@
 """MongoDB IO tasks."""
+
+from __future__ import annotations
 import logging
-from typing import Optional, Sequence
+from typing import Sequence
 from urllib.parse import urlparse
 
 import attrs
@@ -10,7 +12,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
-from dataplaybook import Columns, Table, task
+from dataplaybook import Columns, RowData, RowDataGen, task
 from dataplaybook.utils import PlaybookError
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,13 +33,13 @@ def _clean_netloc(db_netloc: str) -> str:
 class MongoURI:
     """MongoDB URI."""
 
-    netloc = attrs.field(converter=_clean_netloc)
-    database = attrs.field()
-    collection = attrs.field()
-    set_id = attrs.field(default="")
+    netloc: str = attrs.field(converter=_clean_netloc)
+    database: str = attrs.field()
+    collection: str = attrs.field()
+    set_id: str = attrs.field(default="")
 
     @staticmethod
-    def new_from_string(db_uri: str, set_id=None):
+    def new_from_string(db_uri: str, set_id: str = "") -> MongoURI:
         """Mongodb URI from a string."""
         try:
             res = urlparse(db_uri)
@@ -64,11 +66,11 @@ class MongoURI:
         """As string."""
         return f"{self.netloc}/{self.database}/{self.collection}/{self.set_id}"
 
-    def get_client(self, connect=True) -> MongoClient:
+    def get_client(self, connect: bool = True) -> MongoClient:
         """Return a MongoClient."""
         return MongoClient(self.netloc, connect=connect)
 
-    def get_collection(self, connect=True) -> Collection:
+    def get_collection(self, connect: bool = True) -> Collection:
         """Return the Collection from the MongoClient."""
         return (
             self.get_client(connect=connect)
@@ -81,8 +83,8 @@ class MongoURI:
 def read_mongo(
     mdb: MongoURI,
     *,
-    set_id: Optional[str] = None,
-) -> Table:
+    set_id: str | None = None,
+) -> RowDataGen:
     """Read data from a MongoDB collection."""
     if not set_id:
         set_id = mdb.set_id
@@ -99,8 +101,12 @@ def read_mongo(
 
 @task
 def write_mongo(
-    table: Table, mdb: MongoURI, *, set_id: Optional[str] = None, force=False
-):
+    table: list[RowData],
+    mdb: MongoURI,
+    *,
+    set_id: str | None = None,
+    force: bool = False,
+) -> None:
     """Write data to a MongoDB collection."""
     if not set_id:
         set_id = mdb.set_id
@@ -132,7 +138,9 @@ def write_mongo(
 
 
 @task
-def columns_to_list(table: Table, *, list_column: str, columns: Columns) -> None:
+def columns_to_list(
+    table: list[RowData], *, list_column: str, columns: Columns
+) -> None:
     """Convert columns with booleans to a list in a single column.
 
     Useful to store columns with true/false in a single list with the columns
@@ -143,7 +151,9 @@ def columns_to_list(table: Table, *, list_column: str, columns: Columns) -> None
 
 
 @task
-def list_to_columns(table: Table, *, list_column: str, columns: Columns) -> None:
+def list_to_columns(
+    table: list[RowData], *, list_column: str, columns: Columns
+) -> None:
     """Convert a list with values to columns with True."""
     for row in table:
         for col in columns:
@@ -160,7 +170,7 @@ def mongo_list_sids(mdb: MongoURI) -> list[str]:
 
 
 @task
-def mongo_delete_sids(*, mdb: MongoURI, sids: list[str]):
+def mongo_delete_sids(*, mdb: MongoURI, sids: list[str]) -> None:
     """Delete a specific _sid."""
     col = mdb.get_collection()
     for sid in sids:
@@ -175,9 +185,9 @@ def mongo_sync_sids(
     *,
     mdb_local: MongoURI,
     mdb_remote: MongoURI,
-    ignore_remote: Sequence[str] = None,
-    only_sync_sids: Sequence[str] = None,
-):
+    ignore_remote: Sequence[str] | None = None,
+    only_sync_sids: Sequence[str] | None = None,
+) -> None:
     """Sync two MongoDB collections.
 
     Only sync _sid's where the count is different.
@@ -198,7 +208,7 @@ def mongo_sync_sids(
                 continue
             # counts are different!
             mdb_local.set_id = sid
-            lcl = read_mongo(mdb=mdb_local)
+            lcl = list(read_mongo(mdb=mdb_local))
             write_mongo(mdb=mdb_remote, table=lcl, set_id=sid)
 
     if only_sync_sids:

@@ -1,17 +1,20 @@
 """GIS / QGIS tasks."""
-from dataplaybook import Table, task
+
+from dataplaybook import RowData, task
+
+# pylint: disable=too-many-positional-arguments
 
 
 @task
 def linestring(
-    table: Table,
+    table: list[RowData],
     lat_a: str = "latA",
     lat_b: str = "latB",
     lon_a: str = "lonA",
     lon_b: str = "lonB",
     linestring_column: str = "linestring",
     error: str = "22 -22",
-) -> Table:
+) -> list[RowData]:
     """Add a linestring column to a table."""
     for row in table:
         try:

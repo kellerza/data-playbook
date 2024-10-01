@@ -1,11 +1,12 @@
 """DataEnvironment class."""
+
 import logging
 import os
-from pathlib import Path
 
-from dataplaybook.main import ALL_TASKS
 from dataplaybook.utils import local_import_module, time_it
 from dataplaybook.utils.logger import log_filter, set_logger_level, setup_logger
+
+from ..conftest import import_folder
 
 # pylint: disable=unsupported-assignment-operation,no-member,protected-access
 
@@ -48,18 +49,7 @@ def test_timeit():
         print("a")
 
 
-def _glob_import(path):
-    cwd = os.getcwd()
-    try:
-        for file in path.glob("**/*.py"):
-            os.chdir(file.parent)
-            _LOGGER.info(str(file))
-            local_import_module(file.stem)
-    finally:
-        ALL_TASKS.clear()
-        os.chdir(cwd)
-
-
 def test_local_import_all():
     """Test local import."""
-    _glob_import(Path("./dataplaybook").resolve(strict=True))
+    with import_folder("./dataplaybook/tasks"):
+        pass

@@ -1,11 +1,11 @@
 """Powerpoint helpers."""
+
 # pylint: disable=invalid-name
 from __future__ import annotations
-
 import re
 from dataclasses import dataclass
 from turtle import Shape
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from colordict import ColorDict
 from icecream import ic
@@ -24,12 +24,12 @@ RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
 class PStyle:
     """Paragraph style class."""
 
-    bold: Optional[bool] = None
-    strike: Optional[bool] = None
-    italic: Optional[bool] = None
-    color: Optional[RGBColor] = None
-    highlight: Optional[RGBColor] = None
-    size: Optional[Pt] = None
+    bold: bool | None = None
+    strike: bool | None = None
+    italic: bool | None = None
+    color: RGBColor | None = None
+    highlight: RGBColor | None = None
+    size: Pt | None = None
 
     # def __bool__(self):
     #     return self.bold or self.italic or self.color or self.size or False
@@ -72,7 +72,7 @@ class PText:
 
     def apply_to(self, para: SlidePlaceholders) -> None:
         """Apply to."""
-        style: Optional[PStyle] = None
+        style: PStyle | None = None
         for prun in self._list:
             if isinstance(prun, str):
                 if prun == "\n":

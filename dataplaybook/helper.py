@@ -1,6 +1,6 @@
 """Helper functions."""
+
 from operator import itemgetter
-from typing import Optional
 
 
 # Source:
@@ -9,8 +9,8 @@ from typing import Optional
 def format_as_table(
     data: list,
     keys: list,
-    header: Optional[list] = None,
-    sort_by_key: Optional[str] = None,
+    header: list[str] | None = None,
+    sort_by_key: str | None = None,
     sort_order_reverse: bool = False,
 ) -> str:
     """Text formatted table from a list of dicts.

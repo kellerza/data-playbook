@@ -1,4 +1,5 @@
 """Dataplaybook script."""
+
 import sys
 
 from dataplaybook.main import run_playbooks

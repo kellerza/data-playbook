@@ -1,18 +1,19 @@
 """PDF IO Tasks."""
+
 import functools
 import logging
 import os
 import tempfile
+import typing
 from pathlib import Path
 from subprocess import call
-from typing import Optional
 
-from dataplaybook import Table, task
+from dataplaybook import RowDataGen, task
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _myreadlines(fobj, newline):
+def _myreadlines(fobj: typing.IO, newline: str) -> typing.Generator[str, None, None]:
     """Readline with custom newline.
 
     https://stackoverflow.com/a/16260159
@@ -30,8 +31,8 @@ def _myreadlines(fobj, newline):
 
 @task
 def read_pdf_pages(
-    filename: str, *, layout: bool = True, args: Optional[list[str]] = None
-) -> Table:
+    filename: str, *, layout: bool = True, args: list[str] | None = None
+) -> RowDataGen:
     """Read pdf as text pages."""
     if not filename.lower().endswith(".pdf"):
         return
@@ -65,8 +66,8 @@ def read_pdf_files(
     pattern: str = "*.pdf",
     *,
     layout: bool = True,
-    args: Optional[list[str]] = None
-) -> Table:
+    args: list[str] | None = None,
+) -> RowDataGen:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))

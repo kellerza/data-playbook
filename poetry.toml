@@ -1,0 +1,4 @@
+# https://github.com/marketplace/actions/python-poetry-action#workflow-example-cache-the-virtual-environment
+[virtualenvs]
+create = true
+in-project = true

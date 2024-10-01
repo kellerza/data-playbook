@@ -1,4 +1,5 @@
 """Test io_mongo."""
+
 from unittest.mock import MagicMock, call, patch
 
 from dataplaybook.tasks.io_mongo import MongoURI, mongo_sync_sids
@@ -49,7 +50,7 @@ def test_mongo_sync_sids(
     mock_l_db.aggregate.assert_called_once()
     assert mock_read_mongo.call_args_list == [call(mdb=mock_l)]
     assert mock_write_mongo.call_args_list == [
-        call(mdb=mock_r, table=mock_read_mongo(), set_id="sid2")
+        call(mdb=mock_r, table=[], set_id="sid2")
     ]
     assert "Removing sids" in caplog.text
     assert mock_mongo_delete_sids.call_args_list == [call(mdb=mock_r, sids=["sid3"])]
@@ -75,7 +76,7 @@ def test_mongo_sync_sids(
     mongo_sync_sids(mdb_local=mock_l, mdb_remote=mock_r, only_sync_sids=["sid2"])
     assert mock_read_mongo.call_args_list == [call(mdb=mock_l)]
     assert mock_write_mongo.call_args_list == [
-        call(mdb=mock_r, table=mock_read_mongo(), set_id="sid2")
+        call(mdb=mock_r, table=[], set_id="sid2")
     ]
     assert "Removing sids" not in caplog.text
     assert mock_mongo_delete_sids.call_args_list == []

@@ -1,4 +1,5 @@
 """Sending files."""
+
 import smtplib
 from email import encoders
 from email.mime.base import MIMEBase
@@ -6,9 +7,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from socket import gaierror
-from typing import Optional, Union
+from typing import Union
 
 from dataplaybook import task
+
+# pylint: disable=too-many-positional-arguments
 
 
 @task
@@ -16,14 +19,14 @@ def mail(
     to_addrs: Union[list[str], str],
     from_addr: str,
     subject: str,
-    files: Optional[list[str]] = None,
+    server: str,
+    files: list[str] | None = None,
     priority: int = 4,
-    body: Optional[str] = "",
-    html: Optional[str] = "",
-    server: Optional[str] = None,
-    cc_addrs: Optional[list[str]] = None,
-    bcc_addrs: Optional[list[str]] = None,
-):
+    body: str | None = "",
+    html: str | None = "",
+    cc_addrs: list[str] | None = None,
+    bcc_addrs: list[str] | None = None,
+) -> None:
     """Send a mail."""
     cc_addrs = cc_addrs or []
     bcc_addrs = bcc_addrs or []
@@ -43,7 +46,7 @@ def mail(
     if files:
         for file_path in list(files):
             _fp = Path(file_path)
-            if not _fp.exists:
+            if not _fp.exists():
                 files.pop(files.index(file_path))  # Remove if not found
                 body = "Attachment not found: {file_path}\n{body}"
 
@@ -73,7 +76,7 @@ def mail(
         raise
 
 
-def _attach(message, path):
+def _attach(message: MIMEMultipart, path: Path) -> None:
     """Attach a file to message."""
     assert isinstance(path, Path)
 

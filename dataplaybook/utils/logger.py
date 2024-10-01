@@ -1,6 +1,7 @@
 """Logger functions."""
+
 import logging
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 
 def get_logger(logger: Union[str, logging.Logger, None] = None) -> logging.Logger:
@@ -12,7 +13,7 @@ def get_logger(logger: Union[str, logging.Logger, None] = None) -> logging.Logge
     )
 
 
-def set_logger_level(level: Any, module: Optional[logging.Logger] = None) -> None:
+def set_logger_level(level: Any, module: logging.Logger | None = None) -> None:
     """Set the log level."""
 
     def _level(level: Any = None) -> int:

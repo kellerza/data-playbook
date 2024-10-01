@@ -1,9 +1,9 @@
 """Read helpers."""
+
 import logging
 import os
-from collections import OrderedDict
 from json import dumps
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 import openpyxl
 import voluptuous as vol
@@ -11,14 +11,13 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 import dataplaybook.config_validation as cv
-from dataplaybook import Tables, task
-from dataplaybook.const import ATable
+from dataplaybook import RowData, RowDataGen, Tables, task_validate
 from dataplaybook.utils import ensure_list as _ensure_list
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@task(
+@task_validate(
     validator=vol.Schema(
         schema={
             vol.Required("tables"): cv.ensure_tables,
@@ -48,31 +47,33 @@ _LOGGER = logging.getLogger(__name__)
         }
     )
 )
-def read_excel(*, tables: Tables, file: str, sheets=list[dict[str, Any]]) -> None:
+def read_excel(
+    *, tables: Tables, file: str, sheets: list[dict[str, Any]] | None = None
+) -> None:
     """Read excel file using openpyxl."""
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
     for sht in sheets or []:
-        name = sht.get("name") or sht["target"]
+        tgt = str(sht["target"])
+        name = str(sht.get("name") or tgt)
         # default_sheet = *
         the_sheet = wbk.active if name == "*" else wbk[name]
-        tbl = _sheet_read(the_sheet, sht.get("columns"), sht.get("header", 0))
-        tables[sht["target"]] = tbl
+        tables[tgt] = _sheet_read(the_sheet, sht.get("columns"), sht.get("header", 0))
 
 
-def _sheet_read(_sheet: Worksheet, columns=None, header=0) -> Sequence[dict[str, Any]]:
+def _sheet_read(
+    _sheet: Worksheet, columns: dict | None = None, header: int = 0
+) -> list[RowData]:
     """Read a sheet and return a table."""
-    res = ATable()
-    res.headers = header + 2
-    res.extend(_sheet_yield_rows(_sheet, columns, header))
+    res = list(_sheet_yield_rows(_sheet, columns, header))
     _LOGGER.debug("Read %s rows from sheet %s", len(res), _sheet.title)
     return res
 
 
 def _column_map(
-    columns: Optional[dict], header_row: Sequence[str]
-) -> Sequence[tuple[int, str, Optional[Any]]]:
+    columns: dict | None, header_row: Sequence[str]
+) -> Sequence[tuple[int, str, Any | None]]:
     """List of (idx, nme, val)."""
     res = []
     if not columns:
@@ -95,7 +96,9 @@ def _column_map(
     return res
 
 
-def _sheet_yield_rows(_sheet: Worksheet, columns=None, header=0) -> dict[str, Any]:
+def _sheet_yield_rows(
+    _sheet: Worksheet, columns: dict | None = None, header: int = 0
+) -> RowDataGen:
     """Read the sheet and yield the rows."""
     rows = _sheet.rows
     try:
@@ -159,14 +162,16 @@ def _fmt(obj: Any) -> str:
         return str(obj)
 
     # openpyxl's _bind_value in cell.py doesn't use isinstance
-    # pylint: disable=unidiomatic-typecheck
-    if isinstance(obj, str) and type(obj) != str:
+
+    if (
+        isinstance(obj, str) and type(obj) != str  # noqa: E721 # pylint: disable=unidiomatic-typecheck
+    ):
         return str(obj)
 
     return obj
 
 
-@task(
+@task_validate(
     validator=vol.Schema(
         {
             vol.Required("tables"): cv.ensure_tables,
@@ -181,11 +186,11 @@ def write_excel(
     *,
     tables: Tables,
     file: str,
-    include=None,
-    header: Optional[list[str]] = None,
-    headers: Optional[list[Any]] = None,
+    include: list[str] | None = None,
+    header: list[str] | None = None,
+    headers: list[Any] | None = None,
     ensure_string: bool = False,
-):
+) -> None:
     """Write an excel file."""
     header = header or []
     headers = headers or []
@@ -211,7 +216,7 @@ def write_excel(
             _LOGGER.warning("Could not save table %s", table_name)
             continue
 
-        hdr = OrderedDict()
+        hdr: dict[str, int] = {}
 
         # Old style headers (applies to all sheets)
         for _hdr in header:
@@ -229,21 +234,21 @@ def write_excel(
         for row in tables[table_name]:
             for _hdr in row.keys():
                 hdr[str(_hdr)] = 1
-        hdr = list(hdr.keys())
-        wsh.append(hdr)
+        hdrk = list(hdr.keys())
+        wsh.append(hdrk)
 
         debugs = 4
         for row in tables[table_name]:
-            erow = [_fmt(row.get(h)) for h in hdr]
+            erow = [_fmt(row.get(h)) for h in hdrk]
             try:
                 wsh.append(erow)
             except (ValueError, openpyxl.utils.exceptions.IllegalCharacterError) as exc:
                 debugs -= 1
                 if debugs > 0:
                     _LOGGER.warning(
-                        "Error writing %s, hdrs: %s - %s", list(erow), hdr, exc
+                        "Error writing %s, hdrs: %s - %s", list(erow), hdrk, exc
                     )
-                wsh.append([str(row.get(h, "")) for h in hdr])
+                wsh.append([str(row.get(h, "")) for h in hdrk])
         if debugs < 0:
             _LOGGER.warning("Total %s errors", 2 - debugs)
 

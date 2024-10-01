@@ -1,4 +1,5 @@
 """Pptx tests."""
+
 from dataplaybook.tasks.io_pptx import PStyle, PText
 
 

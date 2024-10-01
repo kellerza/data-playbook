@@ -1,19 +1,21 @@
 """Dataplaybook tasks."""
+
 import argparse
 import atexit
 import logging
 import os
 import sys
+import typing
 from functools import wraps
 from inspect import isgeneratorfunction, signature
 from pathlib import Path
-from typing import Any, Callable, Optional, Sequence, Union, get_type_hints
+from typing import Any, Callable, Sequence
 
-from icecream import colorizedStderrPrint, ic  # noqa pylint: disable=unused-import
+from icecream import colorizedStderrPrint, ic
 from typeguard import _CallMemo, check_argument_types, check_return_type
 
-from dataplaybook.const import VERSION, ATable, Table, Tables
-from dataplaybook.helpers import DataEnvironment
+from dataplaybook.const import VERSION, Tables
+from dataplaybook.helpers.env import DataEnvironment
 from dataplaybook.utils import doublewrap, local_import_module
 from dataplaybook.utils.logger import setup_logger
 
@@ -30,7 +32,7 @@ def print_tasks() -> None:
     def sign(func: Callable) -> str:
         sig = str(signature(func))
         sig = sig.replace(str(Tables).replace("typing.", ""), "Tables")
-        sig = sig.replace(str(Table).replace("typing.", ""), "Table")
+        # sig = sig.replace(str(TableXXX).replace("typing.", ""), "Table")
         return sig
 
     mods: dict = {}
@@ -47,7 +49,7 @@ def print_tasks() -> None:
 
 def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
     """Represent the caller."""
-    type_hints = get_type_hints(target)
+    type_hints = typing.get_type_hints(target)
     repr_args = [repr(a)[:50] for a in args]
     repr_kwargs = [f"{k}={v!r}" for k, v in kwargs.items()]
     repr_call = f"{target.__name__}({', '.join(repr_args + repr_kwargs)})"
@@ -56,81 +58,126 @@ def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
     _LOGGER.info("Calling %s", repr_call)
 
 
-@doublewrap
-def task(
-    target: Callable = None,  # type: ignore
-    validator: Optional[Callable] = None,
-) -> Callable:
-    """Verify parameters & execute task."""
-
-    @wraps(target)
-    def taskwrapper(*args: Any, **kwargs: Any) -> Union[ATable, Any]:
-        _repr_function(target=target, args=args, kwargs=kwargs)
-
-        # Warning for explicit parameters
-        if args:
-            short = [str(a)[:20] for a in args]
-            _LOGGER.warning("Use explicit parameters, instead of %s", short)
-
-        # Warning on parameter types
-        call_memo = _CallMemo(target, args=args, kwargs=kwargs)
-        try:
-            check_argument_types(call_memo)
-        except TypeError as err:
-            _LOGGER.warning(err)
-
-        if validator:
-            validator(kwargs)
-
-        try:
-            value = target(*args, **kwargs)
-        except Exception as err:
-            _LOGGER.error(
-                "Error while running task `%s` - %s: %s", name, type(err).__name__, err
-            )
-            raise
-
-        if isgeneratorfunction(target):
-            value = ATable(value)
-
-        try:
-            check_return_type(value, call_memo)
-        except TypeError as err:
-            _LOGGER.error(err)
-
-        if isinstance(value, list) and not isinstance(value, ATable):
-            value = ATable(value)
-
-        return value
+def _add_task(task_function: Callable, validator: Callable | None = None) -> None:
+    """Add the task to ALL_TASKS."""
 
     # Save the task
-    name = target.__name__
+    name = task_function.__name__
     if name in ALL_TASKS:
-        _LOGGER.error(
+        _LOGGER.warning(
             "Task %s (%s) already loaded, overwriting with %s (%s)",
             name,
             ALL_TASKS[name]["module"],
             name,
-            target.__module__,
+            task_function.__module__,
         )
-    ALL_TASKS[target.__name__] = {
-        "func": target,
+    ALL_TASKS[task_function.__name__] = {
+        "func": task_function,
         "validator": validator,
-        "gen": isgeneratorfunction(target),
-        "module": target.__module__,
+        "gen": isgeneratorfunction(task_function),
+        "module": task_function.__module__,
     }
 
-    return taskwrapper
+
+T = typing.TypeVar("T")
+P = typing.ParamSpec("P")
+
+
+def _run_task(
+    task_function: Callable[P, T],
+    validator: Callable | None,
+    *args: Any,
+    **kwargs: Any,
+) -> T:
+    _repr_function(target=task_function, args=args, kwargs=kwargs)  # type:ignore
+
+    # Warning for explicit parameters
+    if args:
+        short = [str(a)[:20] for a in args]
+        _LOGGER.warning("Use explicit parameters, instead of %s", short)
+
+    # Warning on parameter types
+    call_memo = _CallMemo(task_function, args=args, kwargs=kwargs)
+    try:
+        check_argument_types(call_memo)
+    except TypeError as err:
+        _LOGGER.warning(err)
+
+    if validator:
+        validator(kwargs)
+
+    try:
+        value = task_function(*args, **kwargs)
+    except Exception as err:
+        _LOGGER.error(
+            "Error while running task `%s` - %s: %s",
+            task_function.__name__,
+            type(err).__name__,
+            err,
+        )
+        raise
+
+    try:
+        check_return_type(value, call_memo)
+    except TypeError as err:
+        _LOGGER.error(err)
+
+    return value
+
+
+def task(target: Callable[P, T]) -> Callable[P, T]:
+    """Task wrapper."""
+
+    @wraps(target)
+    def task_wrapper(*args: Any, **kwargs: Any) -> T:
+        return _run_task(target, None, *args, **kwargs)
+
+    _add_task(target)
+    return task_wrapper
+
+
+def task_validate(*, validator: Callable) -> Callable[[Callable[P, T]], Callable[P, T]]:
+    """Task wrapper with arguments."""
+
+    def _wrapper(target: Callable[P, T]) -> Callable[P, T]:
+        @wraps(target)
+        def task_wrapper(*args: Any, **kwargs: Any) -> T:
+            return _run_task(target, validator, *args, **kwargs)
+
+        _add_task(target)
+        return task_wrapper
+
+    return _wrapper
+
+
+K = typing.TypeVar("K", Callable, Callable)
+
+
+# @doublewrap
+# def task(
+#     target: K | None = None,  # type: ignore
+#     validator: Callable | None = None,
+# ) -> K:
+#     """Verify parameters & execute task."""
+
+#     @wraps(target)  # type:ignore
+#     def taskwrapper(*args: Any, **kwargs: Any) -> ATable:
+#         return _run_task(target, validator, *args, **kwargs)  # type:ignore
+
+#     if target:
+#         _add_task(target, validator)
+
+#     return taskwrapper
 
 
 _ALL_PLAYBOOKS: dict[str, Callable] = {}
-_DEFAULT_PLAYBOOK: Optional[str] = None
+_DEFAULT_PLAYBOOK: str | None = None
 
 
 @doublewrap
 def playbook(
     target: Callable = None,  # type: ignore
-    name: Optional[str] = None,
+    name: str | None = None,
     default: bool = False,
     run: bool = False,
 ) -> Callable:
@@ -152,7 +199,7 @@ def playbook(
 _EXECUTED: list[bool] = []
 
 
-def get_default_playbook() -> Optional[str]:
+def get_default_playbook() -> str | None:
     """Get the name of the default playbook, if any."""
     if _DEFAULT_PLAYBOOK:
         return _DEFAULT_PLAYBOOK
@@ -212,6 +259,9 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
                     _LOGGER.error("%s not found", spath)
                     return -1
                 spath = spath.with_suffix(".py")
+            if spath.is_dir():
+                _LOGGER.error("Please specify a file. %s is a folder.", spath)
+                return -1
 
             _LOGGER.info("Loading: %s (%s)", spath.name, spath.parent)
             os.chdir(spath.parent)
@@ -227,9 +277,17 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
 
         if not args.playbook:
             args.playbook = get_default_playbook()
+            if not args.playbook:
+                _LOGGER.critical("No playbook found")
+                return -1
 
         if args.playbook not in _ALL_PLAYBOOKS:
-            _LOGGER.error("Playbook %s not found in %s", args.playbook, args.files[0])
+            _LOGGER.error(
+                "Playbook %s not found in %s [%s]",
+                args.playbook,
+                args.files[0],
+                ",".join(_ALL_PLAYBOOKS),
+            )
             return -1
 
         try:

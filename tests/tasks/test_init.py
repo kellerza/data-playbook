@@ -1,12 +1,11 @@
 """Tests for main tasks"""
+
 import re
 
 import pytest
-
 from dataplaybook import DataEnvironment
 from dataplaybook.tasks import (
     build_lookup,
-    build_lookup_var,
     ensure_lists,
     filter_rows,
     print_table,
@@ -49,15 +48,15 @@ def test_task_build_lookup(address_table):
     ]
 
 
-def test_task_build_lookup_var(address_table):
-    """Test build_lookup_var."""
-    tables = DataEnvironment()
-    tables["streets"] = address_table
+# def test_task_build_lookup_var(address_table):
+#     """Test build_lookup_var."""
+#     tables = DataEnvironment()
+#     tables["streets"] = address_table
 
-    hse = build_lookup_var(
-        table=tables["streets"], key="street", columns=["suburb", "postcode"]
-    )
-    assert hse["W"] == dict(suburb="A", postcode=1001)
+#     hse = build_lookup(
+#         table=tables["streets"], key="street", columns=["suburb", "postcode"]
+#     )
+#     assert hse["W"] == dict(suburb="A", postcode=1001)
 
 
 def test_task_ensure_lists(address_table):

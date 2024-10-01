@@ -1,8 +1,8 @@
-"""Config Validaiton Tests."""
+"""Config Validation Tests."""
+
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from dataplaybook.utils import AttrDict, AttrKeyError
 
 

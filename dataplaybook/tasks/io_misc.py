@@ -1,22 +1,24 @@
 """Misc IO tasks."""
+
 import time
+import typing
 import urllib.request
 from csv import DictReader, DictWriter
 from json import dump, load, loads
 from json.decoder import JSONDecodeError
 from os import getenv
 from pathlib import Path
-from typing import Optional, Pattern, Sequence
+from typing import Any
 from urllib.parse import urlparse
 
 from icecream import ic
 
-from dataplaybook import Columns, Table, task
+from dataplaybook import Columns, DataEnvironment, RowData, RowDataGen, Tables, task
 from dataplaybook.utils import ensure_list as _ensure_list
 
 
 @task
-def file_rotate(file: str, count: int = 3):
+def file_rotate(file: str, count: int = 3) -> None:
     """Rotate some file fn.ext --> fn.1.ext --> fn.2.ext."""
     f_n = Path(file)
     if not f_n.exists():
@@ -34,9 +36,9 @@ def file_rotate(file: str, count: int = 3):
 
 
 @task
-def glob(patterns: list[str]) -> Table:
+def glob(patterns: list[str]) -> RowDataGen:
     """Search for files matching certain patterns."""
-    for val in _ensure_list(patterns):
+    for val in _ensure_list(patterns):  # type: ignore
         fol, _, pat = val.partition("/*")
         folder = Path(fol)
         for file in folder.glob("*" + pat):
@@ -44,7 +46,7 @@ def glob(patterns: list[str]) -> Table:
 
 
 @task
-def read_csv(file: str, columns: Optional[Columns] = None) -> Table:
+def read_csv(file: str, columns: dict[str, str] | None = None) -> RowDataGen:
     """Read csv file."""
     with open(file, "r", encoding="utf-8") as __f:
         csvf = DictReader(__f)
@@ -64,7 +66,7 @@ def read_csv(file: str, columns: Optional[Columns] = None) -> Table:
 
 
 @task
-def read_json(file) -> Table:
+def read_json(file: str) -> list[RowData]:
     """Read json from a file."""
     try:
         with Path(file).open(mode="r", encoding="utf-8") as __f:
@@ -89,14 +91,17 @@ def read_json(file) -> Table:
 
 
 @task
-def write_json(tables, file: str, only_var=False) -> None:
+def write_json(data: Tables | list[RowData], file: str, only_var: bool = False) -> None:
     """Write into a json file."""
+
     with Path(file).open("w", encoding="utf-8") as __f:
-        dump(tables.var if only_var else tables, __f, indent="  ")
+        if only_var:
+            data = data.var if isinstance(data, DataEnvironment) else {}
+        dump(data, __f, indent="  ")
 
 
 @task
-def read_tab_delim(file, headers: Columns) -> Table:
+def read_tab_delim(file: str, headers: Columns) -> RowDataGen:
     """Read xml file."""
     with open(file, "r", encoding="utf-8") as __f:
         header = headers
@@ -107,16 +112,16 @@ def read_tab_delim(file, headers: Columns) -> Table:
             if header is None:
                 header = line.split("\t")
                 continue
-            line = line.split("\t")
-            yield dict(zip(header, line))
+            vals = line.split("\t")
+            yield dict(zip(header, vals))
 
 
 @task
 def read_text_regex(
-    filename: str, newline: Pattern, fields: Optional[Pattern]
-) -> Table:
+    filename: str, newline: typing.Pattern, fields: typing.Pattern | None
+) -> RowDataGen:
     """Much regular expressions into a table."""
-    res = None
+    res: dict[str, Any] | None = None
     with open(filename, encoding="utf-8") as file:
         for line in file:
             match_obj = newline.search(line)
@@ -140,7 +145,7 @@ def read_text_regex(
 
 
 @task
-def wget(url: str, file: str, age: int = 48 * 60 * 60):
+def wget(url: str, file: str, age: int = 48 * 60 * 60) -> None:
     """Download a file."""
     if file:
         path = Path(file)
@@ -153,9 +158,9 @@ def wget(url: str, file: str, age: int = 48 * 60 * 60):
         dburl = urlparse(proxy)
         # create the object, assign it to a variable
         prx = f"{dburl.hostname}:{dburl.port}"
-        proxy = urllib.request.ProxyHandler({"http": prx, "https": prx, "ftp": prx})
+        handler = urllib.request.ProxyHandler({"http": prx, "https": prx, "ftp": prx})
         # construct a new opener using your proxy settings
-        opener = urllib.request.build_opener(proxy)
+        opener = urllib.request.build_opener(handler)
         # install the opener on the module-level
         urllib.request.install_opener(opener)
 
@@ -166,10 +171,10 @@ def wget(url: str, file: str, age: int = 48 * 60 * 60):
 
 
 @task
-def write_csv(table: Table, file: str, header: Sequence[str] = None) -> None:
+def write_csv(table: list[RowData], file: str, header: list[str] | None = None) -> None:
     """Write a csv file."""
     fieldnames = list(table[0].keys())
-    for hdr in reversed(header):
+    for hdr in reversed(header or []):
         if hdr in fieldnames:
             fieldnames.remove(hdr)
         fieldnames.insert(0, hdr)

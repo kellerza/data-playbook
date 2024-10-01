@@ -1,13 +1,14 @@
 """Fuzzy matching."""
+
 from fuzzywuzzy import fuzz
 
-from dataplaybook import Column, Table, task
+from dataplaybook import Column, RowData, task
 
 
 @task
 def fuzzy_match(
-    table1: Table,
-    table2: Table,
+    table1: list[RowData],
+    table2: list[RowData],
     t1_column: Column,
     t2_column: Column,
     t1_target_column: Column,

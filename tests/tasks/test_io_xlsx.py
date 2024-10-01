@@ -1,4 +1,5 @@
 """XLSX tests."""
+
 from unittest.mock import MagicMock, patch
 
 from dataplaybook import DataEnvironment

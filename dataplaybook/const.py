@@ -1,21 +1,23 @@
 """Constants."""
-from typing import Any, Union
 
-from dataplaybook.helpers import DataEnvironment  # noqa, pylint: disable=unused-import
-from dataplaybook.utils import Table  # noqa, pylint: disable=unused-import
+from __future__ import annotations
+import typing
 
-VERSION = "1.0.16"
+# pylint: disable=unused-import
+from dataplaybook.helpers.env import DataEnvironment  # noqa: F401
 
+VERSION = "1.0.18"
 
 Columns = list[str]
 Column = str
-# Defined in utils
-# Table = list[dict[str, Any]]
-Tables = Union[dict[str, list[dict[str, Any]]], DataEnvironment]
+RowData = dict[str, typing.Any]
+RowDataGen = typing.Generator[RowData, None, None]
+Tables = dict[str, list[RowData]] | DataEnvironment
 
 
-class ATable(list):
-    """A table/list with some metadata."""
+# @attrs.define(slots=True)
+# class Result(list[dict[str, typing.Any]]):
+#     """A table/list with some metadata."""
 
-    name: str = ""
-    headers: int = 0
+#     name: str = attrs.field(default="")
+#     headers: int = 0

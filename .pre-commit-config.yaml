@@ -1,38 +1,30 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.3
     hooks:
-      - id: black
-        args:
-          - --quiet
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args:
-          - --profile=black
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.3.0
     hooks:
       - id: codespell
         args:
-          - -L HASS,hass,Hass
+          - "--ignore-words-list"
+          - "nd,nam,nin"
+          - --skip
+          - "poetry.lock"
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.2.0
+    rev: v1.11.2
     hooks:
       - id: mypy
-        files: "dataplaybook/.*.py"
-        additional_dependencies: ["types-attrs", "types-requests"]
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        files: "dataplaybook/.*.py"
-  # - repo: https://github.com/PyCQA/bandit
-  #   rev: 1.7.0
-  #   hooks:
-  #     - id: bandit
+        name: mypy
+        #language: system
+        entry: mypy dataplaybook
+        types: [python]
+        pass_filenames: false
+        args:
+          - --show-error-codes
+          - --config-file
+          - pyproject.toml
+        additional_dependencies: ["types-requests", "attrs>21"]

@@ -1,15 +1,21 @@
 """Dataenvironment class."""
-from __future__ import annotations
 
+from __future__ import annotations
 import logging
+import typing
 from configparser import ConfigParser
+from inspect import isgenerator
 from os import getenv
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
-from dataplaybook.utils import Table, slugify
+from dataplaybook.utils import slugify
 
 _LOGGER = logging.getLogger(__name__)
+# Table = list[dict[str, Any]]
+
+if typing.TYPE_CHECKING:
+    from dataplaybook.const import RowData
 
 
 class DataVars(dict):
@@ -85,11 +91,11 @@ class DataEnvironment(dict):
 
     _var: DataVars
 
-    def __init__(self) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Init."""
         dict.__setattr__(self, "_var", DataVars())
         dict.__setitem__(self, "var", self._var)
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
     @property
     def var(self) -> DataVars:
@@ -117,25 +123,29 @@ class DataEnvironment(dict):
         if isinstance(val, list):
             dict.__setitem__(self, key, val)
             _LOGGER.debug("tables[%s] = %s", key, val)
-        else:
-            self._var[key] = val
-            _LOGGER.debug("tables.var[%s] = %s", key, val)
+            return
+        if isgenerator(val):
+            dict.__setitem__(self, key, list(val))
+            _LOGGER.debug("tables[%s] = list(...)", key)
+            return
+        self._var[key] = val
+        _LOGGER.debug("tables.var[%s] = %s", key, val)
 
-    def _check_keys(self, *table_names: str) -> Sequence[str]:
+    def _check_keys(self, *table_names: str) -> typing.Sequence[str]:
         res = []
         for name in table_names:
             if name in self:
                 if isinstance(self[name], list):
                     res.append(name)
                 else:
-                    _LOGGER.warning("Table {%s} is not a list: %s", name, self[name])
+                    _LOGGER.warning("Table %s is not a list: %s", name, self[name])
             else:
-                _LOGGER.warning("Table {%s} does not exist", name)
+                _LOGGER.warning("Table %s does not exist", name)
         if not table_names:
             res = [k for k, v in self.items() if isinstance(v, list)]
         return res
 
-    def as_dict(self, *table_names: str) -> dict[str, Table]:
+    def as_dict(self, *table_names: str) -> dict[str, list[RowData]]:
         """Return an ordered dict."""
         keys = self._check_keys(*table_names)
         res = {}
@@ -143,7 +153,7 @@ class DataEnvironment(dict):
             res[key] = self[key]
         return res
 
-    def as_list(self, *table_names: str) -> Sequence[Table]:
+    def as_list(self, *table_names: str) -> typing.Sequence[list[RowData]]:
         """Return a list of Tables."""
         keys = self._check_keys(*table_names)
         return [self[k] for k in keys]

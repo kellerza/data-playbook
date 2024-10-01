@@ -1,4 +1,5 @@
 """Data validation helpers for voluptuous."""
+
 import logging
 from typing import Any, Callable
 

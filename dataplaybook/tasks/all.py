@@ -1,4 +1,5 @@
 """Import all available tasks."""
+
 # flake8: noqa
 # pylint: disable=wildcard-import,unused-wildcard-import
 from dataplaybook.tasks import *

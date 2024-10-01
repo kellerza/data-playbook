@@ -5,9 +5,10 @@ Everything HTTP Example:
         { "totalResults":25, "results":[ { "type":"file",
         "name":"filename.xlsx", "path":"C:\\...." }
 """
+
 from collections import namedtuple
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 import requests
 
@@ -34,16 +35,16 @@ def _everything_result(json: dict, class_: Callable) -> Result:
 
 def search(
     *terms: str,
-    params: Optional[dict] = None,
+    params: dict | None = None,
     sane: bool = True,
     sort: bool = True,
     max_results: int = 50,
-    class_: Callable = Path
+    class_: Callable = Path,
 ) -> Result:
     """Search for files."""
     params = dict(
         {"s": " ".join(terms), "path_column": 1, "json": 1, "count": max_results},
-        **(params or {})
+        **(params or {}),
     )
     if sane:
         params["s"] += SANE

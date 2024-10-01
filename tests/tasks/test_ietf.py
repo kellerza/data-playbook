@@ -1,14 +1,14 @@
 """Tests for ietf.py"""
+
 import logging
 import re
 from pathlib import Path
 
-import pytest
-
 import dataplaybook.tasks.ietf as ietf
+import pytest
 from dataplaybook import DataEnvironment
-from dataplaybook.const import ATable
 from dataplaybook.tasks.io_xlsx import read_excel
+from dataplaybook.utils import ensure_list
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -137,13 +137,8 @@ def test_extract_std():
 
     table = [{"ss": "rfc 1234 rfc 5678 rfc 3GPP Release 10"}, {"ss": "rfc 9999"}]
 
-    resttt = ietf.extract_standards_from_table(
-        table=table, extract_columns=["ss"]  # , include_columns=[],  # rfc_col="r",
-    )
-
-    assert isinstance(resttt, list)
-
-    res = list(resttt)
+    resg = ietf.extract_standards_from_table(table=table, extract_columns=["ss"])
+    res = ensure_list(resg)
 
     assert len(res) == 4
     assert "name" in res[0]
@@ -154,11 +149,10 @@ def test_extract_std():
     assert res[2] == {"name": "3GPP Release 10", "key": "3GPP Release 10", "lineno": 1}
     assert res[3] == {"name": "RFC9999", "key": "RFC9999", "lineno": 2}
 
-    table = ATable(table)
-    table.name = "ttt"
-
-    resttt = ietf.extract_standards_from_table(table=table, extract_columns=["ss"])
-    res = list(resttt)
+    resg = ietf.extract_standards_from_table(
+        table=table, extract_columns=["ss"], name="ttt"
+    )
+    res = ensure_list(resg)
 
     assert res[0] == {"name": "RFC1234", "key": "RFC1234", "table": "ttt", "lineno": 1}
     assert res[1] == {"name": "RFC5678", "key": "RFC5678", "table": "ttt", "lineno": 1}

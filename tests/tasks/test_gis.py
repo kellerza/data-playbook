@@ -1,4 +1,5 @@
 """Test gis."""
+
 from dataplaybook.tasks.gis import linestring
 
 

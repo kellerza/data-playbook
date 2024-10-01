@@ -1,16 +1,16 @@
 """Merge FNB statement."""
+
 # pylint: disable=consider-using-f-string
 import csv
 import logging
 import os
 import re
-import traceback
+import typing
 from calendar import monthrange
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
-from dataplaybook import Table, task
+from dataplaybook import RowData, RowDataGen, task
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ MONTH_MAP = {
 CHANGE_DAY = 7  # The day at which the months change for budget purposes
 
 
-def _budget_date(date):
+def _budget_date(date: datetime) -> datetime:
     """Get a budget month date from the actual date."""
     if isinstance(date, datetime):
         if date.day > 7:
@@ -53,7 +53,7 @@ def _budget_date(date):
     raise TypeError("Invalid date {}".format(date))
 
 
-def _str_to_date(text, year_month=None):
+def _str_to_date(text: str, year_month: datetime | None = None) -> datetime:
     """Convert statement text date to date."""
     if text is None:
         raise ValueError("Could not parse date '{}'".format(text))
@@ -80,9 +80,9 @@ def _str_to_date(text, year_month=None):
     if year is not None:
         year = int(year)
 
-    day = min(day, monthrange(year, month)[1])
+    day = min(day, monthrange(year or 1900, month)[1])
 
-    return datetime(year, month, day)
+    return datetime(year or 1900, month, day)
 
 
 class InvalidFile(Exception):
@@ -90,7 +90,7 @@ class InvalidFile(Exception):
 
 
 @task
-def read_cheque_csv(filename: str) -> Table:
+def read_cheque_csv(filename: str) -> RowDataGen:
     """Read an FNB cheque csv file."""
     fields = [
         "type",
@@ -164,10 +164,10 @@ def read_cheque_csv(filename: str) -> Table:
             yield res0
 
 
-TX_IDS = {}
+TX_IDS: dict[tuple, int] = {}
 
 
-def _get_id(acc, month):
+def _get_id(acc: str, month: int) -> str:
     """Return an ID."""
     if acc is None:
         acc = "0"
@@ -175,7 +175,7 @@ def _get_id(acc, month):
     return "{:0>16s}.{:04d}.{:04d}".format(str(acc), month, TX_IDS[(acc, month)])
 
 
-def _clean(row):
+def _clean(row: dict) -> dict:
     """Strip space in row description."""
     if isinstance(row["description"], str):
         row["description"] = " ".join(row["description"].split())
@@ -192,7 +192,7 @@ def _clean(row):
 
 
 @task
-def fnb_process(tables: dict[str, Table]) -> Table:
+def fnb_process(tables: dict[str, list[RowData]]) -> RowDataGen:
     """Add the budget month and ID."""
     for _, t_table in tables.items():
         for row in t_table:
@@ -231,7 +231,12 @@ def fnb_process(tables: dict[str, Table]) -> Table:
                 yield _clean(row)
 
 
-def _count_it(gen, retval):
+T = typing.TypeVar("T")
+
+
+def _count_it(
+    gen: typing.Generator[T, None, None], retval: dict
+) -> typing.Generator[T, None, None]:
     """Count items yielded."""
     retval["count"] = 0
     for val in gen:
@@ -241,13 +246,13 @@ def _count_it(gen, retval):
 
 
 @task
-def fnb_read_folder(folder: str, pattern: Optional[str] = "*.csv") -> Table:
+def fnb_read_folder(folder: str, pattern: str = "*.csv") -> RowDataGen:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))
     _LOGGER.info("Open %s files", len(files))
 
-    retval = {}
+    retval: dict[str, int] = {}
     for filename in files:
         try:
             try:
@@ -258,6 +263,6 @@ def fnb_read_folder(folder: str, pattern: Optional[str] = "*.csv") -> Table:
                 pass
 
             _LOGGER.warning("Could not load %s", filename)
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.error("Could not read %s: %s", filename, traceback.print_exc())
+        except Exception as err:  # pylint: disable=broad-except
+            _LOGGER.error("Could not read %s", filename, exc_info=err)
     _LOGGER.info("Success with %s lines", retval.get("total", 0))

@@ -1,21 +1,23 @@
 """Telecoms related tasks."""
+
 import logging
 import re
-from typing import Any, Generator, Match, Optional
+import typing
+from typing import Any, Callable, Generator, Match
 
-from dataplaybook import Columns, Table, task
+from dataplaybook import Columns, RowData, RowDataGen, task
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _re_rfc(match: Match) -> tuple[str, Optional[str]]:
+def _re_rfc(match: Match) -> tuple[str, str | None]:
     template = r"RFC\1"
     if len(match.group(1)) < 4:
         template = r"RFC" + r"\1".zfill(6 - len(match.group(1)))
     return match.expand(template), None
 
 
-def _re_proto(match: Match) -> tuple[str, Optional[str]]:
+def _re_proto(match: Match) -> tuple[str, str | None]:
     key = match.group(2).lower()
     ver = match.group(3)
     if ver is None:
@@ -23,7 +25,7 @@ def _re_proto(match: Match) -> tuple[str, Optional[str]]:
     return f"{key} version {ver}", key
 
 
-def _re_af(match: Match) -> tuple[str, Optional[str]]:
+def _re_af(match: Match) -> tuple[str, str | None]:
     key = match.group(2).upper()
     ver = match.group(3)
     if ver is None:
@@ -31,12 +33,12 @@ def _re_af(match: Match) -> tuple[str, Optional[str]]:
     return f"{key} version {ver}", key
 
 
-def _re_mfa(match: Match) -> tuple[str, Optional[str]]:
+def _re_mfa(match: Match) -> tuple[str, str | None]:
     ver = match.group(2)
     return f"MFA Forum {ver}", f"MFA Forum {ver}"
 
 
-REGEX = (
+REGEX: tuple[typing.Pattern | tuple[Callable | str, typing.Pattern], ...] = (
     # re.compile(r"(?=[^-]|^)((draft-[\w-]+?)(?:-\d{2})?)-*(?![-\w])", re.I),
     re.compile(r"(?=[^-]|^)((draft(?:-\w+)+?)(?:-\d{2})?)(?!-\w|\w)", re.I),
     (
@@ -99,7 +101,7 @@ class KeyStr(str):
         return getattr(self, "__key", self)
 
     def __new__(
-        cls, text: str, key: Optional[str] = None, start: Optional[int] = None
+        cls, text: str, key: str | None = None, start: int | None = None
     ) -> Any:
         """Init the string and the key."""
         res = super().__new__(cls, text)
@@ -130,13 +132,13 @@ def extract_standards_ordered(val: str) -> list[KeyStr]:
     return sorted(extract_standards(val), key=lambda x: x.start)
 
 
-def extract_one_standard(val: str) -> KeyStr:
+def extract_one_standard(val: str) -> KeyStr | None:
     """Extract a single standard."""
     lst = extract_standards_ordered(val)
     return lst[0] if lst else None
 
 
-def _extract_standards(val) -> Generator[KeyStr, None, None]:
+def _extract_standards(val: str) -> Generator[KeyStr, None, None]:
     """Extract standards from a string."""
     for rex in REGEX:
         if isinstance(rex, tuple):
@@ -149,7 +151,6 @@ def _extract_standards(val) -> Generator[KeyStr, None, None]:
 
                 yield KeyStr(
                     match.expand(rex[0]),
-                    match.expand(rex[2]) if len(rex) > 2 else None,
                     start=match.start(),
                 )
             continue
@@ -165,15 +166,17 @@ def _extract_standards(val) -> Generator[KeyStr, None, None]:
 
 @task
 def extract_standards_from_table(
-    table: Table, extract_columns: Columns, include_columns: Optional[Columns] = None
-) -> Table:
+    table: list[RowData],
+    extract_columns: Columns,
+    include_columns: Columns | None = None,
+    name: str = "",
+    line_offset: int = 1,
+) -> RowDataGen:
     """Extract all RFCs from a table, into a new table."""
-    header = getattr(table, "header", 1)
-    name = getattr(table, "name", "")
-    _LOGGER.debug("Header start at line: %s", header)
+    _LOGGER.debug("Header start at line: %s", line_offset)
 
-    for _no, row in enumerate(table, header):
-        base = {"lineno": _no}
+    for _no, row in enumerate(table, line_offset):
+        base: dict[str, Any] = {"lineno": _no}
         if name:
             base["table"] = name
 
@@ -191,10 +194,10 @@ def extract_standards_from_table(
 
 
 @task
-def add_standards_column(table: Table, columns: Columns, rfc_col: str):
+def add_standards_column(table: list[RowData], columns: Columns, rfc_col: str) -> None:
     """Extract all RFCs from a table."""
     for row in table:
         val = row.get(columns[0])
-        new = list(extract_standards(val))
+        new = list(extract_standards(str(val)))
         if new:
             row[rfc_col] = ", ".join(new)

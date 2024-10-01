@@ -1,16 +1,19 @@
 """Read XML files."""
+
 import json
 import logging
+import typing
 from collections import defaultdict
 from xml.etree import ElementTree
 
-from dataplaybook import Tables, task
+# from lxml import etree
+from dataplaybook import RowData, Tables, task
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @task
-def read_xml(tables: Tables, file: str, targets: list[str]):
+def read_xml(tables: Tables, file: str, targets: list[str]) -> None:
     """Read xml file.
 
     https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
@@ -24,7 +27,7 @@ def read_xml(tables: Tables, file: str, targets: list[str]):
 
     for _t1 in dct.values():
         for key, val in _t1.items():
-            key = key.replace("-", "_")
+            key = _ns(key.replace("-", "_"))
             if isinstance(val, list):
                 if key in _notok:
                     _notok.remove(key)
@@ -37,21 +40,21 @@ def read_xml(tables: Tables, file: str, targets: list[str]):
         _LOGGER.warning("Expected table %s", ",".join(_notok))
 
 
-def _writejson(filename, dct):
+def _writejson(filename: str, dct: dict[str, typing.Any]) -> None:
     """Write dict to file."""
     with open(filename, "w", encoding="utf-8") as __f:
         __f.write(json.dumps(dct))
 
 
-def _ns(_ss):
+def _ns(_ss: str) -> str:
     return _ss.replace("{http://www.rfc-editor.org/rfc-index}", "")
 
 
 # pylint: disable=invalid-name
-def _etree_to_dict(t):
+def _etree_to_dict(t: ElementTree.Element) -> RowData:
     """Elementtree to dict."""
     t_tag = _ns(t.tag)
-    d = {t_tag: {} if t.attrib else None}
+    d: RowData = {t_tag: {} if t.attrib else None}
 
     children = list(t)
     if children:

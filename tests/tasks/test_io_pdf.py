@@ -1,4 +1,5 @@
 """Test PDF functions."""
+
 from unittest.mock import Mock, mock_open, patch
 
 from dataplaybook.tasks import io_pdf
