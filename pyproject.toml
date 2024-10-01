@@ -58,11 +58,13 @@ pylint = "*"
 dataplaybook = "dataplaybook.__main__:main"
 
 [tool.semantic_release]
+version_source = "tag"
 version_variable = [
     "dataplaybook/const.py:__version__",
     "pyproject.toml:version",
 ]
 build_command = "pip install poetry && poetry build"
+commit_version_number = "true"
 
 [tool.ruff]
 line-length = 88
