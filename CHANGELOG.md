@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.0.19 (2024-10-01)
+
+### :dolphin:
+
+* print tasks &amp; readme :dolphin: ([`9550522`](https://github.com/kellerza/data-playbook/commit/9550522e0a59e455747cd480bd514fddb9f3874e))
+
 ## v1.0.18 (2024-10-01)
 
 ### :dolphin:
