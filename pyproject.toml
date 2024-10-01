@@ -53,12 +53,13 @@ pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 types-requests = "*"
 pylint = "*"
+python-semantic-release = "*"
 
 [tool.poetry.scripts]
 dataplaybook = "dataplaybook.__main__:main"
 
 [tool.semantic_release]
-version_source = "tag"
+commit = true
 version_variable = [
     "dataplaybook/const.py:__version__",
     "pyproject.toml:version",
@@ -68,7 +69,13 @@ commit_version_number = "true"
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
 [tool.semantic_release.branches.main]
-match = '\d+\.\d+\.\d+'
+#match = 'v\d+\.\d+\.\d+'
+match = "master"
+
+[tool.semantic_release.commit_parser_options]
+major_tags = [":boom:"]
+minor_tags = [":rockets:"]
+patch_tags = [":ambulance:", ":lock:", ":bug:", ":dolphin:"]
 
 [tool.ruff]
 line-length = 88
