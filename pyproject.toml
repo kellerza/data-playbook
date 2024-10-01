@@ -63,12 +63,11 @@ commit = true
 tag = true
 vcs_release = true
 commit_parser = "emoji"
-version_variable = [
-    "dataplaybook/const.py:__version__",
-    "pyproject.toml:version",
-]
+# https://python-semantic-release.readthedocs.io/en/latest/configuration.html#version-toml
+version_variables = ["dataplaybook/const.py:VERSION"]
+version_toml = ["pyproject.toml:tool.poetry.version"]
 build_command = "pip install poetry && poetry build"
-commit_version_number = "true"
+commit_version_number = true
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
 [tool.semantic_release.branches.main]
