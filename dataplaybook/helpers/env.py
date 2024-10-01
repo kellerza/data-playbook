@@ -86,7 +86,7 @@ class _DataEnv(dict):
         return self[key]
 
 
-class DataEnvironment(dict):
+class DataEnvironment(dict[str, list[dict[str, Any]]]):
     """DataEnvironment supports key access and variables."""
 
     _var: DataVars
@@ -94,7 +94,7 @@ class DataEnvironment(dict):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Init."""
         dict.__setattr__(self, "_var", DataVars())
-        dict.__setitem__(self, "var", self._var)
+        dict.__setitem__(self, "var", self._var)  # type:ignore
         super().__init__(*args, **kwargs)
 
     @property

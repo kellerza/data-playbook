@@ -32,79 +32,79 @@ Tasks are implemented as simple Python functions and the modules can be found in
 | PDF functions. Requires _pdftotext_ on your path<br>`dataplaybook.tasks.io_pdf`            | read_pdf_pages, read_pdf_files                                                                 |
 | Read XML<br>`dataplaybook.tasks.io_xml`                                                    | read_xml                                                                                       |
 
-## Data Playbook v0
-
-The [v0](https://github.com/kellerza/data-playbook/tree/v0) of dataplaybook used yaml files, very similar to playbooks
-
-Use: `dataplaybook playbook.yaml`
-
-### Playbook structure
-
-The playbook.yaml file allows you to load additional modules (containing tasks) and specify the tasks to execute in sequence, with all their parameters.
-
-The `tasks` to perform typically follow the the structure of read, process, write.
-
-Example yaml: (please note yaml is case sensitive)
-
-```yaml
-modules: [list, of, modules]
-
-tasks:
-  - task_name: # See a list of tasks below
-      task_setting_1: 1
-    tables: # The INPUT. One of more tables used by this task
-    target: # The OUTPUT. Target table name of this function
-    debug: True/False # Print extra debug message, default: False
+```bash
+$ dataplaybook --all -vvv
+dataplaybook.tasks
+- build_lookup "(table: list[RowData], key: str, columns: list[str]) -> RowDataGen"
+- build_lookup_dict "(table: list[RowData], key: str | list[str], columns: list[str] | None = None) -> dict[str | tuple, Any]"
+- combine "(tables: list[list[RowData]], key: str, columns: list[str], value: Union[Literal[True], str] = True) -> list[RowData]"
+- ensure_lists "(tables: Sequence[list[RowData]], columns: Sequence[str]) -> None"
+- filter_rows "(table: list[RowData], include: dict[str, str] | None = None, exclude: dict[str, str] | None = None) -> RowDataGen"
+- print_table "(*, table: list[RowData] | None = None, tables: dict[str, list[RowData]] | None = None) -> None"
+- remove_null "(tables: Sequence[list[RowData]]) -> None"
+- replace "(table: list[RowData], replace_dict: dict[str, str], columns: list[str]) -> None"
+- unique "(table: list[RowData], key: str) -> RowDataGen"
+- vlookup "(table0: list[RowData], acro: list[RowData], columns: list[str]) -> None"
+dataplaybook.tasks.fuzzy
+- fuzzy_match "(table1: list[RowData], table2: list[RowData], t1_column: str, t2_column: str, t1_target_column: str) -> None"
+dataplaybook.tasks.ietf
+- add_standards_column "(table: list[RowData], columns: list[str], rfc_col: str) -> None"
+- extract_standards_from_table "(table: list[RowData], extract_columns: list[str], include_columns: list[str] | None = None, name: str = '', line_offset: int = 1) -> RowDataGen"
+dataplaybook.tasks.gis
+- linestring "(table: list[RowData], lat_a: str = 'latA', lat_b: str = 'latB', lon_a: str = 'lonA', lon_b: str = 'lonB', linestring_column: str = 'linestring', error: str = '22 -22') -> list[RowData]"
+dataplaybook.tasks.io_mail
+- mail "(to_addrs: list[str] | str, from_addr: str, subject: str, server: str, files: list[str] | None = None, priority: int = 4, body: str | None = '', html: str | None = '', cc_addrs: list[str] | None = None, bcc_addrs: list[str] | None = None) -> None"
+dataplaybook.tasks.io_misc
+- file_rotate "(file: str, count: int = 3) -> None"
+- glob "(patterns: list[str]) -> RowDataGen"
+- read_csv "(file: str, columns: dict[str, str] | None = None) -> RowDataGen"
+- read_json "(file: str) -> list[RowData]"
+- read_tab_delim "(file: str, headers: list[str]) -> RowDataGen"
+- read_text_regex "(filename: str, newline: Pattern, fields: Optional[Pattern]) -> RowDataGen"
+- wget "(url: str, file: str, age: int = 172800) -> None"
+- write_csv "(table: list[RowData], file: str, header: list[str] | None = None) -> None"
+- write_json "(data: dict[str, list[RowData]] | list[RowData], file: str, only_var: bool = False) -> None"
+dataplaybook.tasks.io_mongo
+- columns_to_list "(table: 'list[RowData]', *, list_column: 'str', columns: 'Columns') -> 'None'"
+- list_to_columns "(table: 'list[RowData]', *, list_column: 'str', columns: 'Columns') -> 'None'"
+- mongo_delete_sids "(*, mdb: 'MongoURI', sids: 'list[str]') -> 'None'"
+- mongo_list_sids "(mdb: 'MongoURI') -> 'list[str]'"
+- mongo_sync_sids "(*, mdb_local: 'MongoURI', mdb_remote: 'MongoURI', ignore_remote: 'Sequence[str] | None' = None, only_sync_sids: 'Sequence[str] | None' = None) -> 'None'"
+- read_mongo "(mdb: 'MongoURI', *, set_id: 'str | None' = None) -> 'RowDataGen'"
+- write_mongo "(table: 'list[RowData]', mdb: 'MongoURI', *, set_id: 'str | None' = None, force: 'bool' = False) -> 'None'"
+dataplaybook.tasks.io_pdf
+- read_pdf_files "(folder: str, pattern: str = '*.pdf', *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
+- read_pdf_pages "(filename: str, *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
+dataplaybook.tasks.io_xlsx
+- read_excel "(*, tables: dict[str, list[RowData]], file: str, sheets: list[RowData] | None = None) -> list[str]"
+- write_excel "(*, tables: dict[str, list[RowData]], file: str, include: list[str] | None = None, header: list[str] | None = None, headers: list[Any] | None = None, ensure_string: bool = False) -> None"
+dataplaybook.tasks.io_xml
+- read_xml "(tables: dict[str, list[RowData]], file: str, targets: list[str]) -> None"
 ```
 
-### Templating
+## Local development
 
-Jinja2 and JMESPath expressions can be used to create parameters for subsequent tasks. Jinja2 simply use the `"{{ var[res1] }}"` bracket syntax and jmespath expressions should start with the word _jmespath_ followed by a space.
+Poetry is used for dependency management. Install poetry and run `poetry install` to install the dependencies.
 
-Both the `vars` and `template` tasks achieve a similar result: (this will search a table matching string "2" on the key column and return the value in the value column)
-
-```yaml
-- vars:
-    res1: jmespath test[?key=='2'].value | [0]
-# is equal to
-- template:
-    jmespath: "test[?key=='2'].value | [0]"
-  target: res1
-# ... then use it with `{{ var.res1 }}`
+```bash
+poetry install -E all
 ```
 
-The JMESpath task `template` task has an advantage that you can create new variables **or tables**.
+pre-commit is used for code formatting and linting. Install pre-commit and run `pre-commit install` to install the git hooks.
 
-If you have a lookup you use regularly you can do the following:
-
-```yaml
- - build_lookup_var:
-     key: key
-     columns: [value]
-   target: lookup1
-  # and then use it as follows to get a similar results to the previous example
-  - vars:
-      res1: "{{ var['lookup1']['2'].value }}"
+```bash
+pip install pre-commit && pre-commit install
 ```
 
-When searching through a table with Jinja, a similar one-liner, using `selectattr`, seems much more complex:
+Test locally using pre-commit (ruff, codespell & mypy), pylint & pytest
 
-```yaml
-- vars:
-    res1: "{{ test | selectattr('key', 'equalto', '2') | map(attribute='value') | first }}"
+```bash
+git add . && pre-commit run --all
+poetry run pylint dataplaybook tests
+poetry run pytest
 ```
 
-### Special yaml functions
-
-- `!re <expression>` Regular expression
-- `!es <search string>` Search a file using Everything by Voidtools
-
-### Install the development version
-
-1. Clone the repo
-2. `pip install <path> -e`
-
-### Data Playbook v0 origins
+## Data Playbook v0 - origins
 
 Data playbooks was created to replace various snippets of code I had lying around. They were all created to ensure repeatability of some menial task, and generally followed a similar structure of load something, process it and save it. (Process network data into GIS tools, network audits & reporting on router & NMS output, Extract IETF standards to complete SOCs, read my bank statements into my Excel budgeting tool, etc.)
 
@@ -114,7 +114,7 @@ In many cases I have a 'loose' coupling to actual file names, using Everything s
 
 It has some parts in common with Ansible Playbooks, especially the name was chosen after I was introduced to Ansible Playbooks. The task structure has been updated in 2019 to match the Ansible Playbooks 2.0/2.5+ format and allow names. This format will also be easier to introduce loop mechanisms etc.
 
-#### Comparison to Ansible Playbooks
+### Comparison to Ansible Playbooks
 
 Data playbooks is intended to create and modify variables in the environment (similar to **inventory**). Data playbooks starts with an empty environment (although you can read the environment from various sources inside the play).
 Although new variables can be created using **register:** in Ansible, data playbook functions requires the output to be captured through `target:`.

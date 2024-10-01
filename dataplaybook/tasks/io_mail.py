@@ -7,7 +7,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from socket import gaierror
-from typing import Union
 
 from dataplaybook import task
 
@@ -16,7 +15,7 @@ from dataplaybook import task
 
 @task
 def mail(
-    to_addrs: Union[list[str], str],
+    to_addrs: list[str] | str,
     from_addr: str,
     subject: str,
     server: str,

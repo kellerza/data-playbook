@@ -31,7 +31,13 @@ def print_tasks() -> None:
 
     def sign(func: Callable) -> str:
         sig = str(signature(func))
-        sig = sig.replace(str(Tables).replace("typing.", ""), "Tables")
+        sig = (
+            sig.replace("typing.", "")
+            .replace("Generator[dict[str, Any], NoneType, NoneType]", "RowDataGen")
+            .replace("dict[str, Any]", "RowData")
+            .replace(str(Tables).replace("typing.", ""), "Tables")
+        )
+        sig = sig.replace("dataplaybook.helpers.env.DataEnvironment", "DataEnvironment")
         # sig = sig.replace(str(TableXXX).replace("typing.", ""), "Table")
         return sig
 
@@ -213,7 +219,7 @@ def _parseargs(dataplaybook_cmd: bool) -> argparse.Namespace:
         description=f"Data Playbook v{VERSION}. Playbooks for tabular data."
     )
     if dataplaybook_cmd:
-        parser.add_argument("files", type=str, nargs=1, help="The playbook py file")
+        parser.add_argument("files", type=str, nargs="?", help="The playbook py file")
         parser.add_argument("--all", action="store_true", help="Load all tasks")
 
     parser.add_argument(
@@ -248,6 +254,10 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
 
     if args.v and args.v > 2:
         print_tasks()
+
+    if not args.files:
+        _LOGGER.error("No files specified")
+        return -1
 
     cwd = os.getcwd()
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from turtle import Shape
-from typing import Any, Union
+from typing import Any
 
 from colordict import ColorDict
 from icecream import ic
@@ -40,13 +40,13 @@ class PText:
 
     _list: list
 
-    def __init__(self, *text: Union[str, PStyle]):
+    def __init__(self, *text: str | PStyle):
         """Init Paragraph text."""
         self._list = []
         if text:
             self.append(*text)
 
-    def append(self, *text: Union[str, PStyle]) -> None:
+    def append(self, *text: str | PStyle) -> None:
         """Parse values and append."""
         for val in text:
             if isinstance(val, PStyle):

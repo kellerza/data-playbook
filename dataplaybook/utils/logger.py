@@ -1,10 +1,10 @@
 """Logger functions."""
 
 import logging
-from typing import Any, Union
+from typing import Any
 
 
-def get_logger(logger: Union[str, logging.Logger, None] = None) -> logging.Logger:
+def get_logger(logger: str | logging.Logger | None = None) -> logging.Logger:
     """Get a logger."""
     return (
         logger
