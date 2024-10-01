@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v1.0.18 (2024-10-01)
+
+### :dolphin:
+
+* :dolphin: ([`d7d7e92`](https://github.com/kellerza/data-playbook/commit/d7d7e922bb8109c968a2657d86b653fbb793d282))
+
 ## v1.0.17 (2024-10-01)
 
 ### :dolphin:
