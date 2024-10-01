@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
         schema={
             vol.Required("tables"): cv.ensure_tables,
             vol.Required("file"): str,
-            vol.Required("sheets"): [
+            vol.Optional("sheets"): [
                 vol.Schema(
                     {
                         vol.Optional("name", default=None): vol.Any(str, None),
@@ -49,17 +49,28 @@ _LOGGER = logging.getLogger(__name__)
 )
 def read_excel(
     *, tables: Tables, file: str, sheets: list[dict[str, Any]] | None = None
-) -> None:
-    """Read excel file using openpyxl."""
+) -> list[str]:
+    """Read excel file using openpyxl.
+
+    If no sheets are specified, all sheets are read and names returned."""
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
-    for sht in sheets or []:
-        tgt = str(sht["target"])
-        name = str(sht.get("name") or tgt)
+    if sheets is None:
+        sheets = [{"name": n, "target": n} for n in wbk.sheetnames]
+    if not sheets:
+        sheets = []
+
+    for sht in sheets:
+        name = sht.get("name") or sht["target"]
         # default_sheet = *
         the_sheet = wbk.active if name == "*" else wbk[name]
-        tables[tgt] = _sheet_read(the_sheet, sht.get("columns"), sht.get("header", 0))
+        tbl = _sheet_read(  # pylint: disable=protected-access
+            the_sheet, sht.get("columns"), sht.get("header", 0)
+        )
+        tables[sht["target"]] = tbl
+
+    return [s["target"] for s in sheets]
 
 
 def _sheet_read(
