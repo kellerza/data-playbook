@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v1.0.20 (2024-10-02)
+
+### :dolphin:
+
+* CLI &amp; LXML :dolphin: ([`269305a`](https://github.com/kellerza/data-playbook/commit/269305addca1ae188df08b29db089082fca4ee44))
+
+* CLI &amp; LXML :dolphin: ([`d8e7796`](https://github.com/kellerza/data-playbook/commit/d8e7796078b035837ac292fdb13f3ca54753e468))
+
 ## v1.0.19 (2024-10-01)
 
 ### :dolphin:

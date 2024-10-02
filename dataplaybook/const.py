@@ -6,7 +6,7 @@ import typing
 # pylint: disable=unused-import
 from dataplaybook.helpers.env import DataEnvironment  # noqa: F401
 
-VERSION = "1.0.19"
+VERSION = "1.0.20"
 
 Columns = list[str]
 Column = str
