@@ -1,6 +1,5 @@
 """Dataplaybook tasks."""
 
-import argparse
 import atexit
 import logging
 import os
@@ -14,7 +13,8 @@ from typing import Any, Callable, Sequence
 from icecream import colorizedStderrPrint, ic
 from typeguard import _CallMemo, check_argument_types, check_return_type
 
-from dataplaybook.const import VERSION, Tables
+from dataplaybook.const import Tables
+from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
 from dataplaybook.utils import doublewrap, local_import_module
 from dataplaybook.utils.logger import setup_logger
@@ -116,17 +116,19 @@ def _run_task(
         value = task_function(*args, **kwargs)
     except Exception as err:
         _LOGGER.error(
-            "Error while running task `%s` - %s: %s",
+            "Error while running task `%s` - %s",
             task_function.__name__,
             type(err).__name__,
-            err,
+            exc_info=err,
         )
         raise
 
     try:
         check_return_type(value, call_memo)
     except TypeError as err:
-        _LOGGER.error(err)
+        _LOGGER.warning(
+            "Unexpected return from task `%s`: %s", task_function.__name__, err
+        )
 
     return value
 
@@ -205,38 +207,13 @@ def playbook(
 _EXECUTED: list[bool] = []
 
 
-def get_default_playbook() -> str | None:
+def get_default_playbook() -> str:
     """Get the name of the default playbook, if any."""
     if _DEFAULT_PLAYBOOK:
         return _DEFAULT_PLAYBOOK
     if len(_ALL_PLAYBOOKS) == 1:
         return next(iter(_ALL_PLAYBOOKS))
-    return None
-
-
-def _parseargs(dataplaybook_cmd: bool) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=f"Data Playbook v{VERSION}. Playbooks for tabular data."
-    )
-    if dataplaybook_cmd:
-        parser.add_argument("files", type=str, nargs="?", help="The playbook py file")
-        parser.add_argument("--all", action="store_true", help="Load all tasks")
-
-    parser.add_argument(
-        "playbook",
-        type=str,
-        nargs="?",
-        default=get_default_playbook(),
-        help=f"The playbook function name: {', '.join(_ALL_PLAYBOOKS)}",
-    )
-    parser.add_argument("-v", action="count", help="Debug level")
-    args = parser.parse_args()
-    if not args:
-        sys.exit("No arguments supplied")
-    if not dataplaybook_cmd:
-        args.files = [""]
-        args.all = False
-    return args
+    return ""
 
 
 def run_playbooks(dataplaybook_cmd: bool = False) -> int:
@@ -245,25 +222,29 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
         return 0
     _EXECUTED.append(True)
 
-    args = _parseargs(dataplaybook_cmd)
+    args = parse_args(
+        dataplaybook_cmd=dataplaybook_cmd,
+        default_playbook=get_default_playbook(),
+        playbooks=_ALL_PLAYBOOKS.keys(),
+    )
 
     setup_logger()
 
     if args.all:
         import dataplaybook.tasks.all  # noqa pylint: disable=unused-import,import-outside-toplevel
 
-    if args.v and args.v > 2:
+    if args.v > 2:
         print_tasks()
 
     if not args.files:
-        _LOGGER.error("No files specified")
+        _LOGGER.info("Please specify a .py file to execute.")
         return -1
 
     cwd = os.getcwd()
 
     try:
         if dataplaybook_cmd:
-            spath = Path(args.files[0]).resolve()
+            spath = Path(args.files).resolve()
             if not spath.exists():
                 if spath.suffix != "" or not spath.with_suffix(".py").exists():
                     _LOGGER.error("%s not found", spath)

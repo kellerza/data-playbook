@@ -96,12 +96,11 @@ pre-commit is used for code formatting and linting. Install pre-commit and run `
 pip install pre-commit && pre-commit install
 ```
 
-Test locally using pre-commit (ruff, codespell & mypy), pylint & pytest
+Test locally using pre-commit (ruff, codespell, mypy & pylint)
 
 ```bash
 git add . && pre-commit run --all
 poetry run pylint dataplaybook tests
-poetry run pytest
 ```
 
 ## Data Playbook v0 - origins

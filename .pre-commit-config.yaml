@@ -5,6 +5,7 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
+
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
@@ -14,6 +15,7 @@ repos:
           - "nd,nam,nin"
           - --skip
           - "poetry.lock"
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.11.2
     hooks:
@@ -28,3 +30,20 @@ repos:
           - --config-file
           - pyproject.toml
         additional_dependencies: ["types-requests", "attrs>21"]
+
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: poetry
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: [
+            "run",
+            "pylint",
+            "dataplaybook",
+            "tests",
+            "-rn", # Only display messages
+            "-sn", # Don't display the score
+          ]

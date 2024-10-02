@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "dataplaybook"
 version = "1.0.19"
-description = ""
+description = "Playbooks for data. Open, process and save table based data."
 authors = ["Johann Kellerman <kellerza@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "dataplaybook" }]
@@ -25,13 +25,15 @@ keywords = ["data", "tables", "excel", "mongodb", "generators"]
 
 [tool.poetry.extras]
 mongodb = ["pymongo"]
-all = ["pymongo", "python-pptx", "O365"]
+lxml = ["lxml", "types-lxml"]
+all = ["pymongo", "python-pptx", "O365", "lxml", "types-lxml"]
 
 [tool.poetry.dependencies]
 python = ">3.10"
 pymongo = { version = "*", optional = true }
 python-pptx = { version = "*", optional = true }
 O365 = { version = ">=1.0.4,<2", optional = true }
+lxml = { version = "^5.3.0", optional = true }
 
 attrs = ">21"
 colordict = "^1.2.6"
@@ -46,7 +48,9 @@ python-Levenshtein = "*"
 requests = ">=2.0.0"
 typing-extensions = "*"
 
+
 [tool.poetry.group.dev.dependencies]
+types-lxml = { version = "^2024.9.16", optional = true }
 pytest = "*"
 pytest-aiohttp = "*"
 pytest-cov = "*"
@@ -144,7 +148,7 @@ max-returns = 8
 
 [tool.pytest.ini_options]
 pythonpath = ["dataplaybook"]
-testpaths = ["tests"]
+testpaths = ["dataplaybook"]                         #, "tests"]
 filterwarnings = "ignore:.+@coroutine.+deprecated.+"
 norecursedirs = [".git", "modules"]
 log_cli = true
