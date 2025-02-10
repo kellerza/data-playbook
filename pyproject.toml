@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dataplaybook"
-version = "0.0.0-semantically-released"
+version = "0.0.0"
 description = "Playbooks for data. Open, process and save table based data."
 authors = ["Johann Kellerman <kellerza@gmail.com>"]
 readme = "README.md"
