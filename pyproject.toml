@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dataplaybook"
-version = "0.0.0"
+version = "1.0.25"
 description = "Playbooks for data. Open, process and save table based data."
 authors = ["Johann Kellerman <kellerza@gmail.com>"]
 readme = "README.md"
@@ -70,7 +70,7 @@ vcs_release = true
 commit_parser = "emoji"
 # https://python-semantic-release.readthedocs.io/en/latest/configuration.html#version-toml
 version_variables = ["dataplaybook/const.py:VERSION"]
-# version_toml = ["pyproject.toml:tool.poetry.version"]
+version_toml = ["pyproject.toml:tool.poetry.version"]
 build_command = "pip install poetry && poetry build"
 commit_version_number = true
 
