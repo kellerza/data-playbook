@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dataplaybook"
-version = "1.0.20"
+version = "1.0.21"
 description = "Playbooks for data. Open, process and save table based data."
 authors = ["Johann Kellerman <kellerza@gmail.com>"]
 readme = "README.md"
@@ -19,6 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 keywords = ["data", "tables", "excel", "mongodb", "generators"]
 
