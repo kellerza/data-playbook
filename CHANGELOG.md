@@ -1,47 +1,32 @@
 # CHANGELOG
 
 
-## v1.0.25 (2025-02-10)
+## v1.0.21 (2025-02-10)
 
 ### :dolphin:
+
+- :dolphin:
+  ([`c20cc67`](https://github.com/kellerza/data-playbook/commit/c20cc674482750920e8d1c19599c98c8639fa36d))
 
 - :dolphin:
   ([`ab54ee1`](https://github.com/kellerza/data-playbook/commit/ab54ee12a8e65efe310b6d3be276947d6698981b))
 
 ### Other
 
-- Sem
-  ([`7f42430`](https://github.com/kellerza/data-playbook/commit/7f42430eee222118e48a7063d1efd320edf366d4))
-
-- V1.0.25
-  ([`8f14d24`](https://github.com/kellerza/data-playbook/commit/8f14d246071bafdb43f33d208cf70e80404f8a4d))
-
-
-## v1.0.24 (2025-02-10)
-
-### Other
-
 - 0
   ([`883e04f`](https://github.com/kellerza/data-playbook/commit/883e04f100472c1dde7f083e235a4fc212056931))
 
-
-## v1.0.23 (2025-02-10)
-
-### Other
-
-- A
-  ([`2b155ff`](https://github.com/kellerza/data-playbook/commit/2b155ff450d1bc9d267beda2820160639ef8a51e))
-
-
-## v1.0.21 (2025-02-10)
-
-### Other
+- 1.0.27 :dolphin:
+  ([`62cadc8`](https://github.com/kellerza/data-playbook/commit/62cadc80453b96f06a738a947effdf01f1bdfcab))
 
 - 20
   ([`48e8e31`](https://github.com/kellerza/data-playbook/commit/48e8e316625e9149192e3af6b2ddfe00948d992d))
 
 - 21
   ([`622fc62`](https://github.com/kellerza/data-playbook/commit/622fc62c1e95298d2c9bcac317ffd7d8f628d80a))
+
+- A
+  ([`2b155ff`](https://github.com/kellerza/data-playbook/commit/2b155ff450d1bc9d267beda2820160639ef8a51e))
 
 - Bump abatilo/actions-poetry from 2 to 4 ([#3](https://github.com/kellerza/data-playbook/pull/3),
   [`0b46186`](https://github.com/kellerza/data-playbook/commit/0b461863f2ef2cf4f11e3a9f46723d6bbf90b5cc))
@@ -129,11 +114,20 @@ Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.c
 - Deps
   ([`fb31851`](https://github.com/kellerza/data-playbook/commit/fb31851051a5b3916f600ce66f51e723577b71b0))
 
+- Release v1.1.0 :dolphin:
+  ([`0e112be`](https://github.com/kellerza/data-playbook/commit/0e112be02080a3f3081c8bda1dc3abe08b73eab4))
+
 - Repr
   ([`25c56e5`](https://github.com/kellerza/data-playbook/commit/25c56e59337def715b4ac1a0c22d366bd0a9ec99))
 
+- Sem
+  ([`7f42430`](https://github.com/kellerza/data-playbook/commit/7f42430eee222118e48a7063d1efd320edf366d4))
+
 - Update const.py
   ([`7940d1f`](https://github.com/kellerza/data-playbook/commit/7940d1f62311848465a76bed08bc1ab9b38b17e9))
+
+- V1.0.25
+  ([`8f14d24`](https://github.com/kellerza/data-playbook/commit/8f14d246071bafdb43f33d208cf70e80404f8a4d))
 
 
 ## v1.0.20 (2024-10-02)
