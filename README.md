@@ -126,3 +126,13 @@ Data playbook tasks are different form Ansible's **actions**:
 - Each have a strict voluptuous schema, evaluated when loading and during runtime (e.g. to expand templates) to allow quick troubleshooting
 
 You could argue I can do this with Ansible, but it won't be as elegant with single item hosts files, `gather_facts: no` and `delegate_to: localhost` throughout the playbooks. It will likely only be half as much fun trying to force it into my way of thinking.
+
+## Release
+
+Semantic versioning is used for release.
+
+To create a new release, include a commit with a :dolphin: emoji in the commit message. This will trigger a release on the master branch.
+
+```bash
+git commit -m ":dolphin: Release 0.1.0"
+```
