@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "dataplaybook"
-version = "1.0.20"
+version = "0.0.0-semantically-released"
 description = "Playbooks for data. Open, process and save table based data."
 authors = ["Johann Kellerman <kellerza@gmail.com>"]
 readme = "README.md"
@@ -64,20 +64,20 @@ python-semantic-release = "*"
 dataplaybook = "dataplaybook.__main__:main"
 
 [tool.semantic_release]
-commit = true
+#commit = true
 tag = true
-vcs_release = true
+#vcs_release = true
 commit_parser = "emoji"
 # https://python-semantic-release.readthedocs.io/en/latest/configuration.html#version-toml
 version_variables = ["dataplaybook/const.py:VERSION"]
-version_toml = ["pyproject.toml:tool.poetry.version"]
+# version_toml = ["pyproject.toml:tool.poetry.version"]
 build_command = "pip install poetry && poetry build"
 commit_version_number = true
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
 [tool.semantic_release.branches.main]
-#match = 'v\d+\.\d+\.\d+'
-match = "master"
+match = 'v\d+\.\d+\.\d+'
+#match = "master"
 
 [tool.semantic_release.commit_parser_options]
 major_tags = [":boom:"]
