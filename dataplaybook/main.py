@@ -53,11 +53,19 @@ def print_tasks() -> None:
     #    _LOGGER.debug("%s: %s", mod_name, ", ".join(items))
 
 
+def _repr(a: Any) -> str:
+    """Represent the argument."""
+    res = repr(a)
+    if len(res) < 50:
+        return res
+    return f"{res[:30]}...{res[-20:]}"
+
+
 def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
     """Represent the caller."""
     type_hints = typing.get_type_hints(target)
-    repr_args = [repr(a)[:50] for a in args]
-    repr_kwargs = [f"{k}={v!r}" for k, v in kwargs.items()]
+    repr_args = [_repr(a) for a in args]
+    repr_kwargs = [f"{k}={_repr(v)}" for k, v in kwargs.items()]
     repr_call = f"{target.__name__}({', '.join(repr_args + repr_kwargs)})"
     if "return" in type_hints:
         repr_call = f"_ = {repr_call}"

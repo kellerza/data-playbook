@@ -35,7 +35,7 @@ python-pptx = { version = "*", optional = true }
 O365 = { version = ">=1.0.4,<2", optional = true }
 lxml = { version = "^5.3.0", optional = true }
 
-attrs = ">21"
+attrs = ">24"
 colordict = "^1.2.6"
 colorlog = "*"
 voluptuous = ">=0.11.5"

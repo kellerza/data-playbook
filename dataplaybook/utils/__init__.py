@@ -107,7 +107,7 @@ def doublewrap(
     def new_dec(*args: Any, **kwargs: Any) -> typing.Callable[PDW, Any]:
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # called as @decorator
-            return fun(args[0])
+            return fun(args[0])  # type: ignore
 
         # called as @decorator(*args, **kwargs)
         # def new_dec2(realf: PDW) -> Any:
