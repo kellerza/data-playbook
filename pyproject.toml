@@ -51,7 +51,7 @@ typing-extensions = "*"
 
 
 [tool.poetry.group.dev.dependencies]
-types-lxml = { version = "^2024.9.16", optional = true }
+types-lxml = { version = ">=2024.9.16,<2026.0.0", optional = true }
 pytest = "*"
 pytest-aiohttp = "*"
 pytest-cov = "*"
