@@ -3,6 +3,7 @@
 import logging
 import os
 import typing as t
+from collections import abc
 from json import dumps
 from pathlib import Path
 
@@ -73,8 +74,8 @@ def _sheet_read(_sheet: Worksheet, shdef: Sheet) -> list[RowData]:
 
 
 def _column_map(
-    columns: list[Column] | None, header_row: t.Sequence[str]
-) -> t.Generator[tuple[int, str, Column | None], None, None]:
+    columns: list[Column] | None, header_row: abc.Sequence[str]
+) -> abc.Generator[tuple[int, str, Column | None], None, None]:
     """List of (idx, nme, val)."""
     if not columns:
         for idx, key in enumerate(header_row):

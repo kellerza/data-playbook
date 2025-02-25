@@ -4,6 +4,7 @@ import logging
 import re
 import sys
 import typing as t
+from collections import abc
 from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
@@ -26,7 +27,7 @@ T = t.TypeVar("T")
 
 
 def ensure_list(
-    value: T | list[T] | tuple[T] | t.Generator[T, None, None],
+    value: T | list[T] | tuple[T] | abc.Generator[T, None, None],
 ) -> list[T]:
     """Wrap value in list if it is not one."""
     if isinstance(value, list):
@@ -40,7 +41,7 @@ def ensure_list(
     return [value]  # type: ignore
 
 
-def ensure_list_csv(value: t.Any) -> t.Sequence:
+def ensure_list_csv(value: t.Any) -> abc.Sequence:
     """Ensure that input is a list or make one from comma-separated string."""
     if isinstance(value, str):
         return [member.strip() for member in value.split(",")]

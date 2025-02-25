@@ -13,7 +13,7 @@ def test_read_pages(pcall: Mock, caplog):
 
     m = mock_open(read_data=data)
     with patch("builtins.open", m, create=True):
-        res = list(io_pdf.read_pdf_pages(filename="blah.pdf", args=[]))
+        res = list(io_pdf.read_pdf_pages(file="blah.pdf", args=[]))
         pcall.assert_called()
 
         assert res == [
@@ -23,6 +23,6 @@ def test_read_pages(pcall: Mock, caplog):
 
         m.side_effect = FileNotFoundError
         assert "Could not find pdftotext" not in caplog.text
-        res = list(io_pdf.read_pdf_pages(filename="blah.pdf", args=[]))
+        res = list(io_pdf.read_pdf_pages(file="blah.pdf", args=[]))
         assert "Could not find pdftotext" in caplog.text
         assert res == []

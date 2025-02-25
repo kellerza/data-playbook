@@ -29,10 +29,9 @@ dependencies = [
     "cattrs==24.1.2",
     "colordict>=1.2.6",
     "colorlog",
-    "voluptuous>=0.11.5",
     "jinja2>=3,<4",
     "openpyxl==3.1.5",
-    "typeguard>=4,<5",
+    "beartype==0.20.0",
     "icecream",
     "fuzzywuzzy",
     "python-Levenshtein",
@@ -41,6 +40,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "mypy",
     "pylint",
     "pytest-aiohttp",
     "pytest-cov",

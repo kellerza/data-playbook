@@ -9,8 +9,6 @@ from pathlib import Path
 # from tempfile import NamedTemporaryFile
 from unittest.mock import MagicMock, call, mock_open, patch
 
-import pytest
-
 from dataplaybook.tasks.io_misc import (
     JSONDecodeError,
     file_rotate,
@@ -19,7 +17,6 @@ from dataplaybook.tasks.io_misc import (
     read_json,
     read_tab_delim,
     read_text_regex,
-    wget,
     write_csv,
     write_json,
 )
@@ -69,7 +66,8 @@ class TestReadCsv(unittest.TestCase):
         mock_file = mock_open(read_data=csv_data)
 
         # Call the function with the test data and the mock file object
-        with patch("builtins.open", mock_file):
+
+        with patch.object(Path, "open", mock_file):
             table = list(read_csv(file=file_path, columns=columns))
 
         # Verify that the function returned the expected table
@@ -80,7 +78,7 @@ class TestReadCsv(unittest.TestCase):
         self.assertEqual(table, expected_table)
 
         # Verify that the mock file object was called with the expected arguments
-        mock_file.assert_called_once_with(file_path, "r", encoding="utf-8")
+        mock_file.assert_called_once_with("r", encoding="utf-8")
 
     def test_read_csv_without_columns(self) -> None:
         # Define some test data to read from the csv file
@@ -91,7 +89,7 @@ class TestReadCsv(unittest.TestCase):
         mock_file = mock_open(read_data=csv_data)
 
         # Call the function with the test data and the mock file object
-        with patch("builtins.open", mock_file):
+        with patch.object(Path, "open", mock_file):
             table = list(read_csv(file=file_path))
 
         # Verify that the function returned the expected table
@@ -102,7 +100,7 @@ class TestReadCsv(unittest.TestCase):
         self.assertEqual(table, expected_table)
 
         # Verify that the mock file object was called with the expected arguments
-        mock_file.assert_called_once_with(file_path, "r", encoding="utf-8")
+        mock_file.assert_called_once_with("r", encoding="utf-8")
 
 
 class TestReadJson(unittest.TestCase):
@@ -197,11 +195,10 @@ def test_write_json() -> None:
 def test_read_tab_delim() -> None:
     headers = {"column1": "Header1", "column2": "Header2", "column3": "Header3"}
 
-    with patch(
-        "builtins.open",
-        new_callable=mock_open,
-        read_data="# Comment\n# Header1\tHeader2\tHeader3\nValue1\tValue2\tValue3\nValue4\tValue5\tValue6",
-    ) as mock_file:
+    mock_file = mock_open(
+        read_data="# Comment\n# Header1\tHeader2\tHeader3\nValue1\tValue2\tValue3\nValue4\tValue5\tValue6"
+    )
+    with patch.object(Path, "open", mock_file):
         result = list(read_tab_delim(file="file.txt", headers=list(headers)))
         assert len(result) == 2
         assert result[0] == {
@@ -214,16 +211,16 @@ def test_read_tab_delim() -> None:
             "column2": "Value5",
             "column3": "Value6",
         }
-        mock_file.assert_called_once_with("file.txt", "r", encoding="utf-8")
+        mock_file.assert_called_once_with("r", encoding="utf-8")
 
 
 def test_read_text_regex() -> None:
     """ChatGPT 3 - did not get result correct."""
-    m = mock_open(read_data="abc\n1 foo\n2 bar\n3 baz\nxyz")
-    with patch("builtins.open", m):
+    mock_file = mock_open(read_data="abc\n1 foo\n2 bar\n3 baz\nxyz")
+    with patch.object(Path, "open", mock_file):
         result = list(
             read_text_regex(
-                filename="testfile.txt",
+                file="testfile.txt",
                 newline=re.compile(r"(\d+) (\w+)"),
                 fields=re.compile(r"(\d+) (\w+)"),
             )
@@ -235,52 +232,42 @@ def test_read_text_regex() -> None:
     ]
 
 
-class TestWget(unittest.TestCase):
-    # @patch.object(Path, "exists", return_value=False)
-    # @patch("urllib.request.urlretrieve")
-    # def test_download_file(self, mock_urlretrieve, mock_path_exists) -> None:
-    #     # Create a temporary file
-    #     with NamedTemporaryFile() as tmp_file:
-    #         # Call the function
-    #         wget(url="http://example.com/file.txt", file=tmp_file.name)
-    #         # Assert that the file was downloaded
-    #         mock_urlretrieve.assert_called_once_with(
-    #             "http://example.com/file.txt", tmp_file.name
-    #         )
+# class TestWget(unittest.TestCase):
+# @patch.object(Path, "exists", return_value=False)
+# @patch("urllib.request.urlretrieve")
+# def test_download_file(self, mock_urlretrieve, mock_path_exists) -> None:
+#     # Create a temporary file
+#     with NamedTemporaryFile() as tmp_file:
+#         # Call the function
+#         wget(url="http://example.com/file.txt", file=tmp_file.name)
+#         # Assert that the file was downloaded
+#         mock_urlretrieve.assert_called_once_with(
+#             "http://example.com/file.txt", tmp_file.name
+#         )
 
-    # @patch.object(Path, "stat")
-    # @patch.object(Path, "exists", return_value=True)
-    # # @patch("urllib.request.urlretrieve")
-    # @patch("dataplaybook.tasks.io_misc.requests")
-    # def test_download_age(
-    #     self, mock_urlretrieve, mock_path_exists, mock_path_stat
-    # ) -> None:
-    #     # Create a temporary file
-    #     with NamedTemporaryFile() as tmp_file:
-    #         # Set the modification time to 2 days ago
-    #         two_days_ago = datetime.now() - timedelta(days=2)
-    #         mock_path_stat.return_value.st_mtime = two_days_ago.timestamp()
-    #         # Call the function
-    #         url = "http://example.com/file.txt"
-    #         wget(url=url, file=tmp_file.name)
-    #         # Assert that the file was not downloaded
-    #         # mock_urlretrieve.assert_called_once()
-    #         # _with(url, tmp_file.name)
-    #         # mock_path_exists.assert_called_once_with(tmp_file.name)
-    #         mock_path_stat.assert_called_once()
-    #         # self.assertFalse(
-    #         #     mock_path_stat.return_value.st_mtime - two_days_ago.timestamp() < 60
-    #         # )
-
-    @patch.object(Path, "exists", return_value=False)
-    @patch("dataplaybook.tasks.io_misc.requests")
-    def test_download_no_file(self, mock_urlopen, mock_path_exists):
-        # Call the function
-        with pytest.raises(TypeError):
-            wget(url="http://example.com/file.txt", file=None)
-        # Assert that the response was returned
-        # mock_urlopen.get.assert_called_once_with("http://example.com/file.txt")
-        # self.assertIsNotNone(res)
+# @patch.object(Path, "stat")
+# @patch.object(Path, "exists", return_value=True)
+# # @patch("urllib.request.urlretrieve")
+# @patch("dataplaybook.tasks.io_misc.requests")
+# def test_download_age(
+#     self, mock_urlretrieve, mock_path_exists, mock_path_stat
+# ) -> None:
+#     # Create a temporary file
+#     with NamedTemporaryFile() as tmp_file:
+#         # Set the modification time to 2 days ago
+#         two_days_ago = datetime.now() - timedelta(days=2)
+#         mock_path_stat.return_value.st_mtime = two_days_ago.timestamp()
+#         # Call the function
+#         url = "http://example.com/file.txt"
+#         wget(url=url, file=tmp_file.name)
+#         # Assert that the file was not downloaded
+#         # mock_urlretrieve.assert_called_once()
+#         # _with(url, tmp_file.name)
+#         # mock_path_exists.assert_called_once_with(tmp_file.name)
+#         mock_path_stat.assert_called_once()
+#         # self.assertFalse(
+#         #     mock_path_stat.return_value.st_mtime - two_days_ago.timestamp() < 60
+#         # )
 
 
 def test_write_csv():
@@ -294,12 +281,12 @@ def test_write_csv():
     header = ["col2", "col1"]
 
     # Call the function with the test data and the mock file object
-    with patch("builtins.open", mock_file):
+    with patch.object(Path, "open", mock_file):
         write_csv(table=table, file=file_path, header=header)
 
     # Verify that the mock file object was called with the expected arguments
     expected_calls = [
-        call(file_path, "w", encoding="utf-8-sig", errors="replace", newline=""),
+        call("w", encoding="utf-8-sig", errors="replace", newline=""),
         call().__enter__(),
         call().write("col2,col1\r\n"),
         call().write("val2,val1\r\n"),

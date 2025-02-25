@@ -28,13 +28,13 @@ def test_mongo_sync_sids(
     mock_mongo_delete_sids, mock_write_mongo, mock_read_mongo, caplog
 ):
     """Test mongo_sync_sids."""
-    mock_l_db = MagicMock()
-    mock_l = MagicMock()
-    mock_l.get_collection.return_value = mock_l_db
+    # mock_l_db = MagicMock()
+    mock_l = MagicMock(MongoURI)
+    mock_l_db = mock_l.get_collection.return_value
 
-    mock_r_db = MagicMock()
-    mock_r = MagicMock()
-    mock_r.get_collection.return_value = mock_r_db
+    # mock_r_db = MagicMock()
+    mock_r = MagicMock(MongoURI)
+    mock_r_db = mock_r.get_collection.return_value
 
     mock_l_db.aggregate.return_value = [
         {"_id": "sid1", "count": 1},

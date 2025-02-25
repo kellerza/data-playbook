@@ -10,7 +10,7 @@ from inspect import Parameter, isgeneratorfunction, signature
 from pathlib import Path
 
 import attrs
-import typeguard
+from beartype import beartype
 from icecream import colorizedStderrPrint, ic
 
 from dataplaybook.helpers.args import parse_args
@@ -88,31 +88,17 @@ def _run_task(
         short = [str(a)[:20] for a in args]
         raise TypeError(f"Use explicit parameters, instead of {short}")
 
-    # Warning on parameter types
-    call_memo = typeguard._CallMemo(task_function, args=(), kwargs=kwargs)  # pylint: disable=protected-access
     try:
-        typeguard.check_argument_types(call_memo)
-    except TypeError as err:
-        _LOGGER.warning(err)
-        raise
-
-    try:
-        value = task_function(*args, **kwargs)
+        value = beartype(task_function)(*args, **kwargs)
     except Exception as err:
         _LOGGER.error(
-            "Error while running task `%s` - %s",
+            "Task %s raised %s: %s",
             task_function.__name__,
             type(err).__name__,
-            exc_info=err,
+            err,
+            # exc_info=err,
         )
         raise
-
-    try:
-        typeguard.check_return_type(value, call_memo)
-    except TypeError as err:
-        _LOGGER.warning(
-            "Unexpected return from task `%s`: %s", task_function.__name__, err
-        )
 
     return value
 

@@ -3,14 +3,14 @@
 # pylint: disable=consider-using-f-string
 import csv
 import logging
-import os
 import re
 import typing
 from calendar import monthrange
+from collections import abc
 from datetime import datetime
 from pathlib import Path
 
-from dataplaybook import RowData, RowDataGen, task
+from dataplaybook import PathStr, RowData, RowDataGen, task
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ class InvalidFile(Exception):
 
 
 @task
-def read_cheque_csv(*, filename: str) -> RowDataGen:
+def read_cheque_csv(*, file: PathStr) -> RowDataGen:
     """Read an FNB cheque csv file."""
     fields = [
         "type",
@@ -104,16 +104,15 @@ def read_cheque_csv(*, filename: str) -> RowDataGen:
         "koste",
     ]
     data = {}
-    with open(filename, newline="", encoding="utf-8") as csvfile:
+    file = Path(file)
+    with file.open(newline="", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile, fields)
         for row in csvreader:
             try:
                 rowtype = int(row[fields[0]])
             except ValueError as err:
                 raise InvalidFile(
-                    "read_cheque not a cheque file [{}]".format(
-                        os.path.basename(filename)
-                    )
+                    "read_cheque not a cheque file [{}]".format(file.name)
                 ) from err
 
             if rowtype == 2:  # Account number
@@ -235,8 +234,8 @@ T = typing.TypeVar("T")
 
 
 def _count_it(
-    gen: typing.Generator[T, None, None], retval: dict
-) -> typing.Generator[T, None, None]:
+    gen: abc.Generator[T, None, None], retval: dict
+) -> abc.Generator[T, None, None]:
     """Count items yielded."""
     retval["count"] = 0
     for val in gen:
@@ -256,7 +255,7 @@ def fnb_read_folder(*, folder: str, pattern: str = "*.csv") -> RowDataGen:
     for filename in files:
         try:
             try:
-                yield from _count_it(read_cheque_csv(filename=str(filename)), retval)
+                yield from _count_it(read_cheque_csv(file=str(filename)), retval)
                 _LOGGER.info("Loaded %s lines from %s", retval["count"], filename)
                 continue
             except InvalidFile:

@@ -2,9 +2,10 @@
 
 import json
 import logging
+import re
 import shutil
-import typing
-from typing import Any, Sequence
+import typing as t
+from collections import abc
 
 from dataplaybook import RowData, RowDataGen, Tables, task
 from dataplaybook.utils import ensure_list_csv as _ensure_list_csv
@@ -27,20 +28,20 @@ def build_lookup(*, table: list[RowData], key: str, columns: list[str]) -> RowDa
             row.pop(col)
 
 
-# def build_lookup_var(table: Table, key: str, columns: Columns) -> dict[str, Any]:
+# def build_lookup_var(table: Table, key: str, columns: Columns) -> dict[str, t.Any]:
 #     """DEPRECATED,use build_lookup_dict."""
 #     return build_lookup_dict(table, key, columns)
 
 
-KEYT = typing.TypeVar("KEYT", Any, list[Any])
+KEYT = t.TypeVar("KEYT", t.Any, list[t.Any])
 
 
 @task
 def build_lookup_dict(
     *, table: list[RowData], key: str | list[str], columns: list[str] | None = None
-) -> dict[str | tuple, Any]:
+) -> dict[str | tuple, t.Any]:
     """Build lookup tables {key: columns}."""
-    lookup: dict[str | tuple, Any] = {}
+    lookup: dict[str | tuple, t.Any] = {}
     get_key = (
         (lambda r: r.get(key) or "")
         if isinstance(key, str)
@@ -59,7 +60,7 @@ def combine(
     tables: list[list[RowData]],
     key: str,
     columns: list[str],
-    value: typing.Literal[True] | str = True,
+    value: t.Literal[True] | str = True,
 ) -> list[RowData]:
     """Combine multiple tables on key.
 
@@ -82,7 +83,9 @@ def combine(
 
 
 @task
-def ensure_lists(*, tables: Sequence[list[RowData]], columns: Sequence[str]) -> None:
+def ensure_lists(
+    *, tables: abc.Sequence[list[RowData]], columns: abc.Sequence[str]
+) -> None:
     """Recursively run ensure_list on columns in all tables."""
     for table in tables:
         for row in table:
@@ -114,11 +117,11 @@ def filter_rows(
     *,
     table: list[RowData],
     include: dict[str, str] | None = None,
-    exclude: dict[str, str | list[str]] | None = None,
+    exclude: dict[str, str | list[str] | re.Pattern] | None = None,
 ) -> RowDataGen:
     """Filter rows from a table."""
 
-    def _match(criteria: dict[str, Any], row: RowData) -> bool:
+    def _match(criteria: dict[str, t.Any], row: RowData) -> bool:
         """Test if row matches criteria [OR]."""
         for col, crit in criteria.items():
             if (
@@ -177,7 +180,7 @@ def print_table(
 
 
 @task
-def remove_null(*, tables: Sequence[list[RowData]]) -> None:
+def remove_null(*, tables: abc.Sequence[list[RowData]]) -> None:
     """Remove nulls."""
     for table in tables:
         if not isinstance(table, list):
@@ -230,7 +233,7 @@ def unique(*, table: list[RowData], key: str) -> RowDataGen:
 def vlookup(*, table0: list[RowData], acro: list[RowData], columns: list[str]) -> None:
     """Modify table0[col0], replacing table1[col1] with table1[col2]."""
     # _LOGGER.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
-    _acro: dict[str, Any] = {}
+    _acro: dict[str, t.Any] = {}
     for row in acro:
         key = str(row.get(columns[1], "")).lower()
         val = row.get(columns[2], "")

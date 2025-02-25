@@ -60,7 +60,7 @@ dataplaybook.tasks.io_misc
 - read_csv "(file: str, columns: dict[str, str] | None = None) -> RowDataGen"
 - read_json "(file: str) -> list[RowData]"
 - read_tab_delim "(file: str, headers: list[str]) -> RowDataGen"
-- read_text_regex "(filename: str, newline: Pattern, fields: Optional[Pattern]) -> RowDataGen"
+- read_text_regex "(file: str, newline: Pattern, fields: Optional[Pattern]) -> RowDataGen"
 - wget "(url: str, file: str, age: int = 172800) -> None"
 - write_csv "(table: list[RowData], file: str, header: list[str] | None = None) -> None"
 - write_json "(data: dict[str, list[RowData]] | list[RowData], file: str, only_var: bool = False) -> None"
@@ -74,7 +74,7 @@ dataplaybook.tasks.io_mongo
 - write_mongo "(table: 'list[RowData]', mdb: 'MongoURI', *, set_id: 'str | None' = None, force: 'bool' = False) -> 'None'"
 dataplaybook.tasks.io_pdf
 - read_pdf_files "(folder: str, pattern: str = '*.pdf', *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
-- read_pdf_pages "(filename: str, *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
+- read_pdf_pages "(file: str, *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
 dataplaybook.tasks.io_xlsx
 - read_excel "(*, tables: dict[str, list[RowData]], file: str, sheets: list[RowData] | None = None) -> list[str]"
 - write_excel "(*, tables: dict[str, list[RowData]], file: str, include: list[str] | None = None, header: list[str] | None = None, headers: list[Any] | None = None, ensure_string: bool = False) -> None"

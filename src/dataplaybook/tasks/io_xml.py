@@ -43,9 +43,9 @@ def read_xml(*, tables: Tables, file: str, targets: list[str]) -> None:
         _LOGGER.warning("Expected table %s", ",".join(_notok))
 
 
-# def _writejson(filename: str, dct: dict[str, typing.Any]) -> None:
+# def _writejson(file: PathStr, dct: dict[str, typing.Any]) -> None:
 #     """Write dict to file."""
-#     with open(filename, "w", encoding="utf-8") as __f:
+#     with Path(file).open("w", encoding="utf-8") as __f:
 #         __f.write(json.dumps(dct))
 
 

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 import logging
-from typing import Sequence
+from collections import abc
 from urllib.parse import urlparse
 
 import attrs
-import voluptuous as vol
 from icecream import ic  # noqa pylint: disable=unused-import
 from pymongo import MongoClient
 from pymongo.collection import Collection
@@ -47,12 +46,14 @@ class MongoURI:
             _LOGGER.error("could not parse URL: %s: %s", db_uri, err)
             raise err
         if res.scheme not in ["mdb", "mongodb", "db"]:
-            raise vol.Invalid("mdb://host:port/database/collection/[set_id]")
+            raise ValueError(
+                "Invalid Schema: mdb://host:port/database/collection/[set_id]"
+            )
         pth = res.path.split("/")
 
         if len(pth) == 4:
             if set_id:
-                raise vol.InInvalid("set_id specified, not allowed in mdb URI")
+                raise ValueError("set_id specified, not allowed in mdb URI")
             set_id = pth[3]
 
         return MongoURI(
@@ -185,8 +186,8 @@ def mongo_sync_sids(
     *,
     mdb_local: MongoURI,
     mdb_remote: MongoURI,
-    ignore_remote: Sequence[str] | None = None,
-    only_sync_sids: Sequence[str] | None = None,
+    ignore_remote: abc.Sequence[str] | None = None,
+    only_sync_sids: abc.Sequence[str] | None = None,
 ) -> None:
     """Sync two MongoDB collections.
 

@@ -1,7 +1,7 @@
 """Misc IO tasks."""
 
+import re
 import time
-import typing as t
 from csv import DictReader, DictWriter
 from json import dump, load, loads
 from json.decoder import JSONDecodeError
@@ -52,9 +52,10 @@ def glob(*, patterns: list[str]) -> RowDataGen:
 
 
 @task
-def read_csv(*, file: str, columns: dict[str, str] | None = None) -> RowDataGen:
+def read_csv(*, file: PathStr, columns: dict[str, str] | None = None) -> RowDataGen:
     """Read csv file."""
-    with open(file, "r", encoding="utf-8") as __f:
+
+    with Path(file).open("r", encoding="utf-8") as __f:
         csvf = DictReader(__f)
         # header = opt.headers if 'headers' in opt else None
         for line in csvf:
@@ -72,7 +73,7 @@ def read_csv(*, file: str, columns: dict[str, str] | None = None) -> RowDataGen:
 
 
 @task
-def read_json(*, file: str) -> list[RowData]:
+def read_json(*, file: PathStr) -> list[RowData]:
     """Read json from a file."""
     try:
         with Path(file).open(mode="r", encoding="utf-8") as __f:
@@ -98,7 +99,7 @@ def read_json(*, file: str) -> list[RowData]:
 
 @task
 def write_json(
-    *, data: Tables | list[RowData], file: str, only_var: bool = False
+    *, data: Tables | list[RowData], file: PathStr, only_var: bool = False
 ) -> None:
     """Write into a json file."""
 
@@ -109,9 +110,9 @@ def write_json(
 
 
 @task
-def read_tab_delim(*, file: str, headers: list[str]) -> RowDataGen:
+def read_tab_delim(*, file: PathStr, headers: list[str]) -> RowDataGen:
     """Read xml file."""
-    with open(file, "r", encoding="utf-8") as __f:
+    with Path(file).open("r", encoding="utf-8") as __f:
         header = headers
         for line in __f:
             line = line.strip()
@@ -126,12 +127,12 @@ def read_tab_delim(*, file: str, headers: list[str]) -> RowDataGen:
 
 @task
 def read_text_regex(
-    *, filename: str, newline: t.Pattern, fields: t.Pattern | None
+    *, file: PathStr, newline: re.Pattern, fields: re.Pattern | None
 ) -> RowDataGen:
     """Much regular expressions into a table."""
     res: dict[str, Any] | None = None
-    with open(filename, encoding="utf-8") as file:
-        for line in file:
+    with Path(file).open(encoding="utf-8") as fptr:
+        for line in fptr:
             match_obj = newline.search(line)
             if match_obj:
                 if res:
@@ -147,7 +148,7 @@ def read_text_regex(
             if not fields:
                 continue
             for match_obj in fields.finditer(line):
-                res[match_obj[1]] = match_obj[2]
+                res[match_obj[1]] = match_obj[2]  # type:ignore
     if res:
         yield res
 
@@ -156,7 +157,7 @@ def read_text_regex(
 def wget(
     *,
     url: str,
-    file: str,
+    file: PathStr,
     age: int = 48 * 60 * 60,
     headers: dict[str, str] | None = None,
 ) -> None:
@@ -189,7 +190,7 @@ def wget(
 
 @task
 def write_csv(
-    *, table: list[RowData], file: str, header: list[str] | None = None
+    *, table: list[RowData], file: PathStr, header: list[str] | None = None
 ) -> None:
     """Write a csv file."""
     fieldnames = list(table[0].keys())
@@ -198,7 +199,9 @@ def write_csv(
             fieldnames.remove(hdr)
         fieldnames.insert(0, hdr)
 
-    with open(file, "w", encoding="utf-8-sig", errors="replace", newline="") as csvfile:
+    with Path(file).open(
+        "w", encoding="utf-8-sig", errors="replace", newline=""
+    ) as csvfile:
         writer = DictWriter(csvfile, fieldnames=fieldnames)
 
         writer.writeheader()

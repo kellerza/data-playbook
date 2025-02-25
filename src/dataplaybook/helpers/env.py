@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 import logging
-import typing
+import typing as t
+from collections import abc
 from configparser import ConfigParser
 from inspect import isgenerator
 from os import getenv
@@ -14,7 +15,7 @@ from dataplaybook.utils import slugify
 _LOGGER = logging.getLogger(__name__)
 # Table = list[dict[str, Any]]
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from dataplaybook.const import RowData
 
 
@@ -131,7 +132,7 @@ class DataEnvironment(dict[str, list[dict[str, Any]]]):
         self._var[key] = val
         _LOGGER.debug("tables.var[%s] = %s", key, val)
 
-    def _check_keys(self, *table_names: str) -> typing.Sequence[str]:
+    def _check_keys(self, *table_names: str) -> abc.Sequence[str]:
         res = []
         for name in table_names:
             if name in self:
@@ -153,7 +154,7 @@ class DataEnvironment(dict[str, list[dict[str, Any]]]):
             res[key] = self[key]
         return res
 
-    def as_list(self, *table_names: str) -> typing.Sequence[list[RowData]]:
+    def as_list(self, *table_names: str) -> abc.Sequence[list[RowData]]:
         """Return a list of Tables."""
         keys = self._check_keys(*table_names)
         return [self[k] for k in keys]

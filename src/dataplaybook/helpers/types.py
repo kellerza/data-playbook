@@ -3,8 +3,6 @@
 import typing as t
 from inspect import signature
 
-import typeguard
-
 from dataplaybook.const import Tables
 
 
@@ -43,19 +41,3 @@ def repr_call(
     if "return" in type_hints:
         res = f"_ = {res}"
     return res
-
-
-def check_types(
-    func: t.Callable,
-    /,
-    args: tuple | None = None,
-    kwargs: dict | None = None,
-    retval: t.Any = None,
-) -> None:
-    """Check types."""
-
-    call_memo = typeguard._CallMemo(func, args=args or tuple(), kwargs=kwargs or {})  # pylint: disable=protected-access
-    if retval is None:
-        typeguard.check_argument_types(call_memo)
-    else:
-        typeguard.check_return_type(retval, call_memo)
