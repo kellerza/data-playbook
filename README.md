@@ -22,64 +22,68 @@ def print
 
 Tasks are implemented as simple Python functions and the modules can be found in the dataplaybook/tasks folder.
 
-| Module                                                                                     | Functions                                                                                      |
-| :----------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| Generic function to work on tables<br>`dataplaybook.tasks`                                 | build_lookup, build_lookup_var, combine, drop, extend, filter, print, replace, unique, vlookup |
-| Fuzzy string matching <br>`dataplaybook.taksk.fuzzy`<br> Requires _pip install fuzzywuzzy_ |                                                                                                |
-| Read/write excel files ()<br>`dataplaybook.tasks.io_xlsx`                                  | read_excel, write_excel                                                                        |
-| Misc IO tasks<br>`dataplaybook.tasks.io_misc`                                              | read_csv, read_tab_delim, read_text_regex, wget, write_csv                                     |
-| MongoDB functions<br>`dataplaybook.tasks.io_mongo`                                         | read_mongo, write_mongo, columns_to_list, list_to_columns                                      |
-| PDF functions. Requires _pdftotext_ on your path<br>`dataplaybook.tasks.io_pdf`            | read_pdf_pages, read_pdf_files                                                                 |
-| Read XML<br>`dataplaybook.tasks.io_xml`                                                    | read_xml                                                                                       |
+| Description                                      | Module                        | Functions                                                                                      |
+|:-------------------------------------------------|-------------------------------|:-----------------------------------------------------------------------------------------------|
+| Generic function to work on tables               | `dataplaybook.tasks`          | build_lookup, build_lookup_var, combine, drop, extend, filter, print, replace, unique, vlookup |
+| Fuzzy string matching                            | `dataplaybook.taksk.fuzzy`    | Requires _pip install fuzzywuzzy_                                                              |
+| Read/write excel files ()                        | `dataplaybook.tasks.io_xlsx`  | read_excel, write_excel                                                                        |
+| Misc IO tasks                                    | `dataplaybook.tasks.io_misc`  | read_csv, read_tab_delim, read_text_regex, wget, write_csv                                     |
+| MongoDB functions                                | `dataplaybook.tasks.io_mongo` | read_mongo, write_mongo, columns_to_list, list_to_columns                                      |
+| PDF functions. Requires _pdftotext_ on your path | `dataplaybook.tasks.io_pdf`   | read_pdf_pages, read_pdf_files                                                                 |
+| Read XML                                         | `dataplaybook.tasks.io_xml`   | read_xml                                                                                       |
 
 ```bash
 $ dataplaybook --all -vvv
 dataplaybook.tasks
-- build_lookup "(table: list[RowData], key: str, columns: list[str]) -> RowDataGen"
-- build_lookup_dict "(table: list[RowData], key: str | list[str], columns: list[str] | None = None) -> dict[str | tuple, Any]"
-- combine "(tables: list[list[RowData]], key: str, columns: list[str], value: Union[Literal[True], str] = True) -> list[RowData]"
-- ensure_lists "(tables: Sequence[list[RowData]], columns: Sequence[str]) -> None"
-- filter_rows "(table: list[RowData], include: dict[str, str] | None = None, exclude: dict[str, str] | None = None) -> RowDataGen"
-- print_table "(*, table: list[RowData] | None = None, tables: dict[str, list[RowData]] | None = None) -> None"
-- remove_null "(tables: Sequence[list[RowData]]) -> None"
-- replace "(table: list[RowData], replace_dict: dict[str, str], columns: list[str]) -> None"
-- unique "(table: list[RowData], key: str) -> RowDataGen"
-- vlookup "(table0: list[RowData], acro: list[RowData], columns: list[str]) -> None"
+- build_lookup "(*, table: list[RowData], key: str, columns: list[str]) -> RowDataGen"
+- build_lookup_dict "(*, table: list[RowData], key: str | list[str], columns: list[str] | None = None) -> dict[str | tuple, Any]"
+- combine "(*, tables: list[list[RowData]], key: str, columns: list[str], value: Union[Literal[True], str] = True) -> list[RowData]"
+- ensure_lists "(*, tables: Sequence[list[RowData]], columns: Sequence[str]) -> None"
+- filter_rows "(*, table: list[RowData], include: dict[str, str] | None = None, exclude: dict[str, str | list[str] | re.Pattern] | None
+= None) -> RowDataGen"
+- print_table "(*, table: list[RowData] | None = None, tables: dict[str, list[RowData]] | DataEnvironment | None = None) -> None"
+- remove_null "(*, tables: Sequence[list[RowData]]) -> None"
+- replace "(*, table: list[RowData], replace_dict: dict[str, str], columns: list[str]) -> None"
+- unique "(*, table: list[RowData], key: str) -> RowDataGen"
+- vlookup "(*, table0: list[RowData], acro: list[RowData], columns: list[str]) -> None"
 dataplaybook.tasks.fuzzy
-- fuzzy_match "(table1: list[RowData], table2: list[RowData], t1_column: str, t2_column: str, t1_target_column: str) -> None"
+- fuzzy_match "(*, table1: list[RowData], table2: list[RowData], t1_column: str, t2_column: str, t1_target_column: str) -> None"
 dataplaybook.tasks.ietf
-- add_standards_column "(table: list[RowData], columns: list[str], rfc_col: str) -> None"
-- extract_standards_from_table "(table: list[RowData], extract_columns: list[str], include_columns: list[str] | None = None, name: str = '', line_offset: int = 1) -> RowDataGen"
+- add_standards_column "(*, table: list[RowData], columns: list[str], rfc_col: str) -> None"
+- extract_standards_from_table "(*, table: list[RowData], extract_columns: list[str], include_columns: list[str] | None = None, name: str = '', line_offset: int = 1) -> RowDataGen"
 dataplaybook.tasks.gis
-- linestring "(table: list[RowData], lat_a: str = 'latA', lat_b: str = 'latB', lon_a: str = 'lonA', lon_b: str = 'lonB', linestring_column: str = 'linestring', error: str = '22 -22') -> list[RowData]"
+- linestring "(*, table: list[RowData], lat_a: str = 'latA', lat_b: str = 'latB', lon_a: str = 'lonA', lon_b: str = 'lonB', linestring_column: str = 'linestring', error: str = '22 -22') -> list[RowData]"
 dataplaybook.tasks.io_mail
-- mail "(to_addrs: list[str] | str, from_addr: str, subject: str, server: str, files: list[str] | None = None, priority: int = 4, body: str | None = '', html: str | None = '', cc_addrs: list[str] | None = None, bcc_addrs: list[str] | None = None) -> None"
+- mail "(*, to_addrs: list[str] | str, from_addr: str, subject: str, server: str, files: list[str] | None = None, priority: int = 4, body: str | None = '', html: str | None = '', cc_addrs: list[str] | None = None, bcc_addrs: list[str] | None = None) -> None"
 dataplaybook.tasks.io_misc
-- file_rotate "(file: str, count: int = 3) -> None"
-- glob "(patterns: list[str]) -> RowDataGen"
-- read_csv "(file: str, columns: dict[str, str] | None = None) -> RowDataGen"
-- read_json "(file: str) -> list[RowData]"
-- read_tab_delim "(file: str, headers: list[str]) -> RowDataGen"
-- read_text_regex "(file: str, newline: Pattern, fields: Optional[Pattern]) -> RowDataGen"
-- wget "(url: str, file: str, age: int = 172800) -> None"
-- write_csv "(table: list[RowData], file: str, header: list[str] | None = None) -> None"
-- write_json "(data: dict[str, list[RowData]] | list[RowData], file: str, only_var: bool = False) -> None"
+- file_rotate "(*, file: os.PathLike | str, count: int = 3) -> None"
+- glob "(*, patterns: list[str]) -> RowDataGen"
+- read_csv "(*, file: os.PathLike | str, columns: dict[str, str] | None = None) -> RowDataGen"
+- read_json "(*, file: os.PathLike | str) -> list[RowData]"
+- read_tab_delim "(*, file: os.PathLike | str, headers: list[str]) -> RowDataGen"
+- read_text_regex "(*, file: os.PathLike | str, newline: re.Pattern, fields: re.Pattern | None) -> RowDataGen"
+- wget "(*, url: str, file: os.PathLike | str, age: int = 172800, headers: dict[str, str] | None = None) -> None"
+- write_csv "(*, table: list[RowData], file: os.PathLike | str, header: list[str] | None = None) -> None"
+- write_json "(*, data: dict[str, list[RowData]] | DataEnvironment | list[RowData], file: os.PathLike | str, only_var: bool = False) ->
+None"
 dataplaybook.tasks.io_mongo
-- columns_to_list "(table: 'list[RowData]', *, list_column: 'str', columns: 'Columns') -> 'None'"
-- list_to_columns "(table: 'list[RowData]', *, list_column: 'str', columns: 'Columns') -> 'None'"
+- columns_to_list "(*, table: 'list[RowData]', list_column: 'str', columns: 'list[str]') -> 'None'"
+- list_to_columns "(*, table: 'list[RowData]', list_column: 'str', columns: 'list[str]') -> 'None'"
 - mongo_delete_sids "(*, mdb: 'MongoURI', sids: 'list[str]') -> 'None'"
-- mongo_list_sids "(mdb: 'MongoURI') -> 'list[str]'"
-- mongo_sync_sids "(*, mdb_local: 'MongoURI', mdb_remote: 'MongoURI', ignore_remote: 'Sequence[str] | None' = None, only_sync_sids: 'Sequence[str] | None' = None) -> 'None'"
-- read_mongo "(mdb: 'MongoURI', *, set_id: 'str | None' = None) -> 'RowDataGen'"
-- write_mongo "(table: 'list[RowData]', mdb: 'MongoURI', *, set_id: 'str | None' = None, force: 'bool' = False) -> 'None'"
+- mongo_list_sids "(*, mdb: 'MongoURI') -> 'list[str]'"
+- mongo_sync_sids "(*, mdb_local: 'MongoURI', mdb_remote: 'MongoURI', ignore_remote: 'abc.Sequence[str] | None' = None, only_sync_sids:
+'abc.Sequence[str] | None' = None) -> 'None'"
+- read_mongo "(*, mdb: 'MongoURI', set_id: 'str | None' = None) -> 'RowDataGen'"
+- write_mongo "(*, table: 'list[RowData]', mdb: 'MongoURI', set_id: 'str | None' = None, force: 'bool' = False) -> 'None'"
 dataplaybook.tasks.io_pdf
-- read_pdf_files "(folder: str, pattern: str = '*.pdf', *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
-- read_pdf_pages "(file: str, *, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
+- read_pdf_files "(*, folder: str, pattern: str = '*.pdf', layout: bool = True, args: list[str] | None = None) -> RowDataGen"
+- read_pdf_pages "(*, file: os.PathLike | str, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
 dataplaybook.tasks.io_xlsx
-- read_excel "(*, tables: dict[str, list[RowData]], file: str, sheets: list[RowData] | None = None) -> list[str]"
-- write_excel "(*, tables: dict[str, list[RowData]], file: str, include: list[str] | None = None, header: list[str] | None = None, headers: list[Any] | None = None, ensure_string: bool = False) -> None"
+- read_excel "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: os.PathLike | str, sheets: list[dataplaybook.tasks.io_xlsx.Sheet] | None = None) -> list[str]"
+- write_excel "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: os.PathLike | str, include: list[str] | None = None, sheets: list[dataplaybook.tasks.io_xlsx.Sheet] | None = None, ensure_string: bool = False) -> None"
 dataplaybook.tasks.io_xml
-- read_xml "(tables: dict[str, list[RowData]], file: str, targets: list[str]) -> None"
+- read_lxml "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: str, targets: list[str]) -> None"
+- read_xml "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: str, targets: list[str]) -> None"
 ```
 
 ## Local development

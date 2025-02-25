@@ -13,8 +13,9 @@ def repr_signature(func: t.Callable | None, /) -> str:
     sig = str(signature(func))
     sig = (
         sig.replace("typing.", "")
-        .replace("Generator[dict[str, Any], NoneType, NoneType]", "RowDataGen")
+        .replace("collections.abc.", "")
         .replace("dict[str, Any]", "RowData")
+        .replace("Generator[RowData, None, None]", "RowDataGen")
         .replace(str(Tables).replace("typing.", ""), "Tables")
     )
     sig = sig.replace("dataplaybook.helpers.env.DataEnvironment", "DataEnvironment")

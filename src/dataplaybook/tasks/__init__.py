@@ -8,7 +8,7 @@ import typing as t
 from collections import abc
 
 from dataplaybook import RowData, RowDataGen, Tables, task
-from dataplaybook.utils import ensure_list_csv as _ensure_list_csv
+from dataplaybook.utils import ensure_list
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,7 +109,7 @@ def ensure_lists(
                         continue
                     except ValueError:
                         pass
-                row[col] = _ensure_list_csv(val.strip("[").strip("]"))
+                row[col] = ensure_list(val)
 
 
 @task

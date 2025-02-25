@@ -36,6 +36,7 @@ dependencies = [
     "fuzzywuzzy",
     "python-Levenshtein",
     "requests>=2.0.0",
+    "whenever>=0.7.1",
 ]
 
 [dependency-groups]
