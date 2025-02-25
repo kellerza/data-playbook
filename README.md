@@ -91,8 +91,7 @@ dataplaybook.tasks.io_xml
 uv is used for dependency management. To install the dependencies.
 
 ```bash
-uv venv
-uv pip install .[all]
+uv sync
 ```
 
 pre-commit is used for code formatting and linting. Install pre-commit and run `pre-commit install` to install the git hooks.
@@ -105,7 +104,6 @@ Test locally using pre-commit (ruff, codespell, mypy & pylint)
 
 ```bash
 git add . && pre-commit run --all
-uv run pylint dataplaybook tests
 ```
 
 ## Data Playbook v0 - origins
