@@ -1,5 +1,7 @@
 """Pptx tests."""
 
+from pptx.dml.color import RGBColor
+
 from dataplaybook.tasks.io_pptx import PStyle, PText
 
 
@@ -21,25 +23,25 @@ def test_ptext() -> None:
     assert t._list == ["a", PStyle(size=10)]
 
     t = PText("a", "<#0A0B0C>")
-    assert t._list == ["a", PStyle(color=(10, 11, 12))]
+    assert t._list == ["a", PStyle(color=RGBColor(10, 11, 12))]
 
     t = PText("a", "<RED>")
-    assert t._list == ["a", PStyle(color=(255, 0, 0))]
+    assert t._list == ["a", PStyle(color=RGBColor(255, 0, 0))]
 
     t = PText("a", "<RED,WHITE>")
     assert t._list == [
         "a",
-        PStyle(color=(255, 0, 0), highlight=(255, 255, 255)),
+        PStyle(color=(255, 0, 0), highlight=RGBColor(255, 255, 255)),
     ]
 
     t = PText("a", "<RED,WHITE>")
     assert t._list == [
         "a",
-        PStyle(color=(255, 0, 0), highlight=(255, 255, 255)),
+        PStyle(color=(255, 0, 0), highlight=RGBColor(255, 255, 255)),
     ]
 
     t = PText("a", "<,RED>")
-    assert t._list == ["a", PStyle(highlight=(255, 0, 0))]
+    assert t._list == ["a", PStyle(highlight=RGBColor(255, 0, 0))]
 
     t = PText("a", PStyle(bold=True))
     t = PText("1", t)

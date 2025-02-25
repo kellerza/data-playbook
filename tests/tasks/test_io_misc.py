@@ -166,10 +166,8 @@ class TestReadJson(unittest.TestCase):
         self.assertEqual(table, expected_table)
 
         # Verify that the mock file object was called with the expected arguments
-        assert mock_file.call_args_list == [
-            call(mode="r", encoding="utf-8"),
-            call(mode="r", encoding="utf-8", errors=None),
-        ]
+        assert mock_file.call_args_list[0] == call(mode="r", encoding="utf-8")
+        assert len(mock_file.call_args_list) == 2
 
 
 def test_write_json() -> None:

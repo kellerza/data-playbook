@@ -26,8 +26,8 @@ class PStyle:
     """Paragraph style class."""
 
     bold: bool | None = None
-    color: RGBColor | None = None
-    highlight: RGBColor | None = None
+    color: RGBColor | tuple[int, int, int] | None = None
+    highlight: RGBColor | tuple[int, int, int] | None = None
     italic: bool | None = None
     size: Length | None = None
     strike: bool | None = None
