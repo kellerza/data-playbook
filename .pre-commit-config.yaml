@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.5
+    rev: v0.9.7
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -14,7 +14,7 @@ repos:
           - "--ignore-words-list"
           - "nd,nam,nin"
           - --skip
-          - "poetry.lock"
+          - "uv.lock"
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
@@ -22,20 +22,21 @@ repos:
       - id: mypy
         name: mypy
         #language: system
-        entry: mypy dataplaybook
         types: [python]
         pass_filenames: false
+        entry: mypy
         args:
           - --show-error-codes
           - --config-file
           - pyproject.toml
-        additional_dependencies: ["types-requests", "attrs>21"]
+          - .
+        additional_dependencies: ["types-requests", "attrs>25"]
 
   - repo: local
     hooks:
       - id: pylint
         name: pylint
-        entry: poetry
+        entry: uv
         language: system
         types: [python]
         pass_filenames: false

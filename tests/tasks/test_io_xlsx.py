@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 from dataplaybook import DataEnvironment
-from dataplaybook.tasks.io_xlsx import read_excel, write_excel
+from dataplaybook.tasks.io_xlsx import Column, Sheet, read_excel, write_excel
 from dataplaybook.utils import AttrDict
 
 # from openpyxl.worksheet.worksheet import Worksheet
@@ -36,12 +36,15 @@ def test_read_excel(mock_load_workbook):
         tables=tables,
         file="test.xlsx",
         sheets=[
-            {"name": "Sheet1", "target": "table1"},
-            {
-                "name": "Sheet2",
-                "target": "table2",
-                "columns": {"name": {"from": "Name"}, "age": {"from": "Age"}},
-            },
+            Sheet(name="Sheet1", target="table1"),
+            Sheet(
+                name="Sheet2",
+                target="table2",
+                columns=[
+                    Column(name="name", source="Name"),
+                    Column(name="age", source="Age"),
+                ],
+            ),
         ],
     )
 
@@ -85,7 +88,13 @@ def test_write_excel(mock_workbook):
         tables=tables,
         file="test.xlsx",
         include=["table1", "table2"],
-        header=["Header 1", "Header 2"],
+        sheets=[
+            Sheet(
+                name="Sheet1",
+                target="sheet1",
+                columns=[Column(name="Header 1"), Column(name="Header 2")],
+            )
+        ],
     )
 
     # mock_wbk.create_sheet.assert_has_calls(

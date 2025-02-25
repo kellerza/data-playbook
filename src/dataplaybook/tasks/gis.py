@@ -7,6 +7,7 @@ from dataplaybook import RowData, task
 
 @task
 def linestring(
+    *,
     table: list[RowData],
     lat_a: str = "latA",
     lat_b: str = "latB",

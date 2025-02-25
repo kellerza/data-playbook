@@ -2,16 +2,17 @@
 
 from fuzzywuzzy import fuzz
 
-from dataplaybook import Column, RowData, task
+from dataplaybook import RowData, task
 
 
 @task
 def fuzzy_match(
+    *,
     table1: list[RowData],
     table2: list[RowData],
-    t1_column: Column,
-    t2_column: Column,
-    t1_target_column: Column,
+    t1_column: str,
+    t2_column: str,
+    t1_target_column: str,
 ) -> None:
     """Fuzzy matching.
 

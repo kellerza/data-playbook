@@ -1,16 +1,8 @@
 """Config Validation Tests."""
 
-from unittest.mock import MagicMock, patch
-
 import pytest
+
 from dataplaybook.utils import AttrDict, AttrKeyError
-
-
-def test_template_runtime():
-    """Test template runtime."""
-    with patch("dataplaybook.config_validation.vol.All", MagicMock()):
-        pass
-        # a = cv.templateSchema([])
 
 
 def test_attrd():

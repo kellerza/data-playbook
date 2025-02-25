@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import pytest
+
 from dataplaybook.__main__ import main as __main
 from dataplaybook.main import (
     _ALL_PLAYBOOKS,
@@ -19,8 +20,8 @@ from dataplaybook.main import (
 def test_print(capsys):
     """Sample print."""
     # with import_folder("dataplaybook/tasks") as tasks:
-    assert "read_excel" in ALL_TASKS
     print_tasks()
+    assert "read_excel" in ALL_TASKS
     captured = capsys.readouterr()
     # assert captured.out == "hello\n"
     assert "read_excel" in captured.err

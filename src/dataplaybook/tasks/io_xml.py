@@ -1,6 +1,7 @@
 """Read XML files."""
 
 import logging
+import typing as t
 from collections import defaultdict
 from xml.etree import ElementTree
 
@@ -9,14 +10,14 @@ from dataplaybook import RowData, Tables, task
 try:
     from lxml.etree import QName, _Element, parse
 except ImportError:
-    pass
+    parse = None  # type:ignore
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @task
-def read_xml(tables: Tables, file: str, targets: list[str]) -> None:
+def read_xml(*, tables: Tables, file: str, targets: list[str]) -> None:
     """Read xml file.
 
     https://stackoverflow.com/questions/1912434/how-do-i-parse-xml-in-python
@@ -52,37 +53,36 @@ def _ns(_ss: str) -> str:
     return _ss.split("}")[1] if "}" in _ss else _ss
 
 
-# pylint: disable=invalid-name
-def _etree_to_dict(t: ElementTree.Element) -> RowData:
+def _etree_to_dict(el: ElementTree.Element) -> RowData:  # pylint: disable=invalid-name
     """Elementtree to dict."""
-    t_tag = _ns(t.tag)
-    d: RowData = {t_tag: {} if t.attrib else None}
+    t_tag = _ns(el.tag)
+    res: RowData = {t_tag: {} if el.attrib else None}
 
-    children = list(t)
+    children = list(el)
     if children:
         dd = defaultdict(list)
         for dc in map(_etree_to_dict, children):
             for k, v in dc.items():
                 dd[_ns(k)].append(v)
-        d = {t_tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}
-    if t.attrib:
-        d[t_tag].update(("@" + k, v) for k, v in t.attrib.items())
-    if t.text:
-        text = t.text.strip()
-        if children or t.attrib:
+        res[t_tag] = {k: v[0] if len(v) == 1 else v for k, v in dd.items()}
+    if el.attrib:
+        res[t_tag].update(("@" + k, v) for k, v in el.attrib.items())
+    if el.text:
+        text = el.text.strip()
+        if children or el.attrib:
             if text:
-                d[t_tag]["#text"] = text
+                res[t_tag]["#text"] = text
         else:
-            d[t_tag] = text
-    return d
+            res[t_tag] = text
+    return res
 
 
-if not parse:
+if parse is None:
     _LOGGER.warning("lxml not installed. read_lxml not available.")
 else:
 
     @task
-    def read_lxml(tables: Tables, file: str, targets: list[str]) -> None:
+    def read_lxml(*, tables: Tables, file: str, targets: list[str]) -> None:
         """Read xml file using lxml."""
         root = parse(file)
         root_element = root.getroot()
@@ -108,7 +108,7 @@ else:
         """
         Convert an lxml.etree node tree into a dict.
         """
-        result = {}
+        result: dict[str, t.Any] = {}
         # if isinstance(node, etree._ElementTree):
         #     return {"msg": "empty"}
 
@@ -116,6 +116,7 @@ else:
             for item in node.attrib.items():
                 key, result[key] = item
 
+        value: str | dict
         for element in node.iterchildren():
             # Remove namespace prefix
             key = QName(element).localname
@@ -125,11 +126,11 @@ else:
                 value = element.text
             else:
                 value = elem2dict(element)
-            if key in result:
-                if isinstance(result[key], list):
-                    result[key].append(value)
+            if cval := result.get(key):
+                if isinstance(cval, list):
+                    cval.append(value)
                 else:
-                    result[key] = [result[key], value]
+                    result[key] = [cval, value]
             else:
                 result[key] = value
         return result

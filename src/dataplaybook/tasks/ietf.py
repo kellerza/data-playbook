@@ -5,7 +5,7 @@ import re
 import typing
 from typing import Any, Callable, Generator, Match
 
-from dataplaybook import Columns, RowData, RowDataGen, task
+from dataplaybook import RowData, RowDataGen, task
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -166,9 +166,10 @@ def _extract_standards(val: str) -> Generator[KeyStr, None, None]:
 
 @task
 def extract_standards_from_table(
+    *,
     table: list[RowData],
-    extract_columns: Columns,
-    include_columns: Columns | None = None,
+    extract_columns: list[str],
+    include_columns: list[str] | None = None,
     name: str = "",
     line_offset: int = 1,
 ) -> RowDataGen:
@@ -194,7 +195,9 @@ def extract_standards_from_table(
 
 
 @task
-def add_standards_column(table: list[RowData], columns: Columns, rfc_col: str) -> None:
+def add_standards_column(
+    *, table: list[RowData], columns: list[str], rfc_col: str
+) -> None:
     """Extract all RFCs from a table."""
     for row in table:
         val = row.get(columns[0])

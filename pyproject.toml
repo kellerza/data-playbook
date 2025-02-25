@@ -1,16 +1,16 @@
 [build-system]
-requires = ["poetry-core==2.0.1"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+# requires = ["uv-build"] # >=0.5.15,<0.6
+# build-backend = "uv_build"
 
-[tool.poetry]
+[project]
 name = "dataplaybook"
 version = "1.0.21"
 description = "Playbooks for data. Open, process and save table based data."
-authors = ["Johann Kellerman <kellerza@gmail.com>"]
+authors = [{ name = "Johann Kellerman", email = "kellerza@gmail.com" }]
 readme = "README.md"
-packages = [{ include = "dataplaybook" }]
-license = "Apache-2.0"
-repository = "https://github.com/kellerza/data-playbook"
+# license = "Apache-2.0"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
@@ -22,46 +22,49 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 keywords = ["data", "tables", "excel", "mongodb", "generators"]
+requires-python = ">=3.9"
+dependencies = [
+    "office365-rest-python-client>2,<3",
+    "attrs==25.1.0",
+    "cattrs==24.1.2",
+    "colordict>=1.2.6",
+    "colorlog",
+    "voluptuous>=0.11.5",
+    "jinja2>=3,<4",
+    "openpyxl==3.1.5",
+    "typeguard>=2,<3",
+    "icecream",
+    "fuzzywuzzy",
+    "python-Levenshtein",
+    "requests>=2.0.0",
+]
 
+[dependency-groups]
+dev = [
+    "pylint",
+    "pytest-aiohttp",
+    "pytest-cov",
+    "pytest-github-actions-annotate-failures",
+    "pytest",
+    "python-semantic-release",
+    "types-lxml",
+    "types-requests",
+    # Optional
+    "lxml>=5.3.0",
+    "pymongo",
+    "python-pptx",
+]
 
-[tool.poetry.extras]
+[project.urls]
+Homepage = "https://github.com/kellerza/data-playbook"
+Repository = "https://github.com/kellerza/data-playbook"
+
+[project.optional-dependencies]
 mongodb = ["pymongo"]
-lxml = ["lxml", "types-lxml"]
-all = ["pymongo", "python-pptx", "O365", "lxml", "types-lxml"]
+lxml = ["lxml>=5.3.0", "types-lxml"]
+all = ["pymongo", "python-pptx", "lxml>=5.3.0"]
 
-[tool.poetry.dependencies]
-python = ">3.10"
-pymongo = { version = "*", optional = true }
-python-pptx = { version = "*", optional = true }
-#O365 = { version = ">=1.0.4,<2", optional = true }
-office365-rest-python-client = ">2,<3"
-lxml = { version = "^5.3.0", optional = true }
-
-attrs = ">24"
-colordict = "^1.2.6"
-colorlog = "*"
-voluptuous = ">=0.11.5"
-jinja2 = ">=3,<4"
-openpyxl = ">=3,<4"
-typeguard = ">=2,<3"
-icecream = "*"
-fuzzywuzzy = "*"
-python-Levenshtein = "*"
-requests = ">=2.0.0"
-typing-extensions = "*"
-
-
-[tool.poetry.group.dev.dependencies]
-types-lxml = { version = "^2024.9.16", optional = true }
-pytest = "*"
-pytest-aiohttp = "*"
-pytest-cov = "*"
-pytest-github-actions-annotate-failures = "*"
-types-requests = "*"
-pylint = "*"
-python-semantic-release = "*"
-
-[tool.poetry.scripts]
+[project.scripts]
 dataplaybook = "dataplaybook.__main__:main"
 
 [tool.semantic_release]
@@ -70,9 +73,9 @@ tag = true
 vcs_release = true
 commit_parser = "emoji"
 # https://python-semantic-release.readthedocs.io/en/latest/configuration.html#version-toml
-version_variables = ["dataplaybook/const.py:VERSION"]
-version_toml = ["pyproject.toml:tool.poetry.version"]
-build_command = "pip install poetry && poetry build"
+# version_variables = ["dataplaybook/const.py:VERSION"]
+version_toml = ["pyproject.toml:project.version"]
+build_command = "uv build"
 commit_version_number = true
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
@@ -86,11 +89,8 @@ minor_tags = [":rockets:"]
 patch_tags = [":ambulance:", ":lock:", ":bug:", ":dolphin:"]
 
 [tool.ruff]
-line-length = 88
-indent-width = 4
-target-version = "py311"
+target-version = "py312"
 src = ["src", "test"]
-extend-exclude = ["src/rfr"]
 include = ["tests/*.py", "src/**/*.py"]
 
 [tool.ruff.lint]
@@ -114,7 +114,7 @@ docstring-code-line-length = "dynamic"
 [tool.mypy]
 disallow_untyped_defs = true
 ignore_missing_imports = true
-exclude = ["dataplaybook/tasks/fnb.py"]
+exclude = ["src/dataplaybook/tasks/fnb.py", "build"]
 
 [[tool.mypy.overrides]]
 module = "tests.*"
@@ -149,10 +149,13 @@ disable = '''line-too-long,
 max-returns = 8
 
 [tool.pytest.ini_options]
-pythonpath = ["dataplaybook"]
-testpaths = ["dataplaybook"]                         #, "tests"]
+pythonpath = ["src/dataplaybook"]
+testpaths = ["tests"]                                #, "tests"]
 filterwarnings = "ignore:.+@coroutine.+deprecated.+"
 norecursedirs = [".git", "modules"]
 log_cli = true
 log_cli_level = "DEBUG"
 asyncio_mode = "auto"
+
+[tool.setuptools]
+license-files = [] # https://github.com/astral-sh/uv/issues/9513

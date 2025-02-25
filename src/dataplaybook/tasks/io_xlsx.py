@@ -2,116 +2,103 @@
 
 import logging
 import os
+import typing as t
 from json import dumps
-from typing import Any, Sequence
+from pathlib import Path
 
+import attrs
 import openpyxl
-import voluptuous as vol
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
-import dataplaybook.config_validation as cv
-from dataplaybook import RowData, RowDataGen, Tables, task_validate
-from dataplaybook.utils import ensure_list as _ensure_list
+from dataplaybook import PathStr, RowData, RowDataGen, Tables, task
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@task_validate(
-    validator=vol.Schema(
-        schema={
-            vol.Required("tables"): cv.ensure_tables,
-            vol.Required("file"): str,
-            vol.Optional("sheets"): [
-                vol.Schema(
-                    {
-                        vol.Optional("name", default=None): vol.Any(str, None),
-                        vol.Optional("header"): int,
-                        vol.Optional("columns", default=None): vol.Any(
-                            None,
-                            vol.Schema(
-                                {
-                                    str: vol.Schema(
-                                        {
-                                            vol.Optional("from"): str,
-                                            vol.Optional("col"): int,
-                                        }
-                                    )
-                                }
-                            ),
-                        ),
-                        vol.Required("target"): str,
-                    }
-                )
-            ],
-        }
-    )
-)
+@attrs.define
+class Column:
+    """An Excel column definition."""
+
+    name: str
+    source: int | str = ""
+    """From header/col index."""
+    width: int = 9
+
+
+@attrs.define
+class Sheet:
+    """An Excel sheet definition."""
+
+    target: str
+    name: str = ""
+    header: int = 0
+    columns: list[Column] | None = attrs.field(default=None)
+
+
+@task
 def read_excel(
-    *, tables: Tables, file: str, sheets: list[dict[str, Any]] | None = None
+    *, tables: Tables, file: PathStr, sheets: list[Sheet] | None = None
 ) -> list[str]:
     """Read excel file using openpyxl.
 
     If no sheets are specified, all sheets are read and names returned."""
+    if sheets:
+        if not all(isinstance(s, Sheet) for s in sheets):
+            raise ValueError("sheets must be a list of Sheet objects")
+
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
     if sheets is None:
-        sheets = [{"name": n, "target": n} for n in wbk.sheetnames]
+        sheets = [Sheet(name=n, target=n) for n in wbk.sheetnames]
     if not sheets:
         sheets = []
 
     for sht in sheets:
-        name = sht.get("name") or sht["target"]
+        name = sht.name or sht.target
         # default_sheet = *
         the_sheet = wbk.active if name == "*" else wbk[name]
-        tbl = _sheet_read(  # pylint: disable=protected-access
-            the_sheet, sht.get("columns"), sht.get("header", 0)
-        )
-        tables[sht["target"]] = tbl
+        tbl = _sheet_read(the_sheet, sht)
+        tables[sht.target] = tbl
 
-    return [s["target"] for s in sheets]
+    return [s.target for s in sheets]
 
 
-def _sheet_read(
-    _sheet: Worksheet, columns: dict | None = None, header: int = 0
-) -> list[RowData]:
+def _sheet_read(_sheet: Worksheet, shdef: Sheet) -> list[RowData]:
     """Read a sheet and return a table."""
-    res = list(_sheet_yield_rows(_sheet, columns, header))
+    res = list(_sheet_yield_rows(_sheet, shdef))
     _LOGGER.debug("Read %s rows from sheet %s", len(res), _sheet.title)
     return res
 
 
 def _column_map(
-    columns: dict | None, header_row: Sequence[str]
-) -> Sequence[tuple[int, str, Any | None]]:
+    columns: list[Column] | None, header_row: t.Sequence[str]
+) -> t.Generator[tuple[int, str, Column | None], None, None]:
     """List of (idx, nme, val)."""
-    res = []
     if not columns:
         for idx, key in enumerate(header_row):
             if key:
-                res.append((idx, str(key), None))
-        return res
+                yield (idx, key, None)
+        return
 
-    for nme, val in columns.items():
-        if "from" in val:
-            fromc = str(val["from"])
-            if fromc not in header_row:
-                _LOGGER.error("%s not found in header %s", fromc, list(header_row))
-                raise ValueError(f"{fromc} not found in header")
-            res.append((list(header_row).index(fromc), nme, val))
-        elif "col" in val:
-            res.append((val["col"], nme, val))
-        else:
-            raise ValueError(f"Bad column definition: {val}")
-    return res
+    for col in columns:
+        if isinstance(col.source, int) and col.source >= 0:
+            yield (col.source, col.name, col)
+            continue
+        idx = list(header_row).index(str(col.source))
+        if col.source and idx < 0:
+            _LOGGER.error("%s not found in header %s", col.source, list(header_row))
+            raise ValueError(f"{col.source} not found in header")
+        if idx < 0:
+            raise ValueError(f"Bad column definition: {col.name}")
+        yield (idx, col.name, col)
 
 
-def _sheet_yield_rows(
-    _sheet: Worksheet, columns: dict | None = None, header: int = 0
-) -> RowDataGen:
+def _sheet_yield_rows(_sheet: Worksheet, shdef: Sheet) -> RowDataGen:
     """Read the sheet and yield the rows."""
     rows = _sheet.rows
+    header = shdef.header
     try:
         while header > 0:
             next(rows)
@@ -123,7 +110,7 @@ def _sheet_yield_rows(
         header_row.pop()
     _LOGGER.debug("Header row: %s", header_row)
 
-    colmap = _column_map(columns, header_row)
+    colmap = list(_column_map(shdef.columns, header_row))
 
     row = None
     nocnt = 0
@@ -145,12 +132,13 @@ def _sheet_yield_rows(
                 return
 
 
-def _get_filename(filename: str) -> str:
+def _get_filename(filename: PathStr) -> str:
     """Get a filename to write to."""
+    path = Path(filename)
     try:
-        if os.path.isfile(filename):
-            os.remove(filename)
-        return filename
+        if path.exists() and path.is_file():
+            path.unlink()
+        return str(filename)
     except OSError:  # Open in Excel?
         _parts = list(os.path.splitext(filename))
         _parts[0] += " "
@@ -162,7 +150,7 @@ def _get_filename(filename: str) -> str:
         raise
 
 
-def _fmt(obj: Any) -> str:
+def _fmt(obj: t.Any) -> str:
     """Format an object for Excel."""
     if callable(obj):
         return str(obj)
@@ -182,36 +170,28 @@ def _fmt(obj: Any) -> str:
     return obj
 
 
-@task_validate(
-    validator=vol.Schema(
-        {
-            vol.Required("tables"): cv.ensure_tables,
-            vol.Required("file"): cv.endswith(".xlsx"),
-            vol.Optional("include"): vol.All(_ensure_list, [str]),
-            vol.Optional("header", default=[]): vol.All(_ensure_list, [str]),
-            vol.Optional("headers", default=[]): vol.All(_ensure_list, [object]),
-        }
-    )
-)
+@task
 def write_excel(
     *,
     tables: Tables,
-    file: str,
+    file: PathStr,
     include: list[str] | None = None,
-    header: list[str] | None = None,
-    headers: list[Any] | None = None,
+    sheets: list[Sheet] | None = None,
     ensure_string: bool = False,
 ) -> None:
     """Write an excel file."""
-    header = header or []
-    headers = headers or []
+    if sheets:
+        if not all(isinstance(s, Sheet) for s in sheets):
+            raise ValueError("sheets must be a list of Sheet objects")
+
+    sheets = sheets or []
     wbk = openpyxl.Workbook()
 
     if not include:
         include = list(tables.keys())
 
     # prep headers
-    headers_lookup = {i["sheet"]: i["columns"] for i in headers}
+    sheet_lookup = {i.name: i.columns for i in sheets}
 
     # Remove default sheet
     wbk.remove(wbk["Sheet"])
@@ -221,7 +201,7 @@ def write_excel(
         if not tables[table_name]:
             continue
 
-        wsh = wbk.create_sheet(table_name)
+        wsh: Worksheet = wbk.create_sheet(table_name)
 
         if table_name not in tables:
             _LOGGER.warning("Could not save table %s", table_name)
@@ -229,16 +209,12 @@ def write_excel(
 
         hdr: dict[str, int] = {}
 
-        # Old style headers (applies to all sheets)
-        for _hdr in header:
-            hdr[_hdr] = 1
-
         # Get initial header from headers input
-        if table_name in headers_lookup:
-            for col in headers_lookup[table_name]:
-                hdr[col["name"]] = 1
-                wsh.column_dimensions[get_column_letter(len(hdr))].width = col.get(
-                    "width", 9
+        if cols := sheet_lookup.get(table_name):
+            for col in cols:
+                hdr[col.name] = 1
+                wsh.column_dimensions[get_column_letter(len(hdr))].width = (
+                    col.width or 9
                 )
 
         # Ensure we get then all

@@ -3,7 +3,7 @@
 import logging
 import re
 import sys
-import typing
+import typing as t
 from contextlib import contextmanager
 from functools import wraps
 from importlib import import_module
@@ -11,9 +11,6 @@ from inspect import isgenerator
 from pathlib import Path
 from timeit import default_timer
 from types import ModuleType
-from typing import Any
-
-from typing_extensions import Concatenate, ParamSpec
 
 from dataplaybook.utils.logger import get_logger
 
@@ -25,11 +22,11 @@ class PlaybookError(Exception):
     """Playbook Exception. These typically have warnings and can be ignored."""
 
 
-T = typing.TypeVar("T")
+T = t.TypeVar("T")
 
 
 def ensure_list(
-    value: T | list[T] | tuple[T] | typing.Generator[T, None, None],
+    value: T | list[T] | tuple[T] | t.Generator[T, None, None],
 ) -> list[T]:
     """Wrap value in list if it is not one."""
     if isinstance(value, list):
@@ -43,7 +40,7 @@ def ensure_list(
     return [value]  # type: ignore
 
 
-def ensure_list_csv(value: Any) -> typing.Sequence:
+def ensure_list_csv(value: t.Any) -> t.Sequence:
     """Ensure that input is a list or make one from comma-separated string."""
     if isinstance(value, str):
         return [member.strip() for member in value.split(",")]
@@ -64,7 +61,7 @@ def slugify(text: str) -> str:
 @contextmanager
 def time_it(
     name: str | None = None, delta: int = 2, logger: logging.Logger | None = None
-) -> typing.Iterator[None]:
+) -> t.Iterator[None]:
     """Context manager to time execution and report if too high."""
     t_start = default_timer()
     yield
@@ -89,12 +86,13 @@ def local_import_module(mod_name: str) -> ModuleType:
             sys.path.pop(0)
 
 
-PDW = ParamSpec("PDW")  # used for doublewrap
+PDW = t.ParamSpec("PDW")  # used for doublewrap
+RT = t.TypeVar("RT", bound=t.Callable)
 
 
 def doublewrap(
-    fun: typing.Callable[Concatenate[typing.Callable, PDW], typing.Callable[PDW, Any]],
-) -> typing.Callable[PDW, Any]:
+    fun: t.Callable[t.Concatenate[t.Callable, PDW], t.Callable[PDW, t.Any]],
+) -> t.Callable[PDW, t.Any]:
     """Decorate the decorators.
 
     Allow the decorator to be used as:
@@ -104,13 +102,13 @@ def doublewrap(
     """
 
     @wraps(fun)
-    def new_dec(*args: Any, **kwargs: Any) -> typing.Callable[PDW, Any]:
+    def new_dec(*args: PDW.args, **kwargs: PDW.kwargs) -> t.Callable[PDW, t.Any]:
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # called as @decorator
             return fun(args[0])  # type: ignore
 
         # called as @decorator(*args, **kwargs)
-        # def new_dec2(realf: PDW) -> Any:
+        # def new_dec2(realf: PDW) -> t.Any:
         #     return fun(realf, *args, **kwargs)
 
         # return new_dec2
@@ -128,7 +126,7 @@ class AttrKeyError(KeyError):
 class AttrDict(dict):
     """Simple recursive read-only attribute access (i.e. Munch)."""
 
-    def __getattr__(self, key: str) -> Any:
+    def __getattr__(self, key: str) -> t.Any:
         """Get attribute."""
         try:
             value = self[key]
@@ -136,7 +134,7 @@ class AttrDict(dict):
             raise AttrKeyError(f"Key '{key}' not found in dict {self}") from err
         return AttrDict(value) if isinstance(value, dict) else value
 
-    def __setattr__(self, key: str, value: Any) -> None:
+    def __setattr__(self, key: str, value: t.Any) -> None:
         """Set attribute."""
         raise IOError("Read only")
 

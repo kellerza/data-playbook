@@ -3,6 +3,7 @@
 import re
 
 import pytest
+
 from dataplaybook import DataEnvironment
 from dataplaybook.tasks import (
     build_lookup,
@@ -173,6 +174,6 @@ def test_remove_null(address_table):
 
     assert nul != address_table
 
-    remove_null([nul])
+    remove_null(tables=[nul])
 
     assert nul == address_table

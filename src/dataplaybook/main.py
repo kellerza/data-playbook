@@ -4,121 +4,97 @@ import atexit
 import logging
 import os
 import sys
-import typing
-from functools import wraps
-from inspect import isgeneratorfunction, signature
+import typing as t
+from functools import partial, wraps
+from inspect import Parameter, isgeneratorfunction, signature
 from pathlib import Path
-from typing import Any, Callable, Sequence
 
+import attrs
+import typeguard
 from icecream import colorizedStderrPrint, ic
-from typeguard import _CallMemo, check_argument_types, check_return_type
 
-from dataplaybook.const import Tables
 from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
+from dataplaybook.helpers.types import repr_call, repr_signature
 from dataplaybook.utils import doublewrap, local_import_module
 from dataplaybook.utils.logger import setup_logger
 
 _LOGGER = logging.getLogger(__name__)
 
 
-ALL_TASKS: dict = {}
+@attrs.define
+class Task:
+    """Task definition."""
+
+    name: str = ""
+    module: str = ""
+    func: t.Callable | None = None
+    gen: bool = False
+
+
+ALL_TASKS: dict[str, Task] = {}
 _ENV = DataEnvironment()
 
 
 def print_tasks() -> None:
     """Print all_tasks."""
 
-    def sign(func: Callable) -> str:
-        sig = str(signature(func))
-        sig = (
-            sig.replace("typing.", "")
-            .replace("Generator[dict[str, Any], NoneType, NoneType]", "RowDataGen")
-            .replace("dict[str, Any]", "RowData")
-            .replace(str(Tables).replace("typing.", ""), "Tables")
-        )
-        sig = sig.replace("dataplaybook.helpers.env.DataEnvironment", "DataEnvironment")
-        # sig = sig.replace(str(TableXXX).replace("typing.", ""), "Table")
-        return sig
-
     mods: dict = {}
     for name, tsk in ALL_TASKS.items():
-        mods.setdefault(tsk["module"], []).append(f'{name} "{sign(tsk["func"])}"')
-        mods[tsk["module"]].sort()
+        mods.setdefault(tsk.module, []).append(f'{name} "{repr_signature(tsk.func)}"')
+        mods[tsk.module].sort()
 
     for mod, fun in mods.items():
         colorizedStderrPrint(mod)
         colorizedStderrPrint("- " + "\n- ".join(fun))
-    # for mod_name, items in mods.items():
-    #    _LOGGER.debug("%s: %s", mod_name, ", ".join(items))
 
 
-def _repr(a: Any) -> str:
-    """Represent the argument."""
-    res = repr(a)
-    if len(res) < 50:
-        return res
-    return f"{res[:30]}...{res[-20:]}"
-
-
-def _repr_function(*, target: Callable, args: Sequence, kwargs: dict) -> None:
-    """Represent the caller."""
-    type_hints = typing.get_type_hints(target)
-    repr_args = [_repr(a) for a in args]
-    repr_kwargs = [f"{k}={_repr(v)}" for k, v in kwargs.items()]
-    repr_call = f"{target.__name__}({', '.join(repr_args + repr_kwargs)})"
-    if "return" in type_hints:
-        repr_call = f"_ = {repr_call}"
-    _LOGGER.info("Calling %s", repr_call)
-
-
-def _add_task(task_function: Callable, validator: Callable | None = None) -> None:
+def _add_task(task_function: t.Callable) -> None:
     """Add the task to ALL_TASKS."""
 
+    newtask = Task(
+        name=task_function.__name__,
+        func=task_function,
+        module=task_function.__module__,
+        gen=isgeneratorfunction(task_function),
+    )
     # Save the task
-    name = task_function.__name__
-    if name in ALL_TASKS:
+    if newtask.name in ALL_TASKS:
+        if newtask.module == ALL_TASKS[newtask.name].module:
+            return
         _LOGGER.warning(
             "Task %s (%s) already loaded, overwriting with %s (%s)",
-            name,
-            ALL_TASKS[name]["module"],
-            name,
-            task_function.__module__,
+            newtask.name,
+            ALL_TASKS[newtask.name].module,
+            newtask.name,
+            newtask.module,
         )
-    ALL_TASKS[task_function.__name__] = {
-        "func": task_function,
-        "validator": validator,
-        "gen": isgeneratorfunction(task_function),
-        "module": task_function.__module__,
-    }
+    ALL_TASKS[newtask.name] = newtask
 
 
-T = typing.TypeVar("T")
-P = typing.ParamSpec("P")
+T = t.TypeVar("T")
+P = t.ParamSpec("P")
 
 
 def _run_task(
-    task_function: Callable[P, T],
-    validator: Callable | None,
-    *args: Any,
-    **kwargs: Any,
+    *args: t.Any,
+    task_function: t.Callable[P, T],
+    **kwargs: t.Any,
 ) -> T:
-    _repr_function(target=task_function, args=args, kwargs=kwargs)  # type:ignore
+    _LOGGER.info("Calling %s", repr_call(task_function, kwargs=kwargs))
 
     # Warning for explicit parameters
     if args:
         short = [str(a)[:20] for a in args]
-        _LOGGER.warning("Use explicit parameters, instead of %s", short)
+        raise TypeError(f"Use explicit parameters, instead of {short}")
 
     # Warning on parameter types
-    call_memo = _CallMemo(task_function, args=args, kwargs=kwargs)
+    call_memo = typeguard._CallMemo(task_function, args=(), kwargs=kwargs)  # pylint: disable=protected-access
     try:
-        check_argument_types(call_memo)
+        typeguard.check_argument_types(call_memo)
     except TypeError as err:
         _LOGGER.warning(err)
-
-    if validator:
-        validator(kwargs)
+        raise
 
     try:
         value = task_function(*args, **kwargs)
@@ -132,7 +108,7 @@ def _run_task(
         raise
 
     try:
-        check_return_type(value, call_memo)
+        typeguard.check_return_type(value, call_memo)
     except TypeError as err:
         _LOGGER.warning(
             "Unexpected return from task `%s`: %s", task_function.__name__, err
@@ -141,62 +117,36 @@ def _run_task(
     return value
 
 
-def task(target: Callable[P, T]) -> Callable[P, T]:
+def task(target: t.Callable[P, T]) -> t.Callable[t.Concatenate[P], T]:
     """Task wrapper."""
+    sig = signature(target)
+    notkw = [
+        f"{k}=_" for k, p in sig.parameters.items() if p.kind != Parameter.KEYWORD_ONLY
+    ]
+    if notkw:
+        msg = ", ".join(notkw)
+        msg = (
+            f"{target.__name__} should have keyword only-parameters: ("
+            f"({msg}) --> (*, {msg})"
+        )
 
-    @wraps(target)
-    def task_wrapper(*args: Any, **kwargs: Any) -> T:
-        return _run_task(target, None, *args, **kwargs)
+        raise TypeError(msg)
 
     _add_task(target)
-    return task_wrapper
+    return wraps(target)(partial(_run_task, task_function=target))
 
 
-def task_validate(*, validator: Callable) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """Task wrapper with arguments."""
-
-    def _wrapper(target: Callable[P, T]) -> Callable[P, T]:
-        @wraps(target)
-        def task_wrapper(*args: Any, **kwargs: Any) -> T:
-            return _run_task(target, validator, *args, **kwargs)
-
-        _add_task(target)
-        return task_wrapper
-
-    return _wrapper
-
-
-K = typing.TypeVar("K", Callable, Callable)
-
-
-# @doublewrap
-# def task(
-#     target: K | None = None,  # type: ignore
-#     validator: Callable | None = None,
-# ) -> K:
-#     """Verify parameters & execute task."""
-
-#     @wraps(target)  # type:ignore
-#     def taskwrapper(*args: Any, **kwargs: Any) -> ATable:
-#         return _run_task(target, validator, *args, **kwargs)  # type:ignore
-
-#     if target:
-#         _add_task(target, validator)
-
-#     return taskwrapper
-
-
-_ALL_PLAYBOOKS: dict[str, Callable] = {}
+_ALL_PLAYBOOKS: dict[str, t.Callable] = {}
 _DEFAULT_PLAYBOOK: str | None = None
 
 
 @doublewrap
 def playbook(
-    target: Callable = None,  # type: ignore
+    target: t.Callable = None,  # type: ignore
     name: str | None = None,
     default: bool = False,
     run: bool = False,
-) -> Callable:
+) -> t.Callable:
     """Verify parameters & execute task."""
     if default:
         global _DEFAULT_PLAYBOOK

@@ -15,6 +15,7 @@ from dataplaybook import task
 
 @task
 def mail(
+    *,
     to_addrs: list[str] | str,
     from_addr: str,
     subject: str,

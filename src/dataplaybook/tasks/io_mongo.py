@@ -12,7 +12,7 @@ from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError
 
-from dataplaybook import Columns, RowData, RowDataGen, task
+from dataplaybook import RowData, RowDataGen, task
 from dataplaybook.utils import PlaybookError
 
 _LOGGER = logging.getLogger(__name__)
@@ -81,8 +81,8 @@ class MongoURI:
 
 @task
 def read_mongo(
-    mdb: MongoURI,
     *,
+    mdb: MongoURI,
     set_id: str | None = None,
 ) -> RowDataGen:
     """Read data from a MongoDB collection."""
@@ -101,9 +101,9 @@ def read_mongo(
 
 @task
 def write_mongo(
+    *,
     table: list[RowData],
     mdb: MongoURI,
-    *,
     set_id: str | None = None,
     force: bool = False,
 ) -> None:
@@ -139,7 +139,7 @@ def write_mongo(
 
 @task
 def columns_to_list(
-    table: list[RowData], *, list_column: str, columns: Columns
+    *, table: list[RowData], list_column: str, columns: list[str]
 ) -> None:
     """Convert columns with booleans to a list in a single column.
 
@@ -152,7 +152,7 @@ def columns_to_list(
 
 @task
 def list_to_columns(
-    table: list[RowData], *, list_column: str, columns: Columns
+    *, table: list[RowData], list_column: str, columns: list[str]
 ) -> None:
     """Convert a list with values to columns with True."""
     for row in table:
@@ -163,7 +163,7 @@ def list_to_columns(
 
 
 @task
-def mongo_list_sids(mdb: MongoURI) -> list[str]:
+def mongo_list_sids(*, mdb: MongoURI) -> list[str]:
     """Return a list of _sids."""
     col = mdb.get_collection()
     return col.distinct("_sid")

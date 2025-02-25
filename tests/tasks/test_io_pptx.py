@@ -42,8 +42,8 @@ def test_ptext() -> None:
     assert t._list == ["a", PStyle(highlight=(255, 0, 0))]
 
     t = PText("a", PStyle(bold=True))
-    t = PText(t)
-    assert t._list == ["a", PStyle(bold=True)]
+    t = PText("1", t)
+    assert t._list == ["1", "a", PStyle(bold=True)]
 
     t = PText(" ", "zzz")
     assert t._list == [" ", "zzz"]

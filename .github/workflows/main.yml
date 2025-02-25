@@ -3,7 +3,9 @@ name: CI
 on: [push, pull_request]
 
 env:
-  DEFAULT_PYTHON: 3.11
+  RUFF_VERSION: 0.9.7
+  UV_VERSION: 0.6.2
+  TEST_TARGET: "src tests"
 
 jobs:
   ruff:
@@ -12,62 +14,74 @@ jobs:
       - uses: actions/checkout@v4
       - uses: chartboost/ruff-action@v1
         with:
-          version: 0.9.4
+          version: ${{ env.RUFF_VERSION }}
       - uses: chartboost/ruff-action@v1
         with:
-          version: 0.9.4
           args: "format --check"
+          version: ${{ env.RUFF_VERSION }}
 
   pylint:
+    name: Check pylint
+    needs: [ruff]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v4
-      - uses: actions/cache@v4
-        name: Define a cache for the virtual environment based on the dependencies lock file
+          python-version-file: "pyproject.toml"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          path: ./.venv
-          key: venv-${{ hashFiles('poetry.lock') }}
-      - name: Install dependencies
-        run: poetry install -E all
-      - name: Run pylint
-        run: poetry run pylint dataplaybook tests
+          version: ${{ env.UV_VERSION }}
+      - name: Install Requirements
+        run: uv sync --frozen --all-extras
+      - name: Run Pylint
+        run: pylint ${{ env.TEST_TARGET }}
+
+  mypy:
+    name: Check mypy
+    needs: [ruff]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+      - name: Install Requirements
+        run: uv sync --frozen --all-extras
+      - name: Run mypy
+        run: mypy --install-types --non-interactive ${{ env.TEST_TARGET }}/
 
   pytest:
     name: Run tests Python ${{ matrix.python-version }}
+    needs: [ruff]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-    needs:
-      - ruff
-      - pylint
+        python-version: ["3.11", "3.12", "3.13"]
     env:
       PYTHON: ${{ matrix.python-version }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v4
-      - uses: actions/cache@v4
-        name: Define a cache for the virtual environment based on the dependencies lock file
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          path: ./.venv
-          key: venv-${{ hashFiles('poetry.lock') }}
-      - name: Install the project dependencies
-        run: poetry install -E all
-
+          version: ${{ env.UV_VERSION }}
+      - name: Install Requirements
+        run: uv sync --frozen --all-extras
       - name: Run tests and generate coverage report
-        run: poetry run pytest tests --cov=./dataplaybook --cov-report=xml
-
+        run: pytest
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:

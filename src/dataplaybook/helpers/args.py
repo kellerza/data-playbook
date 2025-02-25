@@ -1,11 +1,10 @@
 """CLI arguments."""
 
 import argparse
-import typing
+import typing as t
+from importlib.metadata import version
 
 import attrs
-
-from dataplaybook.const import VERSION
 
 
 @attrs.define
@@ -20,11 +19,12 @@ class DPArg:
 
 
 def parse_args(
-    *, dataplaybook_cmd: bool, default_playbook: str, playbooks: typing.Iterable[str]
+    *, dataplaybook_cmd: bool, default_playbook: str, playbooks: t.Iterable[str]
 ) -> DPArg:
     """Parse dataplaybook CLI arguments."""
+    ver = version("dataplaybook")
     parser = argparse.ArgumentParser(
-        description=f"Data Playbook v{VERSION}. Playbooks for tabular data."
+        description=f"Data Playbook v{ver}. Playbooks for tabular data."
     )
     if dataplaybook_cmd:
         parser.add_argument("files", type=str, nargs="?", help="The playbook py file")

@@ -1,38 +1,46 @@
 """Powerpoint helpers."""
 
-# pylint: disable=invalid-name
 from __future__ import annotations
 import re
-from dataclasses import dataclass
+import typing as t
 from turtle import Shape
 from typing import Any
 
+import attrs
 from colordict import ColorDict
 from icecream import ic
-from pptx import Presentation
+from pptx import Presentation as NewPresentation  # noqa pylint:disable=unused-import
 from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_TEXT_UNDERLINE_TYPE
 from pptx.oxml.xmlchemy import OxmlElement
-from pptx.slide import Slide, SlidePlaceholders
-from pptx.text.text import TextFrame
-from pptx.util import Pt
+from pptx.presentation import Presentation
+from pptx.slide import Slide
+from pptx.text.text import TextFrame, _Paragraph
+from pptx.util import Length
 
 RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
 
 
-@dataclass
+@attrs.define
 class PStyle:
     """Paragraph style class."""
 
     bold: bool | None = None
-    strike: bool | None = None
-    italic: bool | None = None
     color: RGBColor | None = None
     highlight: RGBColor | None = None
-    size: Pt | None = None
+    italic: bool | None = None
+    size: Length | None = None
+    strike: bool | None = None
 
-    # def __bool__(self):
-    #     return self.bold or self.italic or self.color or self.size or False
+    def __bool__(self) -> bool:
+        return bool(
+            self.bold
+            or self.color
+            or self.highlight
+            or self.italic
+            or self.size
+            or self.strike
+        )
 
 
 class PText:
@@ -40,13 +48,13 @@ class PText:
 
     _list: list
 
-    def __init__(self, *text: str | PStyle):
+    def __init__(self, *text: str | PStyle | PText):
         """Init Paragraph text."""
         self._list = []
         if text:
             self.append(*text)
 
-    def append(self, *text: str | PStyle) -> None:
+    def append(self, *text: str | PStyle | PText) -> None:
         """Parse values and append."""
         for val in text:
             if isinstance(val, PStyle):
@@ -70,8 +78,8 @@ class PText:
                 if newline:
                     self._list.append("\n")
 
-    def apply_to(self, para: SlidePlaceholders) -> None:
-        """Apply to."""
+    def apply_to(self, para: _Paragraph) -> None:
+        """Apply to, was SlidePlaceholders."""
         style: PStyle | None = None
         for prun in self._list:
             if isinstance(prun, str):
@@ -83,14 +91,14 @@ class PText:
                 run.text = prun
                 if style:
                     if style.highlight:
-                        rPr = run._r.get_or_add_rPr()  # pylint:disable=protected-access
+                        rpr = run._r.get_or_add_rPr()  # pylint:disable=protected-access
                         hl = OxmlElement("a:highlight")
-                        srgbClr = OxmlElement("a:srgbClr")
-                        setattr(srgbClr, "val", str(style.highlight))
-                        hl.append(srgbClr)
-                        rPr.append(hl)
+                        clr = OxmlElement("a:srgbClr")
+                        setattr(clr, "val", str(style.highlight))
+                        hl.append(clr)
+                        rpr.append(hl)  # type:ignore
                     if style.size:
-                        run.font.size = Pt(style.size)
+                        run.font.size = style.size
                     if style.color:
                         run.font.color.rgb = style.color
                     run.font.italic = style.italic
@@ -99,8 +107,9 @@ class PText:
                         run.font.underline = MSO_TEXT_UNDERLINE_TYPE.DOT_DASH_HEAVY_LINE
                         # https://github.com/scanny/python-pptx/pull/606/files
                         # rPr = run.get_or_add_rPr()
-                        rPr = run.font._rPr  # pylint:disable=protected-access
-                        rPr.strike = "sngStrike"
+                        rpr = run.font._rPr  # pylint:disable=protected-access
+                        setattr(rpr, "strike", "sngStrike")
+                        # rPr.strike = "sngStrike"
                         # rPr.strikethrough = "sngStrike"
                     # run.hyperlink
                 style = None
@@ -125,7 +134,8 @@ def str2styles(style_s: str) -> PStyle:
 
     for kk in list(ss):
         try:
-            res.size = int(kk)
+            # ic("size", kk, float(kk), Pt(float(kk)))
+            res.size = Length(int(kk))
             ss.remove(kk)
         except (TypeError, ValueError):
             continue
@@ -209,11 +219,21 @@ def add_slide(prs: Presentation, layout: str) -> Slide:
     return prs.slides.add_slide(lay)
 
 
+@t.runtime_checkable
+class ShapeWithText(t.Protocol):
+    """Shape with text."""
+
+    has_text_frame: bool
+    text: str
+    top: int
+
+
+@attrs.define
 class Slide3Parts:
     """Analyse a slide & the 3 main parts."""
 
-    _sl: Slide = None
-    _sh: dict[int, Shape] = {}
+    _sl: Slide
+    _sh: dict[int, ShapeWithText] = {}
 
     def __init__(self, sl: Slide):
         """Init the class."""
@@ -223,31 +243,29 @@ class Slide3Parts:
 
     def get_sh(self) -> None:
         """Get the shape parts in order."""
-        sh: SlidePlaceholders
+        shapes: list[ShapeWithText] = []
         for sh in self._sl.shapes:
-            if not sh.has_text_frame:
-                continue
-            self._sh[sh.top] = sh
+            if isinstance(sh, ShapeWithText) and sh.has_text_frame:
+                shapes.append(sh)
 
-        for idx, top in enumerate(sorted(self._sh.keys())):
-            self._sh[idx] = self._sh.pop(top)
+        self._sh = {s.top: s for s in sorted(shapes, key=lambda s: s.top)}
 
     @property
-    def title(self) -> Shape:
+    def title(self) -> ShapeWithText:
         """Slide title shape."""
         return self._sh[0]
 
     @property
-    def subtitle(self) -> Shape:
+    def subtitle(self) -> ShapeWithText:
         """Slide subtitle shape."""
         return self._sh[1]
 
     @property
-    def text(self) -> Shape:
+    def text(self) -> ShapeWithText:
         """Slide main text element."""
         return self._sh[2]
 
     @property
-    def notes(self) -> TextFrame:
+    def notes(self) -> TextFrame | None:
         """Comments."""
         return self._sl.notes_slide.notes_text_frame

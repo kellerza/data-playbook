@@ -31,7 +31,7 @@ def _myreadlines(fobj: typing.IO, newline: str) -> typing.Generator[str, None, N
 
 @task
 def read_pdf_pages(
-    filename: str, *, layout: bool = True, args: list[str] | None = None
+    *, filename: str, layout: bool = True, args: list[str] | None = None
 ) -> RowDataGen:
     """Read pdf as text pages."""
     if not filename.lower().endswith(".pdf"):
@@ -62,9 +62,9 @@ def read_pdf_pages(
 
 @task
 def read_pdf_files(
+    *,
     folder: str,
     pattern: str = "*.pdf",
-    *,
     layout: bool = True,
     args: list[str] | None = None,
 ) -> RowDataGen:

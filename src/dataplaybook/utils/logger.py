@@ -35,7 +35,7 @@ def set_logger_level(level: Any, module: logging.Logger | None = None) -> None:
     if module:
         get_logger(module).setLevel(level)
 
-    for mod in ("dataplaybook.playbook", "dataplaybook.config_validation"):
+    for mod in "dataplaybook.playbook":  # , "dataplaybook.config_validation"):
         get_logger(mod).setLevel(level)
 
 

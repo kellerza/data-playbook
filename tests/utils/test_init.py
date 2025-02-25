@@ -51,5 +51,5 @@ def test_timeit():
 
 def test_local_import_all():
     """Test local import."""
-    with import_folder("./dataplaybook/tasks"):
+    with import_folder("./src/dataplaybook/tasks", "dataplaybook.tasks"):
         pass

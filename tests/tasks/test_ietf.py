@@ -4,10 +4,11 @@ import logging
 import re
 from pathlib import Path
 
-import dataplaybook.tasks.ietf as ietf
 import pytest
+
+import dataplaybook.tasks.ietf as ietf
 from dataplaybook import DataEnvironment
-from dataplaybook.tasks.io_xlsx import read_excel
+from dataplaybook.tasks.io_xlsx import Sheet, read_excel
 from dataplaybook.utils import ensure_list
 
 _LOGGER = logging.getLogger(__name__)
@@ -192,9 +193,7 @@ def test_compliance_file():
     if not file.exists():
         pytest.skip("Local test file not found.")
     env = DataEnvironment()
-    read_excel(
-        tables=env, file=str(file), sheets=[{"name": "default", "target": "rfc"}]
-    )
+    read_excel(tables=env, file=file, sheets=[Sheet(name="default", target="rfc")])
     cnt = 0
     for row in env["rfc"]:
         std = row["s"]

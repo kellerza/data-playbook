@@ -90,7 +90,7 @@ class InvalidFile(Exception):
 
 
 @task
-def read_cheque_csv(filename: str) -> RowDataGen:
+def read_cheque_csv(*, filename: str) -> RowDataGen:
     """Read an FNB cheque csv file."""
     fields = [
         "type",
@@ -192,7 +192,7 @@ def _clean(row: dict) -> dict:
 
 
 @task
-def fnb_process(tables: dict[str, list[RowData]]) -> RowDataGen:
+def fnb_process(*, tables: dict[str, list[RowData]]) -> RowDataGen:
     """Add the budget month and ID."""
     for _, t_table in tables.items():
         for row in t_table:
@@ -246,7 +246,7 @@ def _count_it(
 
 
 @task
-def fnb_read_folder(folder: str, pattern: str = "*.csv") -> RowDataGen:
+def fnb_read_folder(*, folder: str, pattern: str = "*.csv") -> RowDataGen:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))

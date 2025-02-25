@@ -6,14 +6,14 @@ import shutil
 import typing
 from typing import Any, Sequence
 
-from dataplaybook import Columns, RowData, RowDataGen, Tables, task
+from dataplaybook import RowData, RowDataGen, Tables, task
 from dataplaybook.utils import ensure_list_csv as _ensure_list_csv
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @task
-def build_lookup(table: list[RowData], key: str, columns: Columns) -> RowDataGen:
+def build_lookup(*, table: list[RowData], key: str, columns: list[str]) -> RowDataGen:
     """Build a lookup table (unique key & columns) and removing the columns."""
     lookup: RowData = {}
     all_cols = list(columns)
@@ -37,7 +37,7 @@ KEYT = typing.TypeVar("KEYT", Any, list[Any])
 
 @task
 def build_lookup_dict(
-    table: list[RowData], key: str | list[str], columns: Columns | None = None
+    *, table: list[RowData], key: str | list[str], columns: list[str] | None = None
 ) -> dict[str | tuple, Any]:
     """Build lookup tables {key: columns}."""
     lookup: dict[str | tuple, Any] = {}
@@ -55,9 +55,10 @@ def build_lookup_dict(
 
 @task
 def combine(
+    *,
     tables: list[list[RowData]],
     key: str,
-    columns: Columns,
+    columns: list[str],
     value: typing.Literal[True] | str = True,
 ) -> list[RowData]:
     """Combine multiple tables on key.
@@ -81,7 +82,7 @@ def combine(
 
 
 @task
-def ensure_lists(tables: Sequence[list[RowData]], columns: Sequence[str]) -> None:
+def ensure_lists(*, tables: Sequence[list[RowData]], columns: Sequence[str]) -> None:
     """Recursively run ensure_list on columns in all tables."""
     for table in tables:
         for row in table:
@@ -110,9 +111,10 @@ def ensure_lists(tables: Sequence[list[RowData]], columns: Sequence[str]) -> Non
 
 @task
 def filter_rows(
+    *,
     table: list[RowData],
     include: dict[str, str] | None = None,
-    exclude: dict[str, str] | None = None,
+    exclude: dict[str, str | list[str]] | None = None,
 ) -> RowDataGen:
     """Filter rows from a table."""
 
@@ -175,7 +177,7 @@ def print_table(
 
 
 @task
-def remove_null(tables: Sequence[list[RowData]]) -> None:
+def remove_null(*, tables: Sequence[list[RowData]]) -> None:
     """Remove nulls."""
     for table in tables:
         if not isinstance(table, list):
@@ -198,7 +200,7 @@ def remove_null(tables: Sequence[list[RowData]]) -> None:
 
 @task
 def replace(
-    table: list[RowData], replace_dict: dict[str, str], columns: Columns
+    *, table: list[RowData], replace_dict: dict[str, str], columns: list[str]
 ) -> None:
     """Replace word in a column."""
     col = columns[0]
@@ -213,7 +215,7 @@ def replace(
 
 
 @task
-def unique(table: list[RowData], key: str) -> RowDataGen:
+def unique(*, table: list[RowData], key: str) -> RowDataGen:
     """Return rows with unique keys."""
     seen = {}
     for row in table:
@@ -225,7 +227,7 @@ def unique(table: list[RowData], key: str) -> RowDataGen:
 
 
 @task  # , tables=2, columns=3)
-def vlookup(table0: list[RowData], acro: list[RowData], columns: Columns) -> None:
+def vlookup(*, table0: list[RowData], acro: list[RowData], columns: list[str]) -> None:
     """Modify table0[col0], replacing table1[col1] with table1[col2]."""
     # _LOGGER.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
     _acro: dict[str, Any] = {}

@@ -1,24 +1,30 @@
 """Misc IO tasks."""
 
 import time
-import typing
-import urllib.request
+import typing as t
 from csv import DictReader, DictWriter
 from json import dump, load, loads
 from json.decoder import JSONDecodeError
 from os import getenv
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
+import requests
 from icecream import ic
 
-from dataplaybook import Columns, DataEnvironment, RowData, RowDataGen, Tables, task
+from dataplaybook import (
+    DataEnvironment,
+    PathStr,
+    RowData,
+    RowDataGen,
+    Tables,
+    task,
+)
 from dataplaybook.utils import ensure_list as _ensure_list
 
 
 @task
-def file_rotate(file: str, count: int = 3) -> None:
+def file_rotate(*, file: PathStr, count: int = 3) -> None:
     """Rotate some file fn.ext --> fn.1.ext --> fn.2.ext."""
     f_n = Path(file)
     if not f_n.exists():
@@ -36,7 +42,7 @@ def file_rotate(file: str, count: int = 3) -> None:
 
 
 @task
-def glob(patterns: list[str]) -> RowDataGen:
+def glob(*, patterns: list[str]) -> RowDataGen:
     """Search for files matching certain patterns."""
     for val in _ensure_list(patterns):  # type: ignore
         fol, _, pat = val.partition("/*")
@@ -46,7 +52,7 @@ def glob(patterns: list[str]) -> RowDataGen:
 
 
 @task
-def read_csv(file: str, columns: dict[str, str] | None = None) -> RowDataGen:
+def read_csv(*, file: str, columns: dict[str, str] | None = None) -> RowDataGen:
     """Read csv file."""
     with open(file, "r", encoding="utf-8") as __f:
         csvf = DictReader(__f)
@@ -66,7 +72,7 @@ def read_csv(file: str, columns: dict[str, str] | None = None) -> RowDataGen:
 
 
 @task
-def read_json(file: str) -> list[RowData]:
+def read_json(*, file: str) -> list[RowData]:
     """Read json from a file."""
     try:
         with Path(file).open(mode="r", encoding="utf-8") as __f:
@@ -91,7 +97,9 @@ def read_json(file: str) -> list[RowData]:
 
 
 @task
-def write_json(data: Tables | list[RowData], file: str, only_var: bool = False) -> None:
+def write_json(
+    *, data: Tables | list[RowData], file: str, only_var: bool = False
+) -> None:
     """Write into a json file."""
 
     with Path(file).open("w", encoding="utf-8") as __f:
@@ -101,7 +109,7 @@ def write_json(data: Tables | list[RowData], file: str, only_var: bool = False) 
 
 
 @task
-def read_tab_delim(file: str, headers: Columns) -> RowDataGen:
+def read_tab_delim(*, file: str, headers: list[str]) -> RowDataGen:
     """Read xml file."""
     with open(file, "r", encoding="utf-8") as __f:
         header = headers
@@ -118,7 +126,7 @@ def read_tab_delim(file: str, headers: Columns) -> RowDataGen:
 
 @task
 def read_text_regex(
-    filename: str, newline: typing.Pattern, fields: typing.Pattern | None
+    *, filename: str, newline: t.Pattern, fields: t.Pattern | None
 ) -> RowDataGen:
     """Much regular expressions into a table."""
     res: dict[str, Any] | None = None
@@ -145,33 +153,44 @@ def read_text_regex(
 
 
 @task
-def wget(url: str, file: str, age: int = 48 * 60 * 60) -> None:
-    """Download a file."""
+def wget(
+    *,
+    url: str,
+    file: str,
+    age: int = 48 * 60 * 60,
+    headers: dict[str, str] | None = None,
+) -> None:
+    """Get a file from the web."""
+    path = Path(file)
     if file:
-        path = Path(file)
         if path.exists():
             if time.time() - path.stat().st_mtime < age:
                 return
 
-    proxy = getenv("HTTP_PROXY")
-    if proxy:
-        dburl = urlparse(proxy)
-        # create the object, assign it to a variable
-        prx = f"{dburl.hostname}:{dburl.port}"
-        handler = urllib.request.ProxyHandler({"http": prx, "https": prx, "ftp": prx})
-        # construct a new opener using your proxy settings
-        opener = urllib.request.build_opener(handler)
-        # install the opener on the module-level
-        urllib.request.install_opener(opener)
+    proxies = {
+        "http": getenv("HTTP_PROXY") or "",
+        "https": getenv("HTTPS_PROXY") or getenv("HTTP_PROXY") or "",
+        "ftp": getenv("FTP_PROXY") or getenv("HTTP_PROXY") or "",
+    }
+    proxies = {k: v for k, v in proxies.items() if v}
+    headers = headers or {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
-    if file:
-        urllib.request.urlretrieve(url, file)
-    else:
-        return urllib.request.urlopen(url)
+    with requests.get(
+        url, stream=True, proxies=proxies, headers=headers, timeout=15
+    ) as r:
+        r.raise_for_status()
+        with path.open("wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                # If you have chunk encoded response uncomment if
+                # and set chunk_size parameter to None.
+                # if chunk:
+                f.write(chunk)
 
 
 @task
-def write_csv(table: list[RowData], file: str, header: list[str] | None = None) -> None:
+def write_csv(
+    *, table: list[RowData], file: str, header: list[str] | None = None
+) -> None:
     """Write a csv file."""
     fieldnames = list(table[0].keys())
     for hdr in reversed(header or []):

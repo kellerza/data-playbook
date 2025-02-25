@@ -84,10 +84,11 @@ dataplaybook.tasks.io_xml
 
 ## Local development
 
-Poetry is used for dependency management. Install poetry and run `poetry install` to install the dependencies.
+uv is used for dependency management. To install the dependencies.
 
 ```bash
-poetry install -E all
+uv venv
+uv pip install .[all]
 ```
 
 pre-commit is used for code formatting and linting. Install pre-commit and run `pre-commit install` to install the git hooks.
@@ -100,7 +101,7 @@ Test locally using pre-commit (ruff, codespell, mypy & pylint)
 
 ```bash
 git add . && pre-commit run --all
-poetry run pylint dataplaybook tests
+uv run pylint dataplaybook tests
 ```
 
 ## Data Playbook v0 - origins
