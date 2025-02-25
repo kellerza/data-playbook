@@ -110,14 +110,6 @@ jobs:
         run: |
           git checkout -B ${{ github.ref_name }} ${{ github.sha }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          version: ${{ env.UV_VERSION }}
-
-      - name: Install Requirements
-        run: uv sync --frozen --all-extras
-
       - name: Action | Semantic Version Release
         id: release
         # Adjust tag with desired version if applicable.

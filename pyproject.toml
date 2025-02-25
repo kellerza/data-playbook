@@ -76,7 +76,7 @@ commit_parser = "emoji"
 # https://python-semantic-release.readthedocs.io/en/latest/configuration.html#version-toml
 # version_variables = ["dataplaybook/const.py:VERSION"]
 version_toml = ["pyproject.toml:project.version"]
-build_command = "uv build"
+build_command = "pip install uv && uv sync --frozen --all-extras && uv build"
 commit_version_number = true
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
