@@ -134,8 +134,12 @@ You could argue I can do this with Ansible, but it won't be as elegant with sing
 
 Semantic versioning is used for release.
 
-To create a new release, include a commit with a :dolphin: emoji in the commit message. This will trigger a release on the master branch.
+To create a new release, include a commit with a :dolphin: emoji as a prefix in the commit message. This will trigger a release on the master branch.
 
 ```bash
-git commit -m ":dolphin: Release 0.1.0"
+# Patch
+git commit -m ":dolphin: Release 0.0.x"
+
+# Minor
+git commit -m ":rocket: Release 0.x.0"
 ```
