@@ -56,7 +56,7 @@ jobs:
       - name: Install Requirements
         run: uv sync --frozen --all-extras
       - name: Run mypy
-        run: uv run mypy --install-types --non-interactive ${{ env.TEST_TARGET }}/
+        run: uv run mypy --non-interactive --config-file pyproject.toml ${{ env.TEST_TARGET }}
 
   pytest:
     name: Run tests Python ${{ matrix.python-version }}

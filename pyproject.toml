@@ -17,12 +17,12 @@ classifiers = [
     "Natural Language :: English",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = ["data", "tables", "excel", "mongodb", "generators"]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "office365-rest-python-client>2,<3",
     "attrs==25.1.0",

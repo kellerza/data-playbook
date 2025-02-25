@@ -16,21 +16,22 @@ repos:
           - --skip
           - "uv.lock"
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+  - repo: local
     hooks:
       - id: mypy
         name: mypy
-        #language: system
+        language: system
         types: [python]
         pass_filenames: false
-        entry: mypy
+        entry: uv
         args:
+          - run
+          - mypy
           - --show-error-codes
           - --config-file
           - pyproject.toml
-          - .
-        additional_dependencies: ["types-requests", "attrs>25"]
+          - src
+          - tests
 
   - repo: local
     hooks:
@@ -40,11 +41,10 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        args: [
-            "run",
-            "pylint",
-            "dataplaybook",
-            "tests",
-            "-rn", # Only display messages
-            "-sn", # Don't display the score
-          ]
+        args:
+          - run
+          - pylint
+          - src
+          - tests
+          - -rn # Only display messages
+          - -sn # Don't display the score

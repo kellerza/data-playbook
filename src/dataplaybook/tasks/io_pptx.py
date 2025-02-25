@@ -29,7 +29,7 @@ class PStyle:
     color: RGBColor | tuple[int, int, int] | None = None
     highlight: RGBColor | tuple[int, int, int] | None = None
     italic: bool | None = None
-    size: Length | None = None
+    size: Length | int | None = None
     strike: bool | None = None
 
     def __bool__(self) -> bool:
