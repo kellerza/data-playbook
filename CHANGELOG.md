@@ -1,6 +1,161 @@
 # CHANGELOG
 
 
+## v1.1.0 (2025-02-25)
+
+### :rocket:
+
+- :rocket: Release 0.x.0
+  ([`4d3a932`](https://github.com/kellerza/data-playbook/commit/4d3a932eea23d5a2c38c327fd4a9059b15f582ad))
+
+- :rocket: Release 0.x.0
+  ([`62b1a85`](https://github.com/kellerza/data-playbook/commit/62b1a85586d0d9dd3d6aa241250af704a5211186))
+
+- :rocket: Release 0.x.0
+  ([`1cc3d4e`](https://github.com/kellerza/data-playbook/commit/1cc3d4e103d2619b94565de9106957c528c6ad51))
+
+### Other
+
+- 311
+  ([`8052675`](https://github.com/kellerza/data-playbook/commit/80526754914583ab375d3bdfa0adcaac310aab99))
+
+- 311
+  ([`6b4291a`](https://github.com/kellerza/data-playbook/commit/6b4291ab9ca96c7db3fd83dfab1d364c82dae011))
+
+- Add cattrs,parser,ensure*
+  ([`cd2490d`](https://github.com/kellerza/data-playbook/commit/cd2490daff876cc2d8c6a7ff3012e8a8704590fc))
+
+- Beartype
+  ([`c777a25`](https://github.com/kellerza/data-playbook/commit/c777a2546ddee9b94b1920ca53cfb170ed06c01c))
+
+- Bump colorlog from 6.8.2 to 6.9.0 ([#6](https://github.com/kellerza/data-playbook/pull/6),
+  [`5301068`](https://github.com/kellerza/data-playbook/commit/530106869a09973f1ee4e1c249fcf76288aa0ffd))
+
+Bumps [colorlog](https://github.com/borntyping/python-colorlog) from 6.8.2 to 6.9.0. - [Release
+  notes](https://github.com/borntyping/python-colorlog/releases) -
+  [Commits](https://github.com/borntyping/python-colorlog/compare/v6.8.2...v6.9.0)
+
+--- updated-dependencies: - dependency-name: colorlog dependency-type: direct:production
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump pytest from 8.3.3 to 8.3.4 ([#7](https://github.com/kellerza/data-playbook/pull/7),
+  [`81a9558`](https://github.com/kellerza/data-playbook/commit/81a955872367e268f24d2087257ac923d130a24b))
+
+Bumps [pytest](https://github.com/pytest-dev/pytest) from 8.3.3 to 8.3.4. - [Release
+  notes](https://github.com/pytest-dev/pytest/releases) -
+  [Changelog](https://github.com/pytest-dev/pytest/blob/main/CHANGELOG.rst) -
+  [Commits](https://github.com/pytest-dev/pytest/compare/8.3.3...8.3.4)
+
+--- updated-dependencies: - dependency-name: pytest dependency-type: direct:development
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump python-levenshtein from 0.26.0 to 0.26.1
+  ([#10](https://github.com/kellerza/data-playbook/pull/10),
+  [`fb4974b`](https://github.com/kellerza/data-playbook/commit/fb4974b6e2c89a6c2bc2f6f0aed7ebf018af6929))
+
+Bumps [python-levenshtein](https://github.com/rapidfuzz/python-Levenshtein) from 0.26.0 to 0.26.1. -
+  [Release notes](https://github.com/rapidfuzz/python-Levenshtein/releases) -
+  [Changelog](https://github.com/rapidfuzz/python-Levenshtein/blob/main/HISTORY.md) -
+  [Commits](https://github.com/rapidfuzz/python-Levenshtein/compare/v0.26.0...v0.26.1)
+
+--- updated-dependencies: - dependency-name: python-levenshtein dependency-type: direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump python-semantic-release/python-semantic-release
+  ([#13](https://github.com/kellerza/data-playbook/pull/13),
+  [`cc51b0b`](https://github.com/kellerza/data-playbook/commit/cc51b0bd42cb12ad84dab3832690d022d0be17b9))
+
+Bumps
+  [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release)
+  from 9.19.0 to 9.19.1. - [Release
+  notes](https://github.com/python-semantic-release/python-semantic-release/releases) -
+  [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.rst)
+  -
+  [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/v9.19.0...v9.19.1)
+
+--- updated-dependencies: - dependency-name: python-semantic-release/python-semantic-release
+  dependency-type: direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump python-semantic-release/python-semantic-release
+  ([#18](https://github.com/kellerza/data-playbook/pull/18),
+  [`f18da53`](https://github.com/kellerza/data-playbook/commit/f18da53856728ea5248acda1e756f9d08479b4e0))
+
+Bumps
+  [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release)
+  from 9.19.1 to 9.21.0. - [Release
+  notes](https://github.com/python-semantic-release/python-semantic-release/releases) -
+  [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.rst)
+  -
+  [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/v9.19.1...v9.21.0)
+
+--- updated-dependencies: - dependency-name: python-semantic-release/python-semantic-release
+  dependency-type: direct:production
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump types-lxml from 2024.9.16 to 2024.12.13
+  ([#9](https://github.com/kellerza/data-playbook/pull/9),
+  [`4ee66d1`](https://github.com/kellerza/data-playbook/commit/4ee66d1e448447abe3e1a88f147cc1cddb068425))
+
+Bumps [types-lxml](https://github.com/abelcheung/types-lxml) from 2024.9.16 to 2024.12.13. -
+  [Release notes](https://github.com/abelcheung/types-lxml/releases) -
+  [Commits](https://github.com/abelcheung/types-lxml/compare/2024.09.16...2024.12.13)
+
+--- updated-dependencies: - dependency-name: types-lxml dependency-type: direct:development
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- O365
+  ([`cac8cf2`](https://github.com/kellerza/data-playbook/commit/cac8cf2c69ed7b2aa4014ff1c375479fae896062))
+
+- Py313
+  ([`8f46245`](https://github.com/kellerza/data-playbook/commit/8f46245c7b10cca9b277613ede1e539dcf2cae18))
+
+- Release :rocket:
+  ([`b602d9c`](https://github.com/kellerza/data-playbook/commit/b602d9cd8ffa57a1145dd2ce5f9d78ec618b1e06))
+
+- Release :rockets:
+  ([`4457a2f`](https://github.com/kellerza/data-playbook/commit/4457a2f2dfbc609442910ad759f8dafff57ac3cc))
+
+- Uv
+  ([`4987b85`](https://github.com/kellerza/data-playbook/commit/4987b85c033f2da456c207d7133b82589e0555bb))
+
+- Uv
+  ([`d9debab`](https://github.com/kellerza/data-playbook/commit/d9debab92d24561bcc519b5337f4d12fa299d848))
+
+- Uv
+  ([`971af06`](https://github.com/kellerza/data-playbook/commit/971af06d0e2c475ee7c28528b8f41ae3c2059a3a))
+
+
 ## v1.0.21 (2025-02-10)
 
 ### :dolphin:

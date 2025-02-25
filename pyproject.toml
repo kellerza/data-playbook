@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataplaybook"
-version = "1.0.21"
+version = "1.1.0"
 description = "Playbooks for data. Open, process and save table based data."
 authors = [{ name = "Johann Kellerman", email = "kellerza@gmail.com" }]
 readme = "README.md"
