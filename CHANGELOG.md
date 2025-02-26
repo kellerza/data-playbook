@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.1.1 (2025-02-26)
+
+### :dolphin:
+
+- :dolphin: Excel & types
+  ([`d79e5ba`](https://github.com/kellerza/data-playbook/commit/d79e5ba6551d35d1868ec59b91e8e1b7666c1502))
+
+
 ## v1.1.0 (2025-02-25)
 
 ### :rocket:
