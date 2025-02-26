@@ -1,8 +1,11 @@
 """Test converter."""
 
+from datetime import datetime
+
 import attrs
 import cattrs
 import pytest
+from whenever import Instant
 
 from dataplaybook.utils.parser import CONVERT, BaseClass, _structure1
 
@@ -101,3 +104,14 @@ def test_optional() -> None:
 
     with pytest.raises(cattrs.errors.StructureHandlerNotFoundError):
         assert CONVERT.structure(val, int | str | None) is None  # type: ignore
+
+
+def test_date_Instant() -> None:
+    """Date."""
+    inst = CONVERT.structure("2022-06-26", Instant)
+    assert inst == Instant.from_utc(2022, 6, 26)
+
+    # inst = Instant.now()
+    idate = CONVERT.unstructure(inst, Instant)
+    assert isinstance(idate, datetime)
+    assert idate == inst.py_datetime()

@@ -10,7 +10,9 @@ from pathlib import Path
 
 import attrs
 import openpyxl
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.utils import get_column_letter
+from openpyxl.utils.exceptions import IllegalCharacterError
 from openpyxl.worksheet.worksheet import Worksheet
 
 from dataplaybook import PathStr, RowData, RowDataGen, Tables, task
@@ -279,7 +281,13 @@ def write_excel(
             erow = [_fmt(row.get(h)) for h in hdrk]
             try:
                 wsh.append(erow)
-            except (ValueError, openpyxl.utils.exceptions.IllegalCharacterError) as exc:
+            except IllegalCharacterError:
+                newrow = [
+                    ILLEGAL_CHARACTERS_RE.sub(" ", v) if isinstance(v, str) else v
+                    for v in erow
+                ]
+                wsh.append(newrow)
+            except ValueError as exc:
                 debugs -= 1
                 if debugs > 0:
                     _LOGGER.warning(

@@ -72,10 +72,10 @@ def ensure_datetime(val: t.Any, *, silent: bool = False) -> datetime | None:
     return None
 
 
-def ensure_instant(val: t.Any) -> Instant:
+def ensure_instant(val: t.Any) -> Instant | None:
     """Parse instant."""
-    if val is None:
-        return Instant.now()
+    if not val:
+        return None
     if isinstance(val, Instant):
         return val
     if isinstance(val, datetime):
@@ -95,6 +95,12 @@ def ensure_instant(val: t.Any) -> Instant:
             return LocalDateTime.parse_common_iso(val).assume_utc()
         except ValueError:
             pass
+        if len(val) <= 10:
+            try:
+                return Instant.parse_rfc3339(val + " 00:00:00Z")
+            except ValueError:
+                pass
+
         return ensure_instant(ensure_datetime(val))
 
     raise ValueError(f"Invalid instant: {val} - {type(val)}")

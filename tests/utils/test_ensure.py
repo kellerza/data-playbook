@@ -69,7 +69,8 @@ def test_ensure_date() -> None:
         assert ensure_datetime(test[0]) == test[1]
         if test[1]:
             tzt = test[1].replace(tzinfo=timezone.utc)
-            assert ensure_instant(test[0]).py_datetime() == tzt
+            inst = ensure_instant(test[0])
+            assert (inst.py_datetime() if inst else None) == tzt
 
     assert ensure_datetime("2022-10-07T09:49:03.009000") == datetime(
         year=2022, month=10, day=7, hour=9, minute=49, second=3, microsecond=9000
@@ -84,6 +85,11 @@ def test_ensure_date() -> None:
     )
 
     assert ensure_datetime("2022-10-07T09:49:03.009000a") is None
+
+
+def test_ensure_instant() -> None:
+    """Instant."""
+    assert ensure_instant("2022-06-26") == Instant.from_utc(2022, 6, 26)
 
 
 def test_ensure_list() -> None:
