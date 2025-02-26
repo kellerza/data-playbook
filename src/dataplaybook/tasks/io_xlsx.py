@@ -1,5 +1,6 @@
 """Read helpers."""
 
+from __future__ import annotations
 import logging
 import os
 import typing as t
@@ -26,6 +27,24 @@ class Column:
     """From header/col index."""
     width: float = 9
 
+    @classmethod
+    def from_old(
+        cls, old: list[dict] | dict[str, dict[str, str]] | t.Any
+    ) -> list[Column] | None:
+        """Convert old columns to new."""
+        if isinstance(old, list):
+            # old write format
+            return [Column(name=c["name"], width=c.get("width", 9)) for c in old]
+        if isinstance(old, dict):
+            # old read format
+            return [
+                Column(name=k, source=v["col"] if "col" in v else v.get("from") or "")
+                for k, v in old.items()
+            ]
+        if old:
+            raise ValueError(f"Bad column definition: {old}")
+        return None
+
 
 @attrs.define
 class Sheet:
@@ -37,6 +56,32 @@ class Sheet:
     header: int = 0
     columns: list[Column] | None = attrs.field(default=None)
 
+    @classmethod
+    def from_old(cls, *headers: dict[str, t.Any]) -> list[Sheet]:
+        """Convert old headers to sheets."""
+        res = []
+        for sheet in headers:
+            if isinstance(sheet, dict) and "sheet" in sheet:
+                res.append(  # write
+                    Sheet(
+                        name=sheet["sheet"],
+                        columns=Column.from_old(sheet.get("columns")),
+                    )
+                )
+                continue
+            if isinstance(sheet, dict) and "target" in sheet and "name" in sheet:
+                res.append(  # read def
+                    Sheet(
+                        name=sheet["target"],
+                        source=sheet["name"],
+                        header=sheet.get("header") or 0,
+                        columns=Column.from_old(sheet.get("columns")),
+                    )
+                )
+                continue
+            raise ValueError(f"Bad sheet definition: {sheet}")
+        return res
+
 
 @task
 def read_excel(
@@ -45,10 +90,6 @@ def read_excel(
     """Read excel file using openpyxl.
 
     If no sheets are specified, all sheets are read and names returned."""
-    if sheets:
-        if not all(isinstance(s, Sheet) for s in sheets):
-            raise ValueError("sheets must be a list of Sheet objects")
-
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
@@ -249,19 +290,3 @@ def write_excel(
             _LOGGER.warning("Total %s errors", 2 - debugs)
 
     wbk.save(_get_filename(file))  # Write to disk
-
-
-def old_headers_to_sheets(*headers: dict[str, t.Any]) -> list[Sheet]:
-    """Convert old headers to sheets."""
-    res = []
-    for header in headers:
-        res.append(
-            Sheet(
-                name=header["sheet"],
-                columns=[
-                    Column(name=c["name"], width=c["width"])
-                    for c in (header.get("columns") or [])
-                ],
-            )
-        )
-    return res

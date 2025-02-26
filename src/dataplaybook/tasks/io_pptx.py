@@ -16,9 +16,21 @@ from pptx.oxml.xmlchemy import OxmlElement
 from pptx.presentation import Presentation
 from pptx.slide import Slide
 from pptx.text.text import TextFrame, _Paragraph
-from pptx.util import Length  # noqa pylint:disable=unused-import
+from pptx.util import Length, Pt
 
 RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
+
+
+def int_length(val: int | Length | None) -> Length | None:
+    """Convert int to Length."""
+    if isinstance(val, Length):
+        return val
+    if isinstance(val, (int, float)):
+        return Pt(val)
+    if not val:
+        return None
+
+    return Length(val)
 
 
 @attrs.define
@@ -29,7 +41,7 @@ class PStyle:
     color: RGBColor | tuple[int, int, int] | None = None
     highlight: RGBColor | tuple[int, int, int] | None = None
     italic: bool | None = None
-    size: Length | int | None = None
+    size: Length | int | float | None = attrs.field(default=0, converter=int_length)
     strike: bool | None = None
 
     def __bool__(self) -> bool:
@@ -135,7 +147,7 @@ def str2styles(style_s: str) -> PStyle:
     for kk in list(ss):
         try:
             # ic("size", kk, float(kk), Pt(float(kk)))
-            res.size = Length(int(kk))
+            res.size = Pt(int(kk))
             ss.remove(kk)
         except (TypeError, ValueError):
             continue

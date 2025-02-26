@@ -116,3 +116,72 @@ def test_write_excel(mock_workbook):
     # )
 
     mock_wbk.save.assert_called_once_with("test.xlsx")
+
+
+def test_from_old_read() -> None:
+    """Test conversion from old format."""
+    res = Sheet.from_old(
+        {
+            "name": "features",
+            "target": "x",
+            "header": 1,
+            "columns": {
+                "ref": {"col": 1},
+                "action": {"col": 6},
+            },
+        }
+    )
+    assert res == [
+        Sheet(
+            name="x",
+            source="features",
+            header=1,
+            columns=[
+                Column(name="ref", source=1),
+                Column(name="action", source=6),
+            ],
+        )
+    ]
+
+    res = Sheet.from_old({"name": "categoriesmap", "target": "categoriesmap"})
+    assert res == [
+        Sheet(
+            name="categoriesmap",
+            source="categoriesmap",
+        )
+    ]
+
+    res = Sheet.from_old(
+        {"name": "links", "target": "links", "columns": {"group": {"from": "group"}}}
+    )
+    assert res == [
+        Sheet(
+            name="links",
+            source="links",
+            columns=[
+                Column(name="group", source="group"),
+            ],
+        )
+    ]
+
+
+def test_from_old_write() -> None:
+    """Test conversion from old format."""
+    res = Sheet.from_old(
+        {
+            "sheet": "erl",
+            "columns": [
+                {"name": "erl_id", "width": 8.43},
+                {"name": "priority", "width": 9},
+            ],
+        }
+    )
+    assert res == [
+        Sheet(
+            name="erl",
+            columns=[
+                Column(name="erl_id", width=8.43),
+                Column(name="priority", width=9),
+            ],
+        )
+    ]

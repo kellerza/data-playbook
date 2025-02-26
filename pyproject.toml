@@ -45,7 +45,7 @@ dev = [
     "mypy",
     "pylint",
     "pytest-aiohttp",
-    "pytest-cov",
+    "pytest-cov>=6",
     "pytest-github-actions-annotate-failures",
     "pytest",
     "python-semantic-release",
@@ -79,6 +79,7 @@ commit_parser = "emoji"
 version_toml = ["pyproject.toml:project.version"]
 build_command = "pip install uv && uv sync --frozen --all-extras && uv build"
 commit_version_number = true
+# changelog.default_templates.changelog_file = ""
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
 [tool.semantic_release.branches.main]
@@ -158,6 +159,7 @@ norecursedirs = [".git", "modules"]
 log_cli = true
 log_cli_level = "DEBUG"
 asyncio_mode = "auto"
+addopts = "--cov=src --cov-report xml:cov.xml"
 
 [tool.setuptools]
 license-files = [] # https://github.com/astral-sh/uv/issues/9513
