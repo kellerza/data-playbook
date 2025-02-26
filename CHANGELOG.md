@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.1.3 (2025-02-26)
+
+### :dolphin:
+
+- :dolphin: ensure_instant
+  ([`b298be4`](https://github.com/kellerza/data-playbook/commit/b298be46e870231d5b5f63fca0452d0f0a30a50c))
+
+
 ## v1.1.2 (2025-02-26)
 
 ### :dolphin:
