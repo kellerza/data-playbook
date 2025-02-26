@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.1.2 (2025-02-26)
+
+### :dolphin:
+
+- :dolphin: from_old
+  ([`a4324f0`](https://github.com/kellerza/data-playbook/commit/a4324f0d3a56290cdaded9b6e24113cac6577e80))
+
+
 ## v1.1.1 (2025-02-26)
 
 ### :dolphin:
