@@ -26,8 +26,8 @@ class BaseClass:
 
     def asdict(
         self,
-        only_keys: abc.Iterator[str] | None = None,
-        exclude_keys: abc.Iterator[str] | None = None,
+        only_keys: abc.Iterable[str] | None = None,
+        exclude_keys: abc.Iterable[str] | None = None,
         omit_if_default: bool = True,
     ) -> dict[str, t.Any]:
         """Return class as a dictionary."""

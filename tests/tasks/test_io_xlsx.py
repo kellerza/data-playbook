@@ -32,14 +32,14 @@ def test_read_excel(mock_load_workbook):
 
     tables = DataEnvironment()
 
-    read_excel(
+    reads = read_excel(
         tables=tables,
         file="test.xlsx",
         sheets=[
-            Sheet(name="Sheet1", target="table1"),
+            Sheet(name="table1", source="Sheet1"),
             Sheet(
-                name="Sheet2",
-                target="table2",
+                name="table2",
+                source="Sheet2",
                 columns=[
                     Column(name="name", source="Name"),
                     Column(name="age", source="Age"),
@@ -47,6 +47,7 @@ def test_read_excel(mock_load_workbook):
             ),
         ],
     )
+    assert reads == ["table1", "table2"]
 
     expected_tables = {
         "table1": [
@@ -90,8 +91,8 @@ def test_write_excel(mock_workbook):
         include=["table1", "table2"],
         sheets=[
             Sheet(
-                name="Sheet1",
-                target="sheet1",
+                name="sheet1",
+                source="Sheet1",
                 columns=[Column(name="Header 1"), Column(name="Header 2")],
             )
         ],

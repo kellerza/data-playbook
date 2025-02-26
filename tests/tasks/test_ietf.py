@@ -193,7 +193,7 @@ def test_compliance_file():
     if not file.exists():
         pytest.skip("Local test file not found.")
     env = DataEnvironment()
-    read_excel(tables=env, file=file, sheets=[Sheet(name="default", target="rfc")])
+    read_excel(tables=env, file=file, sheets=[Sheet(name="rfc", source="default")])
     cnt = 0
     for row in env["rfc"]:
         std = row["s"]

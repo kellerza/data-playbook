@@ -10,12 +10,11 @@ from inspect import Parameter, isgeneratorfunction, signature
 from pathlib import Path
 
 import attrs
-from beartype import beartype
 from icecream import colorizedStderrPrint, ic
 
 from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
-from dataplaybook.helpers.types import repr_call, repr_signature
+from dataplaybook.helpers.types import repr_call, repr_signature, typechecked
 from dataplaybook.utils import doublewrap, local_import_module
 from dataplaybook.utils.logger import setup_logger
 
@@ -89,7 +88,7 @@ def _run_task(
         raise TypeError(f"Use explicit parameters, instead of {short}")
 
     try:
-        value = beartype(task_function)(*args, **kwargs)
+        value = typechecked(task_function)(*args, **kwargs)
     except Exception as err:
         _LOGGER.error(
             "Task %s raised %s: %s",

@@ -24,15 +24,16 @@ class Column:
     name: str
     source: int | str = ""
     """From header/col index."""
-    width: int = 9
+    width: float = 9
 
 
 @attrs.define
 class Sheet:
     """An Excel sheet definition."""
 
-    target: str
     name: str = ""
+    source: str = ""
+    """Source sheet. May be '*' for the default/active sheet"""
     header: int = 0
     columns: list[Column] | None = attrs.field(default=None)
 
@@ -52,18 +53,25 @@ def read_excel(
     _LOGGER.debug("Loaded workbook %s.", file)
 
     if sheets is None:
-        sheets = [Sheet(name=n, target=n) for n in wbk.sheetnames]
+        sheets = [Sheet(name=n) for n in wbk.sheetnames]
     if not sheets:
         sheets = []
 
+    res: list[str] = []
+
     for sht in sheets:
-        name = sht.name or sht.target
+        name = sht.source or sht.name
         # default_sheet = *
         the_sheet = wbk.active if name == "*" else wbk[name]
+        if not the_sheet:
+            _LOGGER.error("Sheet %s not found", name)
+            tables[name] = []
+            continue
         tbl = _sheet_read(the_sheet, sht)
-        tables[sht.target] = tbl
+        res.append(sht.name)
+        tables[sht.name] = tbl
 
-    return [s.target for s in sheets]
+    return res
 
 
 def _sheet_read(_sheet: Worksheet, shdef: Sheet) -> list[RowData]:
@@ -241,3 +249,19 @@ def write_excel(
             _LOGGER.warning("Total %s errors", 2 - debugs)
 
     wbk.save(_get_filename(file))  # Write to disk
+
+
+def old_headers_to_sheets(*headers: dict[str, t.Any]) -> list[Sheet]:
+    """Convert old headers to sheets."""
+    res = []
+    for header in headers:
+        res.append(
+            Sheet(
+                name=header["sheet"],
+                columns=[
+                    Column(name=c["name"], width=c["width"])
+                    for c in (header.get("columns") or [])
+                ],
+            )
+        )
+    return res

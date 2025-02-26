@@ -16,7 +16,7 @@ from pptx.oxml.xmlchemy import OxmlElement
 from pptx.presentation import Presentation
 from pptx.slide import Slide
 from pptx.text.text import TextFrame, _Paragraph
-from pptx.util import Length
+from pptx.util import Length  # noqa pylint:disable=unused-import
 
 RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
 

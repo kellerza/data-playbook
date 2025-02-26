@@ -37,6 +37,7 @@ dependencies = [
     "python-Levenshtein",
     "requests>=2.0.0",
     "whenever>=0.7.1",
+    "typeguard>=4.4.2",
 ]
 
 [dependency-groups]

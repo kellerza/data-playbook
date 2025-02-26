@@ -1,7 +1,7 @@
 """CLI arguments."""
 
 import argparse
-import typing as t
+from collections import abc
 from importlib.metadata import version
 
 import attrs
@@ -19,7 +19,7 @@ class DPArg:
 
 
 def parse_args(
-    *, dataplaybook_cmd: bool, default_playbook: str, playbooks: t.Iterable[str]
+    *, dataplaybook_cmd: bool, default_playbook: str, playbooks: abc.Iterable[str]
 ) -> DPArg:
     """Parse dataplaybook CLI arguments."""
     ver = version("dataplaybook")

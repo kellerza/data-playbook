@@ -3,12 +3,13 @@
 import logging
 import re
 import typing as t
+from collections import abc
 
 L = t.TypeVar("L")
 T = t.TypeVar("T", str, list, int)
 
 
-def append_unique(target: list[T], source: t.Iterable[T]) -> bool:
+def append_unique(target: list[T], source: abc.Iterable[T]) -> bool:
     """Add unique items to a list. Return True if the list was changed."""
     res = False
     for item in source:
