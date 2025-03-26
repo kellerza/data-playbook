@@ -26,7 +26,7 @@ requires-python = ">=3.11"
 dependencies = [
     "office365-rest-python-client>2,<3",
     "attrs==25.3.0",
-    "cattrs==24.1.2",
+    "cattrs==24.1.3",
     "colordict>=1.2.6",
     "colorlog",
     "jinja2>=3,<4",
