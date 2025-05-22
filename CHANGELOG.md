@@ -1,6 +1,102 @@
 # CHANGELOG
 
 
+## v1.1.4 (2025-05-22)
+
+### :dolphin:
+
+- :dolphin: Upgrade whenever
+  ([`523efa4`](https://github.com/kellerza/data-playbook/commit/523efa4a154eec5a0ee94abe2d9be334033c44ef))
+
+### Other
+
+- Bump astral-sh/setup-uv from 5 to 6 ([#24](https://github.com/kellerza/data-playbook/pull/24),
+  [`1b1424d`](https://github.com/kellerza/data-playbook/commit/1b1424d53628d62dfa39b03c870243072a747639))
+
+Bumps [astral-sh/setup-uv](https://github.com/astral-sh/setup-uv) from 5 to 6. - [Release
+  notes](https://github.com/astral-sh/setup-uv/releases) -
+  [Commits](https://github.com/astral-sh/setup-uv/compare/v5...v6)
+
+--- updated-dependencies: - dependency-name: astral-sh/setup-uv dependency-version: '6'
+
+dependency-type: direct:production
+
+update-type: version-update:semver-major ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump attrs from 25.1.0 to 25.3.0 ([#20](https://github.com/kellerza/data-playbook/pull/20),
+  [`65cf91b`](https://github.com/kellerza/data-playbook/commit/65cf91b79c45aafc00e1bf21be91f399fb916eff))
+
+Bumps [attrs](https://github.com/sponsors/hynek) from 25.1.0 to 25.3.0. -
+  [Commits](https://github.com/sponsors/hynek/commits)
+
+--- updated-dependencies: - dependency-name: attrs dependency-type: direct:production
+
+update-type: version-update:semver-minor ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump beartype from 0.20.0 to 0.20.2 ([#22](https://github.com/kellerza/data-playbook/pull/22),
+  [`d349fe8`](https://github.com/kellerza/data-playbook/commit/d349fe85bb118bb5cc8114d7ddf9946ad9a9c64b))
+
+Bumps [beartype](https://github.com/beartype/beartype) from 0.20.0 to 0.20.2. - [Release
+  notes](https://github.com/beartype/beartype/releases) -
+  [Changelog](https://github.com/beartype/beartype/blob/main/doc/RELEASE.rst) -
+  [Commits](https://github.com/beartype/beartype/compare/v0.20.0...v0.20.2)
+
+--- updated-dependencies: - dependency-name: beartype dependency-type: direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump cattrs from 24.1.2 to 24.1.3 ([#23](https://github.com/kellerza/data-playbook/pull/23),
+  [`41e989c`](https://github.com/kellerza/data-playbook/commit/41e989c01fa2ca35345c548270e5ad82dc7cad6a))
+
+Bumps [cattrs](https://github.com/python-attrs/cattrs) from 24.1.2 to 24.1.3. - [Release
+  notes](https://github.com/python-attrs/cattrs/releases) -
+  [Changelog](https://github.com/python-attrs/cattrs/blob/main/HISTORY.md) -
+  [Commits](https://github.com/python-attrs/cattrs/compare/v24.1.2...v24.1.3)
+
+--- updated-dependencies: - dependency-name: cattrs dependency-type: direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump python-semantic-release/python-semantic-release
+  ([#25](https://github.com/kellerza/data-playbook/pull/25),
+  [`8eb861c`](https://github.com/kellerza/data-playbook/commit/8eb861c8c9b55f85a2201d4370412c2b106eff70))
+
+Bumps
+  [python-semantic-release/python-semantic-release](https://github.com/python-semantic-release/python-semantic-release)
+  from 9.21.0 to 9.21.1. - [Release
+  notes](https://github.com/python-semantic-release/python-semantic-release/releases) -
+  [Changelog](https://github.com/python-semantic-release/python-semantic-release/blob/master/CHANGELOG.rst)
+  -
+  [Commits](https://github.com/python-semantic-release/python-semantic-release/compare/v9.21.0...v9.21.1)
+
+--- updated-dependencies: - dependency-name: python-semantic-release/python-semantic-release
+  dependency-version: 9.21.1
+
+dependency-type: direct:production
+
+update-type: version-update:semver-patch ...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+
 ## v1.1.3 (2025-02-26)
 
 ### :dolphin:
