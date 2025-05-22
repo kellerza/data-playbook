@@ -3,7 +3,6 @@
 from __future__ import annotations
 import re
 import typing as t
-from turtle import Shape
 from typing import Any
 
 import attrs
@@ -21,13 +20,13 @@ from pptx.util import Length, Pt
 RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
 
 
-def int_length(val: int | Length | None) -> Length | None:
+def int_length(val: int | float | Length | None) -> Length | None:
     """Convert int to Length."""
     if isinstance(val, Length):
         return val
     if isinstance(val, (int, float)):
         return Pt(val)
-    if not val:
+    if val is None:
         return None
 
     return Length(val)
@@ -41,7 +40,7 @@ class PStyle:
     color: RGBColor | tuple[int, int, int] | None = None
     highlight: RGBColor | tuple[int, int, int] | None = None
     italic: bool | None = None
-    size: Length | int | float | None = attrs.field(default=0, converter=int_length)
+    size: Length | None = attrs.field(default=None, converter=int_length)
     strike: bool | None = None
 
     def __bool__(self) -> bool:
@@ -163,7 +162,7 @@ def str2styles(style_s: str) -> PStyle:
         # Convert string to color
         if not col.startswith("#"):
             try:
-                col = ColorDict(mode="hex")[col]
+                col = str(ColorDict(mode="hex")[col])
             except Exception as err:  # noqa pylint: disable=broad-exception-caught
                 ic("BAD color", col, err)
         try:
@@ -244,40 +243,38 @@ class ShapeWithText(t.Protocol):
 class Slide3Parts:
     """Analyse a slide & the 3 main parts."""
 
-    _sl: Slide
-    _sh: dict[int, ShapeWithText] = {}
+    slide: Slide
+    shapes: dict[int, ShapeWithText] = attrs.field(init=False, default={})
 
-    def __init__(self, sl: Slide):
+    def __attrs_post_init__(self) -> None:
         """Init the class."""
-        self._sl = sl
-        self._sh: dict[int, Shape] = {}
-        self.get_sh()
+        self.get_shapes()
 
-    def get_sh(self) -> None:
+    def get_shapes(self) -> None:
         """Get the shape parts in order."""
         shapes: list[ShapeWithText] = []
-        for sh in self._sl.shapes:
+        for sh in self.slide.shapes:
             if isinstance(sh, ShapeWithText) and sh.has_text_frame:
                 shapes.append(sh)
 
-        self._sh = {s.top: s for s in sorted(shapes, key=lambda s: s.top)}
+        self.shapes = dict(enumerate(sorted(shapes, key=lambda s: s.top)))
 
     @property
     def title(self) -> ShapeWithText:
         """Slide title shape."""
-        return self._sh[0]
+        return self.shapes[0]
 
     @property
     def subtitle(self) -> ShapeWithText:
         """Slide subtitle shape."""
-        return self._sh[1]
+        return self.shapes[1]
 
     @property
     def text(self) -> ShapeWithText:
         """Slide main text element."""
-        return self._sh[2]
+        return self.shapes[2]
 
     @property
     def notes(self) -> TextFrame | None:
         """Comments."""
-        return self._sl.notes_slide.notes_text_frame
+        return self.slide.notes_slide.notes_text_frame

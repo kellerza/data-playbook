@@ -10,7 +10,7 @@ from inspect import isgenerator
 from json import JSONDecodeError, loads
 
 from icecream import ic
-from whenever import Instant, LocalDateTime
+from whenever import Instant, PlainDateTime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,20 +84,20 @@ def ensure_instant(val: t.Any) -> Instant | None:
         except ValueError:
             pass
         # add utc if not present
-        return LocalDateTime.from_py_datetime(val).assume_utc()
+        return PlainDateTime.from_py_datetime(val).assume_utc()
 
     if isinstance(val, str):
         try:
-            return Instant.parse_rfc3339(val)
+            return Instant.parse_common_iso(val)
         except ValueError:
             pass
         try:
-            return LocalDateTime.parse_common_iso(val).assume_utc()
+            return PlainDateTime.parse_common_iso(val).assume_utc()
         except ValueError:
             pass
         if len(val) <= 10:
             try:
-                return Instant.parse_rfc3339(val + " 00:00:00Z")
+                return Instant.parse_common_iso(val + " 00:00:00Z")
             except ValueError:
                 pass
 
@@ -150,7 +150,7 @@ def ensure_list_from_str(
     """Ensure list with a str source."""
     if val.startswith("[") and val.endswith("]"):
         try:
-            return literal_eval(_format_rfc3339(val))
+            return literal_eval(_format_common_iso(val))
         except ValueError:
             pass
         try:
@@ -178,21 +178,23 @@ def ensure_list_from_str(
     return [s for s in lst if s]
 
 
-def _format_rfc3339(val: str | datetime) -> str:
+def _format_common_iso(val: str | datetime) -> str:
     """Convert a datetime() into a RFC3339 string."""
     if isinstance(val, str):
         if "datetime(" not in val:
             return val
         return re.sub(
             r"(?:datetime\.)?(datetime\([^()]+\))",
-            lambda m: _format_rfc3339(eval(m.group(1))),  # pylint: disable=eval-used
+            lambda m: _format_common_iso(eval(m.group(1))),  # pylint: disable=eval-used
             string=val,
             flags=re.I,
         )
     try:
-        return f"'{Instant.from_py_datetime(val).format_rfc3339()}'"
+        return f"'{Instant.from_py_datetime(val).format_common_iso()}'"
     except ValueError:
-        return f"'{LocalDateTime.from_py_datetime(val).assume_utc().format_rfc3339()}'"
+        return (
+            f"'{PlainDateTime.from_py_datetime(val).assume_utc().format_common_iso()}'"
+        )
 
 
 def ensure_set(val: t.Any) -> set[str]:

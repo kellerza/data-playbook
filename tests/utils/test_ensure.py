@@ -155,7 +155,9 @@ def test_ensure_list_with_datetime() -> None:
         "'<b>P3</b>', 'cse': '<b>kellerza@gmail.com</b>'} }]"
     )
     assert len(res) == 1
-    assert res[0]["date"] == Instant.from_utc(2023, 1, 13, 10, 38, 22).format_rfc3339()
+    assert (
+        res[0]["date"] == Instant.from_utc(2023, 1, 13, 10, 38, 22).format_common_iso()
+    )
 
 
 def test_ensure_string() -> None:
