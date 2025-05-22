@@ -31,7 +31,7 @@ dependencies = [
     "colorlog",
     "jinja2>=3,<4",
     "openpyxl==3.1.5",
-    "beartype==0.20.0",
+    "beartype==0.20.2",
     "icecream",
     "fuzzywuzzy",
     "python-Levenshtein",
