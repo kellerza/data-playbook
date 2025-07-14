@@ -376,13 +376,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-lxml = [
+all = [
     { name = "lxml" },
-]
-mongodb = [
     { name = "pymongo" },
-]
-pptx = [
     { name = "python-pptx" },
 ]
 
@@ -408,17 +404,17 @@ requires-dist = [
     { name = "fuzzywuzzy" },
     { name = "icecream" },
     { name = "jinja2", specifier = ">=3,<4" },
-    { name = "lxml", marker = "extra == 'lxml'", specifier = ">=5.4,<7" },
+    { name = "lxml", marker = "extra == 'all'", specifier = ">=5.4,<7" },
     { name = "office365-rest-python-client", specifier = ">2,<3" },
     { name = "openpyxl", specifier = "==3.1.5" },
-    { name = "pymongo", marker = "extra == 'mongodb'" },
+    { name = "pymongo", marker = "extra == 'all'" },
     { name = "python-levenshtein" },
-    { name = "python-pptx", marker = "extra == 'pptx'" },
+    { name = "python-pptx", marker = "extra == 'all'" },
     { name = "requests", specifier = ">=2.0.0,<3" },
     { name = "typeguard", specifier = ">=4.4.2" },
     { name = "whenever", specifier = ">=0.8,<0.9" },
 ]
-provides-extras = ["mongodb", "lxml", "pptx"]
+provides-extras = ["all"]
 
 [package.metadata.requires-dev]
 dev = [
