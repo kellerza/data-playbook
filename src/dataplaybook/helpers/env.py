@@ -95,7 +95,7 @@ class DataEnvironment(dict[str, list[dict[str, Any]]]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Init."""
         dict.__setattr__(self, "_var", DataVars())
-        dict.__setitem__(self, "var", self._var)  # type:ignore
+        dict.__setitem__(self, "var", self._var)  # type:ignore[misc]
         super().__init__(*args, **kwargs)
 
     @property

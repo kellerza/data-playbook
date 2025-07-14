@@ -51,7 +51,7 @@ def setup_logger() -> None:
     logging.getLogger().handlers[0].addFilter(log_filter)
 
     try:
-        from colorlog import ColoredFormatter  # pylint: disable=import-outside-toplevel
+        from colorlog import ColoredFormatter
 
         logging.getLogger().handlers[0].setFormatter(
             ColoredFormatter(

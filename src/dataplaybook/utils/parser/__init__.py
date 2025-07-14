@@ -62,7 +62,7 @@ DT = t.TypeVar("DT", bound=dict[str, t.Any] | abc.Mapping[str, t.Any])
 
 async def async_structure(
     iteratr: abc.AsyncGenerator[DT, None] | abc.AsyncIterator[DT],
-    cls: t.Type[C],
+    cls: type[C],
     *,
     log: int = 0,
     lenient: bool = False,
@@ -85,10 +85,10 @@ def pre_process(
     start_unknown_fields: bool = False,
     debug: bool = False,
 ) -> t.Callable[[T], T]:
-    """Decorator to help rename/migrate field names."""
+    """Help rename/migrate field names."""
 
     def decorator(cls: T) -> T:
-        struct = make_dict_structure_fn(cls, converter_arg, _cattrs_use_alias=True)  # type: ignore
+        struct = make_dict_structure_fn(cls, converter_arg, _cattrs_use_alias=True)  # type: ignore[var-annotated,arg-type]
 
         def unknown_field_hook(d: dict[str, t.Any]) -> None:
             """Move unknown fields to unknown_field."""
@@ -99,7 +99,7 @@ def pre_process(
                     "Cannot process unknown field for non-dict: %s %s", type(d), d
                 )
                 return
-            fields = adapted_fields(t.get_origin(cls) or cls)  # type: ignore
+            fields = adapted_fields(t.get_origin(cls) or cls)  # type: ignore[arg-type]
             all_fields = {a.alias or a.name for a in fields}
             if debug:
                 _LOGGER.debug(
@@ -143,17 +143,17 @@ def pre_process(
     return decorator
 
 
-def structure1(data: t.Any, cls: t.Type[T]) -> T:
+def structure1(data: t.Any, cls: type[T]) -> T:
     """Structure simple values."""
     try:
         return CONVERT.structure(data, cls)
     except ClassValidationError as err:
-        raise ValueError("; ".join(transform_error(err)))  # pylint: disable=raise-missing-from
+        raise ValueError("; ".join(transform_error(err)))  # noqa: B904
 
 
 def structure_list(
     iteratr: abc.Sequence[dict],
-    cls: t.Type[C],
+    cls: type[C],
     *,
     log: int = 0,
     lenient: bool = False,
@@ -172,7 +172,7 @@ def structure_list(
 def _structure1(
     cvt: Converter,
     data: abc.Mapping[str, t.Any],
-    cls: t.Type[C],
+    cls: type[C],
     *,
     allow_ignore_extra: bool = False,
 ) -> C:

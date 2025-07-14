@@ -68,7 +68,7 @@ def test_pstyle_size_pt() -> None:
     t = PText("<8>")
     assert t._list == [PStyle(size=Pt(8))]
     assert PStyle(size=Pt(8)) == PStyle(size=8)
-    assert PStyle(size=Pt(1.1)) == PStyle(size=1.1)  # type:ignore
+    assert PStyle(size=Pt(1.1)) == PStyle(size=1.1)  # type:ignore[]
 
 
 # def test_pstyle():

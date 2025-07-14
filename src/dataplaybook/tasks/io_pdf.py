@@ -49,7 +49,7 @@ def read_pdf_pages(
         _LOGGER.info("Converting %s", file)
         _LOGGER.debug("Calling with %s", params)
         call(params, shell=False)
-        with open(to_name, "r", encoding="utf-8", errors="replace") as __f:
+        with Path(to_name).open(encoding="utf-8", errors="replace") as __f:
             for _no, text in enumerate(_myreadlines(__f, chr(12)), 1):
                 yield {"page": _no, "text": text}
     except FileNotFoundError:
@@ -59,7 +59,7 @@ def read_pdf_pages(
         )
     finally:
         os.close(_fd)
-        os.remove(to_name)
+        Path(to_name).unlink()
 
 
 @task

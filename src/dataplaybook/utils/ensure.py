@@ -32,7 +32,7 @@ def ensure_bool(value: t.Any) -> bool:
     return bool(value)
 
 
-def ensure_bool_str(value: t.Any, _: t.Type | None = None) -> bool | str:
+def ensure_bool_str(value: t.Any, _: type | None = None) -> bool | str:
     """Extract a bool|str."""
     if isinstance(value, bool):
         return value
@@ -72,7 +72,7 @@ def ensure_datetime(val: t.Any, *, silent: bool = False) -> datetime | None:
     return None
 
 
-def ensure_instant(val: t.Any) -> Instant | None:
+def ensure_instant(val: t.Any) -> Instant | None:  # noqa: PLR0911
     """Parse instant."""
     if not val:
         return None
@@ -109,7 +109,7 @@ def ensure_instant(val: t.Any) -> Instant | None:
 T = t.TypeVar("T")
 
 
-def ensure_list(
+def ensure_list(  # noqa: PLR0911
     val: list[T] | tuple[T] | abc.Generator[T, None, None] | t.Any,
     *,
     recurse: int = 0,
@@ -120,7 +120,7 @@ def ensure_list(
         return []
 
     if recurse > 0:
-        result: list = []  # type:ignore
+        result: list = []  # type:ignore[]
         for res in ensure_list(val):
             result.extend(ensure_list(res, recurse=recurse - 1, delim=delim))
         return result
@@ -128,7 +128,7 @@ def ensure_list(
     if isinstance(val, list):
         return val
     if isinstance(val, str):
-        return ensure_list_from_str(val, delim=delim)  # type:ignore
+        return ensure_list_from_str(val, delim=delim)  # type:ignore[]
 
     if isinstance(val, dict):
         if not val:
@@ -185,7 +185,7 @@ def _format_common_iso(val: str | datetime) -> str:
             return val
         return re.sub(
             r"(?:datetime\.)?(datetime\([^()]+\))",
-            lambda m: _format_common_iso(eval(m.group(1))),  # pylint: disable=eval-used
+            lambda m: _format_common_iso(eval(m.group(1))),
             string=val,
             flags=re.I,
         )
@@ -208,7 +208,7 @@ def ensure_string(
     """Combine lists and ensure field is a string."""
     if value is None:
         return ""
-    if isinstance(value, (list, set)):
+    if isinstance(value, list | set):
         new_list = [
             s.strip() if isinstance(s, str) else str(s)
             for s in value

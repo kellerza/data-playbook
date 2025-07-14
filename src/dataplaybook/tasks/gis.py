@@ -2,8 +2,6 @@
 
 from dataplaybook import RowData, task
 
-# pylint: disable=too-many-positional-arguments
-
 
 @task
 def linestring(

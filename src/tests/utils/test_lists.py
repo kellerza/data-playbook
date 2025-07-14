@@ -6,6 +6,7 @@ from dataplaybook.utils import extract_pattern, strip, unique
 
 
 def test_extract_pattern() -> None:
+    """Test extract_pattern."""
     rex = re.compile(r"a(\d+)")
     sss, lst = extract_pattern("a1 x a2 a3 z", rex)
     assert sss == "x z"

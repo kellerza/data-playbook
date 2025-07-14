@@ -8,7 +8,8 @@ from typing import Any
 import attrs
 from colordict import ColorDict
 from icecream import ic
-from pptx import Presentation as NewPresentation  # noqa pylint:disable=unused-import
+
+# from pptx import Presentation as NewPresentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import MSO_TEXT_UNDERLINE_TYPE
 from pptx.oxml.xmlchemy import OxmlElement
@@ -20,11 +21,11 @@ from pptx.util import Length, Pt
 RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
 
 
-def int_length(val: int | float | Length | None) -> Length | None:
+def int_length(val: float | Length | None) -> Length | None:
     """Convert int to Length."""
     if isinstance(val, Length):
         return val
-    if isinstance(val, (int, float)):
+    if isinstance(val, int | float):
         return Pt(val)
     if val is None:
         return None
@@ -44,6 +45,7 @@ class PStyle:
     strike: bool | None = None
 
     def __bool__(self) -> bool:
+        """Check if the style has any attributes set."""
         return bool(
             self.bold
             or self.color
@@ -72,7 +74,7 @@ class PText:
                 self._list.append(val)
                 continue
             if isinstance(val, PText):
-                self.append(*val._list)  # pylint:disable=protected-access
+                self.append(*val._list)
                 continue
             if not isinstance(val, str):
                 raise ValueError(f"expected string, got {type(val)}")
@@ -102,12 +104,12 @@ class PText:
                 run.text = prun
                 if style:
                     if style.highlight:
-                        rpr = run._r.get_or_add_rPr()  # pylint:disable=protected-access
+                        rpr = run._r.get_or_add_rPr()
                         hl = OxmlElement("a:highlight")
                         clr = OxmlElement("a:srgbClr")
-                        setattr(clr, "val", str(style.highlight))
+                        clr.val = str(style.highlight)  # type:ignore[attr-defined]
                         hl.append(clr)
-                        rpr.append(hl)  # type:ignore
+                        rpr.append(hl)  # type:ignore[arg-type]
                     if style.size:
                         run.font.size = style.size
                     if style.color:
@@ -118,8 +120,8 @@ class PText:
                         run.font.underline = MSO_TEXT_UNDERLINE_TYPE.DOT_DASH_HEAVY_LINE
                         # https://github.com/scanny/python-pptx/pull/606/files
                         # rPr = run.get_or_add_rPr()
-                        rpr = run.font._rPr  # pylint:disable=protected-access
-                        setattr(rpr, "strike", "sngStrike")
+                        rpr = run.font._rPr
+                        rpr.strike = "sngStrike"  # type:ignore[attr-defined]
                         # rPr.strike = "sngStrike"
                         # rPr.strikethrough = "sngStrike"
                     # run.hyperlink
@@ -158,12 +160,12 @@ def str2styles(style_s: str) -> PStyle:
             highlight = True
             continue
 
-        col = col.lower()
+        col = col.lower()  # noqa: PLW2901
         # Convert string to color
         if not col.startswith("#"):
             try:
-                col = str(ColorDict(mode="hex")[col])
-            except Exception as err:  # noqa pylint: disable=broad-exception-caught
+                col = str(ColorDict(mode="hex")[col])  # noqa: PLW2901
+            except Exception as err:
                 ic("BAD color", col, err)
         try:
             rgb = RGBColor.from_string(col.strip("#"))
@@ -171,7 +173,7 @@ def str2styles(style_s: str) -> PStyle:
                 res.highlight = rgb
             else:
                 res.color = rgb
-        except Exception as err:  # pylint: disable=broad-exception-caught
+        except Exception as err:
             ic("BAD hex color", col, err)
 
         highlight = True
@@ -193,7 +195,7 @@ def add_paragraphs(
     if clear:
         frame.clear()
     for ptext in text:
-        if isinstance(ptext, (list, tuple)):
+        if isinstance(ptext, list | tuple):
             add_paragraphs(
                 frame=frame,
                 text=ptext,
@@ -202,10 +204,10 @@ def add_paragraphs(
             )
             continue
         if isinstance(ptext, str):
-            ptext = PText(ptext)
+            ptext = PText(ptext)  # noqa: PLW2901
         if not isinstance(ptext, PText):
             ic("string/PText expected", ptext)
-            ptext = PText(str(ptext))
+            ptext = PText(str(ptext))  # noqa: PLW2901
 
         # get the paragraph - if clear, paragraph[0] exist, but it's empty
         para = frame.paragraphs[0] if clear else frame.add_paragraph()

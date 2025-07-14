@@ -1,6 +1,5 @@
 """Merge FNB statement."""
 
-# pylint: disable=consider-using-f-string
 import csv
 import logging
 import re
@@ -50,27 +49,27 @@ def _budget_date(date: datetime) -> datetime:
             return datetime(date.year, date.month - 1, 1)
         return datetime(date.year - 1, 12, 1)  # decrease year & month
 
-    raise TypeError("Invalid date {}".format(date))
+    raise TypeError(f"Invalid date {date}")
 
 
 def _str_to_date(text: str, year_month: datetime | None = None) -> datetime:
     """Convert statement text date to date."""
     if text is None:
-        raise ValueError("Could not parse date '{}'".format(text))
+        raise ValueError("Could not parse date '{text}'")
 
     match = RE_DATE.match(text)
 
     if match is None:
         match = RE_DATE2.match(text)
         if match is None:
-            raise ValueError("Could not parse date '{}'".format(text))
+            raise ValueError("Could not parse date '{text}'")
         return datetime(int(match.group(1)), int(match.group(2)), int(match.group(3)))
 
     (year, month, day) = (match.group(3), match.group(2).lower(), int(match.group(1)))
 
     month = MONTH_MAP.get(month, month)
     if isinstance(month, str):
-        raise ValueError("Invalid text month: {}".format(month))
+        raise ValueError("Invalid text month: {month}")
 
     # If no year, add from year_month
     if year is None and year_month is not None:
@@ -112,7 +111,7 @@ def read_cheque_csv(*, file: PathStr) -> RowDataGen:
                 rowtype = int(row[fields[0]])
             except ValueError as err:
                 raise InvalidFile(
-                    "read_cheque not a cheque file [{}]".format(file.name)
+                    "read_cheque not a cheque file [{file.name}]"
                 ) from err
 
             if rowtype == 2:  # Account number
@@ -133,26 +132,24 @@ def read_cheque_csv(*, file: PathStr) -> RowDataGen:
             except (ValueError, TypeError):
                 continue
 
-            tdate = _str_to_date(row["date"], data["date"])
+            tdate = _str_to_date(row["date"], data["date"])  # type: ignore[arg-type]
             if tdate is None:
                 continue
 
             res0 = {
                 "amount": float(row["amount"]),
                 "date": tdate,
-                "id": "{:0>16s}.{:04d}.{:04d}".format(
-                    data["account"], data["id"], number
-                ),
+                "id": f"{data['account']:0>16s}.{data['id']:04d}.{number:04d}",
                 "description": row["desc2"],
                 "extras": row["desc1"],
             }
 
             if RE_CARD.match(row["desc3"]) is None:
-                res0["description"] += " " + row["desc3"]
+                res0["description"] += " " + str(row["desc3"])  # type: ignore[operator]
             else:
-                res0["extras"] += " " + row["desc3"]
+                res0["extras"] += " " + str(row["desc3"])  # type: ignore[operator]
 
-            if " kontant" in res0["extras"].lower():
+            if " kontant" in res0["extras"].lower():  # type: ignore[operator, union-attr]
                 res0["extras"], res0["description"] = (
                     res0["description"],
                     res0["extras"],
@@ -171,14 +168,14 @@ def _get_id(acc: str, month: int) -> str:
     if acc is None:
         acc = "0"
     TX_IDS[(acc, month)] = TX_IDS.get((acc, month), 0) + 1
-    return "{:0>16s}.{:04d}.{:04d}".format(str(acc), month, TX_IDS[(acc, month)])
+    return f"{acc:0>16s}.{month:04d}.{TX_IDS[(acc, month)]:04d}"
 
 
 def _clean(row: dict) -> dict:
     """Strip space in row description."""
     if isinstance(row["description"], str):
         row["description"] = " ".join(row["description"].split())
-    elif isinstance(row["description"], (int, float)):
+    elif isinstance(row["description"], int | float):
         row["description"] = "''" + str(row["description"])
     else:
         _LOGGER.info("type %s", str(type(row["description"])))
@@ -210,7 +207,7 @@ def fnb_process(*, tables: dict[str, list[RowData]]) -> RowDataGen:
                 (row["extras"], row["description"]) = f_t
                 yield _clean(row)
 
-                row = row.copy()
+                row = row.copy()  # noqa: PLW2901
                 (row["description"], row["extras"]) = f_t
                 row["amount"] = -(row["amount"] or 0)
                 yield _clean(row)
@@ -262,6 +259,6 @@ def fnb_read_folder(*, folder: str, pattern: str = "*.csv") -> RowDataGen:
                 pass
 
             _LOGGER.warning("Could not load %s", filename)
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:
             _LOGGER.error("Could not read %s", filename, exc_info=err)
     _LOGGER.info("Success with %s lines", retval.get("total", 0))

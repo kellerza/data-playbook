@@ -44,7 +44,7 @@ def file_rotate(*, file: PathStr, count: int = 3) -> None:
 @task
 def glob(*, patterns: list[str]) -> RowDataGen:
     """Search for files matching certain patterns."""
-    for val in _ensure_list(patterns):  # type: ignore
+    for val in _ensure_list(patterns):  # type: ignore[]
         fol, _, pat = val.partition("/*")
         folder = Path(fol)
         for file in folder.glob("*" + pat):
@@ -54,7 +54,6 @@ def glob(*, patterns: list[str]) -> RowDataGen:
 @task
 def read_csv(*, file: PathStr, columns: dict[str, str] | None = None) -> RowDataGen:
     """Read csv file."""
-
     with Path(file).open("r", encoding="utf-8") as __f:
         csvf = DictReader(__f)
         # header = opt.headers if 'headers' in opt else None
@@ -102,7 +101,6 @@ def write_json(
     *, data: Tables | list[RowData], file: PathStr, only_var: bool = False
 ) -> None:
     """Write into a json file."""
-
     with Path(file).open("w", encoding="utf-8") as __f:
         if only_var:
             data = data.var if isinstance(data, DataEnvironment) else {}
@@ -115,14 +113,14 @@ def read_tab_delim(*, file: PathStr, headers: list[str]) -> RowDataGen:
     with Path(file).open("r", encoding="utf-8") as __f:
         header = headers
         for line in __f:
-            line = line.strip()
+            line = line.strip()  # noqa: PLW2901
             if line.startswith("#") or not line:
                 continue
             if header is None:
                 header = line.split("\t")
                 continue
             vals = line.split("\t")
-            yield dict(zip(header, vals))
+            yield dict(zip(header, vals, strict=False))
 
 
 @task
@@ -148,7 +146,7 @@ def read_text_regex(
             if not fields:
                 continue
             for match_obj in fields.finditer(line):
-                res[match_obj[1]] = match_obj[2]  # type:ignore
+                res[match_obj[1]] = match_obj[2]  # type:ignore[]
     if res:
         yield res
 

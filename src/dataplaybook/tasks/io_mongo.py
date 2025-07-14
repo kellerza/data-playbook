@@ -6,7 +6,6 @@ from collections import abc
 from urllib.parse import urlparse
 
 import attrs
-from icecream import ic  # noqa pylint: disable=unused-import
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.errors import ServerSelectionTimeoutError

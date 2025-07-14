@@ -1,20 +1,19 @@
-"""Tests for ietf.py"""
+"""Tests for ietf."""
 
 import logging
-import re
 from pathlib import Path
 
 import pytest
 
-import dataplaybook.tasks.ietf as ietf
 from dataplaybook import DataEnvironment
+from dataplaybook.tasks import ietf
 from dataplaybook.tasks.io_xlsx import Sheet, read_excel
 from dataplaybook.utils import ensure_list
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def test_extract_standards():
+def test_extract_standards() -> None:
     """Test starting from string."""
     txt = "IEEE 802.3ah"
     std = list(ietf.extract_standards(txt))
@@ -28,7 +27,7 @@ def test_extract_standards():
     assert std[0].key == "draft-ietf-l3vpn-2547bis-mcast-bgp"
 
 
-def test_extract_standards_pad():
+def test_extract_standards_pad() -> None:
     """Test starting from string."""
     txt = "RFC1 RFC11 RFC111 RFC1111 RFC11116"
     std = list(ietf.extract_standards(txt))
@@ -36,7 +35,7 @@ def test_extract_standards_pad():
     assert std == ["RFC0001", "RFC0011", "RFC0111", "RFC1111", "RFC11116"]
 
 
-def test_extract_standards_version():
+def test_extract_standards_version() -> None:
     """Test starting from string."""
     txt = "draft-ietf-standard-01  draft-ietf-std--zz   draft-ietf-std-01--zz"
     std = list(ietf.extract_standards(txt))
@@ -47,7 +46,7 @@ def test_extract_standards_version():
     assert std[2].key == "draft-ietf-std"
 
 
-def test_extract_standards_ordered():
+def test_extract_standards_ordered() -> None:
     """Test starting from string."""
     txt = "RFC 1234 draft-ietf-standard-01 "
 
@@ -58,7 +57,7 @@ def test_extract_standards_ordered():
     assert std == ["RFC1234", "draft-ietf-standard-01"]
 
 
-def test_extract_standards_unique():
+def test_extract_standards_unique() -> None:
     """Test duplicates are removed."""
     txt = "RFC1234 RFC1234"
 
@@ -67,9 +66,9 @@ def test_extract_standards_unique():
     assert std[0].start == 0
 
 
-def test_extract_x_all():
+def test_extract_x_all() -> None:
     """Test all know variants."""
-    allitems = (
+    allitems: list[str | tuple[str, str] | tuple[str, str, str]] = [
         "RFC1234",
         ("RFC 2345", "RFC2345"),
         "IEEE 802.1x",
@@ -101,7 +100,7 @@ def test_extract_x_all():
             "draft-ietf-l3vpn-2547bis-mcast-bgp-08",
             "draft-ietf-l3vpn-2547bis-mcast-bgp",
         ),
-    )
+    ]
     txt = ""
     exp = []
     for itm in allitems:
@@ -117,14 +116,13 @@ def test_extract_x_all():
 
     assert res == exp
 
-    for itm, std in zip(allitems, res):
+    for itm, std in zip(allitems, res, strict=False):
         if isinstance(itm, tuple) and len(itm) > 2:
             assert itm[2] == std.key
 
 
-def test_task_add_std_col():
+def test_task_add_std_col() -> None:
     """Add column."""
-
     table = [{"ss": "rfc 1234 rfc 5678"}]
 
     ietf.add_standards_column(table=table, rfc_col="r", columns=["ss"])
@@ -133,9 +131,8 @@ def test_task_add_std_col():
     assert table[0]["r"] == "RFC1234, RFC5678"
 
 
-def test_extract_std():
+def test_extract_std() -> None:
     """Extract std."""
-
     table = [{"ss": "rfc 1234 rfc 5678 rfc 3GPP Release 10"}, {"ss": "rfc 9999"}]
 
     resg = ietf.extract_standards_from_table(table=table, extract_columns=["ss"])
@@ -166,7 +163,7 @@ def test_extract_std():
     assert res[3] == {"name": "RFC9999", "key": "RFC9999", "table": "ttt", "lineno": 2}
 
 
-def test_extract_standards_case():
+def test_extract_standards_case() -> None:
     """Test starting from string."""
     txt = "mfa fORUM 0.0.0 gNMI.Proto vERSION 0.1.0 file.Proto vERSION 0.0.1"
     std = list(ietf.extract_standards(txt))
@@ -187,7 +184,7 @@ def test_extract_standards_case():
     assert std[0] == "openconfig-isis-policy.yang version 0.3.0"
 
 
-def test_compliance_file():
+def test_compliance_file() -> None:
     """Test a local compliance file."""
     file = Path("../test_ietf.xlsx").resolve()
     if not file.exists():
@@ -197,17 +194,14 @@ def test_compliance_file():
     cnt = 0
     for row in env["rfc"]:
         std = row["s"]
+        # draftver = row.get("m") or ""
         rexl = []
-        for rex in ietf.REGEX:
-            if isinstance(rex, re.Pattern):
-                if rex.fullmatch(std):
-                    rexl.append(str(rex.pattern))
+        for rex in ietf.STANDARDS:
+            if rex.rex.fullmatch(std):
+                rexl.append(str(rex.rex))
                 continue
-            if rex[1].fullmatch(std):
-                rexl.append(str(rex[1].pattern))
 
         if len(rexl) != 1:
             _LOGGER.error("S %s, matches %i", std, len(rexl))
             cnt += 1
-    if cnt > 10:
-        assert False
+    assert cnt < 8, f"Too many standards without a match: {cnt}"

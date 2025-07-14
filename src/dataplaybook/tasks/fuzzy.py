@@ -34,7 +34,7 @@ def fuzzy_match(
         # row[opt.target_column + '_'] = str(res)
 
         res = []
-        for col2l, col2 in zip(t2_namesl, t2_names):
+        for col2l, col2 in zip(t2_namesl, t2_names, strict=False):
             resf = fuzz.ratio(col1, col2l)
             if resf > 20:
                 res.append((resf, col2))

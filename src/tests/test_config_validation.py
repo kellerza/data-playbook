@@ -5,7 +5,8 @@ import pytest
 from dataplaybook.utils import AttrDict, AttrKeyError
 
 
-def test_attrd():
+def test_attrd() -> None:
+    """Test AttrDict."""
     atd = AttrDict(a=1, b=2)
     assert atd.a == 1
     assert atd["a"] == 1

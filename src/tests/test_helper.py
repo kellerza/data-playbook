@@ -1,9 +1,9 @@
 """Test helpers."""
 
-import dataplaybook.helper as helper
+from dataplaybook import helper
 
 
-def test_format_as_table():
+def test_format_as_table() -> None:
     """Test."""
     header = ["Name", "Age", "Sex"]
     keys = ["name", "age", "sex"]

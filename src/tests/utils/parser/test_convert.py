@@ -22,7 +22,7 @@ class TstModel(BaseClass):
 
 
 def test_convert1() -> None:
-    """test."""
+    """Test."""
     res = _structure1(
         CONVERT,
         {"junk": "aa", "list_is": [0, "1", "z"]},
@@ -64,46 +64,46 @@ def test_int() -> None:
         assert CONVERT.structure(val, set[int]) == {1, 2}
 
     for val in ["1.0", "a"]:
-        with pytest.raises((ValueError)):
+        with pytest.raises(ValueError):
             CONVERT.structure(val, int)
 
-    with pytest.raises((TypeError)):
+    with pytest.raises(TypeError):
         CONVERT.structure([1, 2], int)
 
     for val in [
         [1, "a"],
         [1, "2.0"],
     ]:
-        with pytest.raises((ValueError)):
+        with pytest.raises(ValueError):
             CONVERT.structure(val, list[int])
 
 
 def test_float_int() -> None:
     """Int."""
     for val, exp in [("1", 1), ("2.2", 2.2), (True, 1), ("5.00", 5), (5.0, 5)]:
-        assert CONVERT.structure(val, int | float) == exp  # type: ignore
-        assert CONVERT.structure(val, int | float | None) == exp  # type: ignore
+        assert CONVERT.structure(val, int | float) == exp  # type: ignore[arg-type]
+        assert CONVERT.structure(val, int | float | None) == exp  # type: ignore[arg-type]
 
 
 def test_int_str() -> None:
-    """Test int|str"""
-
+    """Test int|str."""
     for val, exp in [
         ("1", 1),
         (1, 1),
         ("a", "a"),
     ]:
-        assert CONVERT.structure(val, int | str) == exp  # type: ignore
+        assert CONVERT.structure(val, int | str) == exp  # type: ignore[arg-type]
 
 
 def test_optional() -> None:
+    """Test optional."""
     val = None
-    assert CONVERT.structure(val, int | None) is None  # type: ignore
-    assert CONVERT.structure(val, list[int] | None) is None  # type: ignore
-    assert CONVERT.structure(val, set[int] | None) is None  # type: ignore
+    assert CONVERT.structure(val, int | None) is None  # type: ignore[arg-type]
+    assert CONVERT.structure(val, list[int] | None) is None  # type: ignore[arg-type]
+    assert CONVERT.structure(val, set[int] | None) is None  # type: ignore[arg-type]
 
     with pytest.raises(cattrs.errors.StructureHandlerNotFoundError):
-        assert CONVERT.structure(val, int | str | None) is None  # type: ignore
+        assert CONVERT.structure(val, int | str | None) is None  # type: ignore[arg-type]
 
 
 def test_date_Instant() -> None:

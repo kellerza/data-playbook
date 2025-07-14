@@ -4,6 +4,7 @@ from dataplaybook.utils.parser import parse
 
 
 def test_alt() -> None:
+    """Test alternative item."""
     p = parse.Parser(recipe={"items": parse.create_step(alt="item")})
 
     res = p({"items": "i1"})[0]

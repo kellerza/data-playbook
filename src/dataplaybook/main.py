@@ -14,7 +14,7 @@ from icecream import colorizedStderrPrint, ic
 
 from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
-from dataplaybook.helpers.types import repr_call, repr_signature, typechecked
+from dataplaybook.helpers.typeh import repr_call, repr_signature, typechecked
 from dataplaybook.utils import doublewrap, local_import_module
 from dataplaybook.utils.logger import setup_logger
 
@@ -37,7 +37,6 @@ _ENV = DataEnvironment()
 
 def print_tasks() -> None:
     """Print all_tasks."""
-
     mods: dict = {}
     for name, tsk in ALL_TASKS.items():
         mods.setdefault(tsk.module, []).append(f'{name} "{repr_signature(tsk.func)}"')
@@ -50,7 +49,6 @@ def print_tasks() -> None:
 
 def _add_task(task_function: t.Callable) -> None:
     """Add the task to ALL_TASKS."""
-
     newtask = Task(
         name=task_function.__name__,
         func=task_function,
@@ -127,14 +125,14 @@ _DEFAULT_PLAYBOOK: str | None = None
 
 @doublewrap
 def playbook(
-    target: t.Callable = None,  # type: ignore
+    target: t.Callable = lambda: print("@doublewrap"),
     name: str | None = None,
     default: bool = False,
     run: bool = False,
 ) -> t.Callable:
     """Verify parameters & execute task."""
     if default:
-        global _DEFAULT_PLAYBOOK
+        global _DEFAULT_PLAYBOOK  # noqa: PLW0603
         if _DEFAULT_PLAYBOOK:
             sys.exit("Multiple default playbooks")
         _DEFAULT_PLAYBOOK = name or target.__name__
@@ -159,7 +157,7 @@ def get_default_playbook() -> str:
     return ""
 
 
-def run_playbooks(dataplaybook_cmd: bool = False) -> int:
+def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0911
     """Execute playbooks, or prompt for one."""
     if _EXECUTED:
         return 0
@@ -174,7 +172,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
     setup_logger()
 
     if args.all:
-        import dataplaybook.tasks.all  # noqa pylint: disable=unused-import,import-outside-toplevel
+        import dataplaybook.tasks.all  # noqa: F401
 
     if args.v > 2:
         print_tasks()
@@ -183,7 +181,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
         _LOGGER.info("Please specify a .py file to execute.")
         return -1
 
-    cwd = os.getcwd()
+    cwd = Path.cwd()
 
     try:
         if dataplaybook_cmd:
@@ -201,7 +199,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
             os.chdir(spath.parent)
             try:
                 local_import_module(spath.stem)
-            except Exception as err:  # pylint: disable=broad-except
+            except Exception as err:
                 _LOGGER.error("Unable to import %s: %s", spath.stem, err)
                 return -1
 
@@ -226,7 +224,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
 
         try:
             retval = _ALL_PLAYBOOKS[args.playbook](_ENV)
-        except Exception as err:  # pylint: disable=broad-except
+        except Exception as err:
             _LOGGER.error(
                 "Error while running playbook '%s' - %s: %s",
                 args.playbook,

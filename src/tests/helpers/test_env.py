@@ -1,4 +1,4 @@
-"""Test Environment"""
+"""Test Environment."""
 
 import os
 
@@ -7,14 +7,13 @@ import pytest
 from dataplaybook.helpers.env import DataEnvironment, _DataEnv
 
 
-def test_dataenvironment():
+def test_dataenvironment() -> None:
     """Test dataenvironment."""
-
     env = DataEnvironment()
     env["tab"] = [1]
     assert env["tab"] == [1]
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         env.tab2 = [1]
     assert "tab2" not in env
 
@@ -26,21 +25,20 @@ def test_dataenvironment():
     with pytest.raises(KeyError):
         env.var["non slug"] = 1
 
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         env["var"] = "notallowed"
 
-    with pytest.raises(Exception):
-        env.var = "notallowed"
+    with pytest.raises(Exception):  # noqa: B017
+        env.var = "notallowed"  # type:ignore[misc,assignment]
 
     assert list(env.keys()) == ["var", "tab"]
 
     env["v"] = 1
-    assert env.var.v == 1
+    assert env.var.v == 1  # type:ignore[attr-defined]
 
 
-def test_dataenvironment_as():
+def test_dataenvironment_as() -> None:
     """Test dataenvironment."""
-
     env = DataEnvironment()
     env["t1"] = [{"a": 1}]
 
@@ -54,7 +52,7 @@ def test_dataenvironment_as():
     assert env.as_dict("t1")["t1"] == [{"a": 1}]
 
 
-def test_env():
+def test_env() -> None:
     """Test DataEnv."""
     dataenv = DataEnvironment()
     assert isinstance(dataenv.var, dict)
@@ -66,15 +64,15 @@ def test_env():
     os.environ["HOME"] = "/home/me"
 
     assert "HOME" not in dataenv.var.env
-    assert isinstance(dataenv.var.env.HOME, str)
+    assert isinstance(dataenv.var.env.HOME, str)  # type:ignore[attr-defined]
     assert "HOME" in dataenv.var.env
-    assert dataenv.var.env.HOME == "/home/me"
+    assert dataenv.var.env.HOME == "/home/me"  # type:ignore[attr-defined]
 
     with pytest.raises(KeyError):
         dataenv.var["env"] = 1
 
 
-def test_dataenv():
+def test_dataenv() -> None:
     """Test DataEnv loading."""
     env = _DataEnv()
     env._load('a=1\nb="2"')

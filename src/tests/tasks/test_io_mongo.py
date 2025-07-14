@@ -1,11 +1,13 @@
 """Test io_mongo."""
 
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, Mock, call, patch
+
+import pytest
 
 from dataplaybook.tasks.io_mongo import MongoURI, mongo_sync_sids
 
 
-def test_db_schema_post_validator():
+def test_db_schema_post_validator() -> None:
     """Test read."""
     dbm = MongoURI.new_from_string("db://localhost:27027/d1/c1/s1")
 
@@ -25,8 +27,11 @@ def test_db_schema_post_validator():
 @patch("dataplaybook.tasks.io_mongo.write_mongo")
 @patch("dataplaybook.tasks.io_mongo.mongo_delete_sids")
 def test_mongo_sync_sids(
-    mock_mongo_delete_sids, mock_write_mongo, mock_read_mongo, caplog
-):
+    mock_mongo_delete_sids: Mock,
+    mock_write_mongo: Mock,
+    mock_read_mongo: Mock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test mongo_sync_sids."""
     # mock_l_db = MagicMock()
     mock_l = MagicMock(MongoURI)

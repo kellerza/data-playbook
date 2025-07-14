@@ -1,13 +1,13 @@
 """Everything tests."""
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from dataplaybook.everything import search
 
 
 @patch("dataplaybook.everything.requests")
-def test_q(mock_requests):
+def test_q(mock_requests: Mock) -> None:
     """Test a query."""
     mock_resp = MagicMock()
     mock_resp.status_code = 200

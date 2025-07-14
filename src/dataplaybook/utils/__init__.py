@@ -93,22 +93,20 @@ def doublewrap(
     def new_dec(*args: PDW.args, **kwargs: PDW.kwargs) -> t.Callable[PDW, t.Any]:
         if len(args) == 1 and len(kwargs) == 0 and callable(args[0]):
             # called as @decorator
-            return fun(args[0])  # type: ignore
+            return fun(args[0])  # type: ignore[call-arg]
 
         # called as @decorator(*args, **kwargs)
         # def new_dec2(realf: PDW) -> t.Any:
         #     return fun(realf, *args, **kwargs)
 
         # return new_dec2
-        return lambda realf: fun(realf, *args, **kwargs)  # type:ignore
+        return lambda realf: fun(realf, *args, **kwargs)  # type:ignore[return-value]
 
     return new_dec
 
 
 class AttrKeyError(KeyError):
     """Key not found in dict."""
-
-    pass
 
 
 class AttrDict(dict):
@@ -124,7 +122,7 @@ class AttrDict(dict):
 
     def __setattr__(self, key: str, value: t.Any) -> None:
         """Set attribute."""
-        raise IOError("Read only")
+        raise OSError("Read only")
 
     def __repr__(self) -> str:
         """Represent."""

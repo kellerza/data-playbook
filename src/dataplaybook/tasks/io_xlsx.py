@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 import logging
-import os
-import typing as t
-from collections import abc
+from collections.abc import Generator, Sequence
 from json import dumps
 from pathlib import Path
+from typing import Any
 
 import attrs
 import openpyxl
@@ -31,7 +30,7 @@ class Column:
 
     @classmethod
     def from_old(
-        cls, old: list[dict] | dict[str, dict[str, str]] | t.Any
+        cls, old: list[dict] | dict[str, dict[str, str]] | Any
     ) -> list[Column] | None:
         """Convert old columns to new."""
         if isinstance(old, list):
@@ -59,7 +58,7 @@ class Sheet:
     columns: list[Column] | None = attrs.field(default=None)
 
     @classmethod
-    def from_old(cls, *headers: dict[str, t.Any]) -> list[Sheet]:
+    def from_old(cls, *headers: dict[str, Any]) -> list[Sheet]:
         """Convert old headers to sheets."""
         res = []
         for sheet in headers:
@@ -91,7 +90,8 @@ def read_excel(
 ) -> list[str]:
     """Read excel file using openpyxl.
 
-    If no sheets are specified, all sheets are read and names returned."""
+    If no sheets are specified, all sheets are read and names returned.
+    """
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
     _LOGGER.debug("Loaded workbook %s.", file)
 
@@ -125,8 +125,8 @@ def _sheet_read(_sheet: Worksheet, shdef: Sheet) -> list[RowData]:
 
 
 def _column_map(
-    columns: list[Column] | None, header_row: abc.Sequence[str]
-) -> abc.Generator[tuple[int, str, Column | None], None, None]:
+    columns: list[Column] | None, header_row: Sequence[str]
+) -> Generator[tuple[int, str, Column | None], None, None]:
     """List of (idx, nme, val)."""
     if not columns:
         for idx, key in enumerate(header_row):
@@ -155,7 +155,7 @@ def _sheet_yield_rows(_sheet: Worksheet, shdef: Sheet) -> RowDataGen:
         while header > 0:
             next(rows)
             header -= 1
-        header_row = [cell.value for cell in next(rows)]
+        header_row = [str(cell.value) if cell.value else "" for cell in next(rows)]
     except StopIteration:
         header_row = []
     while len(header_row) > 1 and header_row[-1] is None:
@@ -192,38 +192,33 @@ def _get_filename(filename: PathStr) -> str:
             path.unlink()
         return str(filename)
     except OSError:  # Open in Excel?
-        _parts = list(os.path.splitext(filename))
-        _parts[0] += " "
         for idx in range(50):
-            newname = str(idx).join(_parts)
-            if not os.path.isfile(newname):
-                _LOGGER.warning("File %s locked, saving as %s", filename, newname)
-                return newname
+            newf = path.with_stem(path.stem + f" {idx}")
+            if not newf.is_file():
+                _LOGGER.warning("File %s locked, saving as %s", filename, newf)
+                return str(newf)
         raise
 
 
-def _fmt(obj: t.Any) -> str:
+def _fmt(obj: Any) -> str:
     """Format an object for Excel."""
     if callable(obj):
         return str(obj)
     try:
-        if isinstance(obj, (list, dict, tuple)):
+        if isinstance(obj, list | dict | tuple):
             return dumps(obj)
     except TypeError:
         return str(obj)
 
     # openpyxl's _bind_value in cell.py doesn't use isinstance
-
-    if (
-        isinstance(obj, str) and type(obj) != str  # noqa: E721 # pylint: disable=unidiomatic-typecheck
-    ):
+    if isinstance(obj, str) and type(obj) != str:  # noqa: E721
         return str(obj)
 
     return obj
 
 
 @task
-def write_excel(
+def write_excel(  # noqa: PLR0912
     *,
     tables: Tables,
     file: PathStr,

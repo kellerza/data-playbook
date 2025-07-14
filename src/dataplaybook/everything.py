@@ -6,31 +6,24 @@ Everything HTTP Example:
         "name":"filename.xlsx", "path":"C:\\...." }
 """
 
-from collections import namedtuple
+import logging
 from pathlib import Path
-from typing import Callable
 
+import attrs
 import requests
 
+_LOGGER = logging.getLogger(__name__)
 SANE = r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$ !C:\program !c:\$R"
 SERVER = "http://localhost:8881"
 
-Result = namedtuple("Result", ["total", "files", "folders"])
-PathT = namedtuple("PathT", ["path", "name"])
 
+@attrs.define()
+class Result:
+    """Result of the search."""
 
-def _everything_result(json: dict, class_: Callable) -> Result:
-    """Everything's return value."""
-    result = {"total": -1, "files": [], "folders": []}
-    result["total"] = json["totalResults"]
-    for itm in json["results"]:
-        try:
-            lst = result[itm["type"] + "s"]
-            if isinstance(lst, list):
-                lst.append(class_(itm["path"], itm.get("name", "")))
-        except KeyError as err:
-            print(err)
-    return Result(**result)
+    total: int
+    files: list[Path] = attrs.field(factory=list)
+    folders: list[Path] = attrs.field(factory=list)
 
 
 def search(
@@ -39,7 +32,6 @@ def search(
     sane: bool = True,
     sort: bool = True,
     max_results: int = 50,
-    class_: Callable = Path,
 ) -> Result:
     """Search for files."""
     params = dict(
@@ -51,5 +43,16 @@ def search(
     if sort:
         params["sort"] = "date_modified"
         params["ascending"] = 0
-    res = requests.get(SERVER, params=params, timeout=15)
-    return _everything_result(res.json(), class_)
+
+    result = requests.get(SERVER, params=params, timeout=15)
+    json = result.json()
+
+    res = Result(total=json["totalResults"])
+    for itm in json["results"]:
+        if itm["type"] == "file":
+            res.files.append(Path(itm["path"]) / itm.get("name", ""))
+        elif itm["type"] == "folder":
+            res.folders.append(Path(itm["path"]) / itm.get("name", ""))
+        else:
+            _LOGGER.error("Unknown type '%s' in result: %s", itm["type"], itm)
+    return res

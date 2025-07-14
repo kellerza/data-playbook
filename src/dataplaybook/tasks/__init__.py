@@ -28,14 +28,6 @@ def build_lookup(*, table: list[RowData], key: str, columns: list[str]) -> RowDa
             row.pop(col)
 
 
-# def build_lookup_var(table: Table, key: str, columns: Columns) -> dict[str, t.Any]:
-#     """DEPRECATED,use build_lookup_dict."""
-#     return build_lookup_dict(table, key, columns)
-
-
-KEYT = t.TypeVar("KEYT", t.Any, list[t.Any])
-
-
 @task
 def build_lookup_dict(
     *, table: list[RowData], key: str | list[str], columns: list[str] | None = None
@@ -71,7 +63,7 @@ def combine(
     _res = {}
     copy_columns = list(columns)
     copy_columns.insert(0, key)
-    for table, table_name in zip(tables, columns):
+    for table, table_name in zip(tables, columns, strict=False):
         for row in table:
             key = row[key]
             if key not in _res:
@@ -94,7 +86,7 @@ def ensure_lists(
                     continue
                 # row[col] = ensure_list(row[col])
                 val = row.get(col)
-                if isinstance(val, (list, tuple)):
+                if isinstance(val, list | tuple):
                     continue
                 if not val:
                     row[col] = []
@@ -121,13 +113,15 @@ def filter_rows(
 ) -> RowDataGen:
     """Filter rows from a table."""
 
-    def _match(criteria: dict[str, t.Any], row: RowData) -> bool:
+    def _match(
+        criteria: dict[str, str] | dict[str, str | list[str] | re.Pattern], row: RowData
+    ) -> bool:
         """Test if row matches criteria [OR]."""
         for col, crit in criteria.items():
             if (
-                crit == row[col]
+                (isinstance(crit, str) and crit == row[col])
                 or (isinstance(crit, list) and row[col] in crit)
-                or (hasattr(crit, "match") and crit.match(str(row[col])))
+                or (isinstance(crit, t.Pattern) and crit.match(str(row[col])))
             ):
                 return True
 
@@ -155,7 +149,7 @@ def print_table(
     if table:
         tables["_"] = table
     try:
-        import pandas as pd  # pylint: disable=import-outside-toplevel
+        import pandas as pd
     except ImportError:
         pass
     else:

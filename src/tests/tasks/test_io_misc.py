@@ -23,6 +23,7 @@ from dataplaybook.tasks.io_misc import (
 
 
 def test_file_rotate() -> None:
+    """Test file rotation."""
     with (
         patch.object(Path, "exists") as mock_exists,
         patch.object(Path, "unlink") as mock_unlink,
@@ -47,16 +48,20 @@ def test_file_rotate() -> None:
 
 
 def test_glob() -> None:
+    """Test glob."""
     with patch.object(Path, "glob") as mock_glob:
         # no others
         mock_glob.return_value = ["a", "b"]
         res = list(glob(patterns=["a/*b"]))
-        mock_glob.assert_called_once
+        mock_glob.assert_called_once()
         assert res == [{"file": "a"}, {"file": "b"}]
 
 
 class TestReadCsv(unittest.TestCase):
+    """Test reading CSV files."""
+
     def test_read_csv_with_columns(self) -> None:
+        """Test reading CSV files with specified columns."""
         # Define some test data to read from the csv file
         file_path = "/path/to/file.csv"
         columns = {"col1": "header1", "col2": "header2"}
@@ -81,6 +86,7 @@ class TestReadCsv(unittest.TestCase):
         mock_file.assert_called_once_with("r", encoding="utf-8")
 
     def test_read_csv_without_columns(self) -> None:
+        """Test reading CSV files without specified columns."""
         # Define some test data to read from the csv file
         file_path = "/path/to/file.csv"
         csv_data = "col1,col2\nval1,val2\nval3,val4\n"
@@ -104,7 +110,10 @@ class TestReadCsv(unittest.TestCase):
 
 
 class TestReadJson(unittest.TestCase):
+    """Test reading JSON files."""
+
     def test_read_json(self) -> None:
+        """Test reading JSON files."""
         # Define some test data to read from the json file
         file_path = "/path/to/file.json"
         json_data = (
@@ -129,6 +138,7 @@ class TestReadJson(unittest.TestCase):
         mock_file.assert_called_once_with(mode="r", encoding="utf-8")
 
     def test_read_json_with_invalid_json(self) -> None:
+        """Test reading JSON with invalid data."""
         # Define some test data to read from the json file
         file_path = "/path/to/file.json"
         json_data = '[{"col1": "val1", "col2": "val2"}, {"col1": "val3", "col2": "val4"'
@@ -145,6 +155,7 @@ class TestReadJson(unittest.TestCase):
         mock_file.assert_called_once_with(mode="r", encoding="utf-8")
 
     def test_read_json_with_extra_data(self) -> None:
+        """Test reading JSON with extra data."""
         # Define some test data to read from the json file
         file_path = "/path/to/file.json"
         json_data = (
@@ -171,6 +182,7 @@ class TestReadJson(unittest.TestCase):
 
 
 def test_write_json() -> None:
+    """Test writing JSON files."""
     data = [{"key": "value"}]
     with patch.object(Path, "open", mock_open()) as mock_file:
         write_json(data=data, file="test.json")
@@ -191,6 +203,7 @@ def test_write_json() -> None:
 
 
 def test_read_tab_delim() -> None:
+    """Test reading tab-delimited files."""
     headers = {"column1": "Header1", "column2": "Header2", "column3": "Header3"}
 
     mock_file = mock_open(
@@ -268,7 +281,7 @@ def test_read_text_regex() -> None:
 #         # )
 
 
-def test_write_csv():
+def test_write_csv() -> None:
     """Kudos to Chat-GPT 3."""
     # Create a mock file object to simulate writing to a file
     mock_file = mock_open()

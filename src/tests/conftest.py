@@ -2,20 +2,24 @@
 
 import logging
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from importlib import import_module
 from pathlib import Path
 
-from dataplaybook.main import ALL_TASKS
+from dataplaybook.main import ALL_TASKS, Task
 from dataplaybook.utils import local_import_module
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @contextmanager
-def import_folder(path_str: str, modname: str = "", glob: str = "*.py"):
+def import_folder(
+    path_str: str, modname: str = "", glob: str = "*.py"
+) -> Generator[dict[str, Task], None, None]:
+    """Import all modules in a folder."""
     path = Path(path_str).resolve(strict=True)
-    cwd = os.getcwd()
+    cwd = Path.cwd()
     try:
         for file in path.glob(glob):
             if modname:

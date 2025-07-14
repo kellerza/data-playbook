@@ -10,11 +10,9 @@ from socket import gaierror
 
 from dataplaybook import task
 
-# pylint: disable=too-many-positional-arguments
-
 
 @task
-def mail(
+def mail(  # noqa: PLR0913
     *,
     to_addrs: list[str] | str,
     from_addr: str,

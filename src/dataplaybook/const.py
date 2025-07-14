@@ -1,12 +1,18 @@
 """Constants."""
 
 from __future__ import annotations
-from collections import abc
-from typing import Any, TypeAlias
+from collections.abc import Generator
+from typing import Any
 
-# pylint: disable=unused-import
-from dataplaybook.helpers.env import DataEnvironment  # noqa: F401
+from dataplaybook.helpers.env import DataEnvironment
 
-RowData: TypeAlias = dict[str, Any]
-RowDataGen: TypeAlias = abc.Generator[RowData, None, None]
+type RowData = dict[str, Any]
+RowDataGen = Generator[RowData, None, None]
 Tables = dict[str, list[RowData]] | DataEnvironment
+
+__all__ = (
+    "DataEnvironment",
+    "RowData",
+    "RowDataGen",
+    "Tables",
+)

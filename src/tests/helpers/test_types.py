@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from typeguard import TypeCheckError, typechecked
 
-from dataplaybook.helpers.types import typeguard
+from dataplaybook.helpers.typeh import typeguard
 
 RowDataGen = abc.Generator[dict[str, Any], None, None]
 
@@ -25,7 +25,7 @@ def return_some_good(lst: list[str]) -> abc.Generator[dict[str, Any], None, None
         yield ({"a": val})
 
 
-def test_return_some():
+def test_return_some() -> None:
     """Test return_none."""
     assert list(return_some_good(["1", "2"])) == [{"a": "1"}, {"a": "2"}]
     assert list(return_some_good([])) == []
@@ -46,5 +46,5 @@ def test_some_check_all() -> None:
         == typeguard.CollectionCheckStrategy.ALL_ITEMS
     )
     with pytest.raises(TypeCheckError) as err:
-        list(return_some_good(["1", 2]))  # type:ignore
+        list(return_some_good(["1", 2]))  # type:ignore[list-item]
     assert "is not an instance of str" in str(err)

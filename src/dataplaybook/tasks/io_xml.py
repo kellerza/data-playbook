@@ -10,7 +10,7 @@ from dataplaybook import RowData, Tables, task
 try:
     from lxml.etree import QName, _Element, parse
 except ImportError:
-    parse = None  # type:ignore
+    parse = None  # type:ignore[assignment]
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def read_xml(*, tables: Tables, file: str, targets: list[str]) -> None:
 
     for _t1 in dct.values():
         for key, val in _t1.items():
-            key = _ns(key).replace("-", "_")
+            key = _ns(key).replace("-", "_")  # noqa:PLW2901
             if isinstance(val, list):
                 if key in _notok:
                     _notok.remove(key)
@@ -53,7 +53,7 @@ def _ns(_ss: str) -> str:
     return _ss.split("}")[1] if "}" in _ss else _ss
 
 
-def _etree_to_dict(el: ElementTree.Element) -> RowData:  # pylint: disable=invalid-name
+def _etree_to_dict(el: ElementTree.Element) -> RowData:
     """Elementtree to dict."""
     t_tag = _ns(el.tag)
     res: RowData = {t_tag: {} if el.attrib else None}
@@ -92,7 +92,7 @@ else:
         _notok = set(targets)
 
         for key, val in dct.items():
-            key = key.replace("-", "_")
+            key = key.replace("-", "_")  # noqa: PLW2901
             if isinstance(val, list):
                 _notok.discard(key)
                 tables[key] = val
@@ -105,9 +105,7 @@ else:
             _LOGGER.info("Successfully loaded tables: %s", ", ".join(targets))
 
     def elem2dict(node: _Element, attributes: bool = True) -> dict:
-        """
-        Convert an lxml.etree node tree into a dict.
-        """
+        """Convert an lxml.etree node tree into a dict."""
         result: dict[str, t.Any] = {}
         # if isinstance(node, etree._ElementTree):
         #     return {"msg": "empty"}

@@ -5,8 +5,8 @@ from copy import deepcopy
 
 import attrs
 
-Row: t.TypeAlias = dict[str, t.Any]
-StepFunc = t.Callable[[str, Row], t.Any]
+type Row = dict[str, t.Any]
+type StepFunc = t.Callable[[str, Row], t.Any]
 
 
 @attrs.define(slots=True)
@@ -33,7 +33,8 @@ def create_step(
 ) -> StepFunc:
     """Create a step using the convert function.
 
-    If alt is specified, the convert function should be able to handle a list."""
+    If alt is specified, the convert function should be able to handle a list.
+    """
     if isinstance(alt, str):
         alt = (alt,)
 
@@ -97,7 +98,8 @@ def step_unknown_fields(key: str, row: Row) -> t.Any:
 def create_step_move_to_dict(prefix: str = "", empty: dict | None = None) -> t.Callable:
     """Create a step to move fields to a dict.
 
-    Convert (ui_a:1, ui_b:2) to {ui:{a:1, b:2}}"""
+    Convert (ui_a:1, ui_b:2) to {ui:{a:1, b:2}}
+    """
 
     def _call(field: str, row: dict) -> dict | None:
         """Move fields to a dict."""

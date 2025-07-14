@@ -1,4 +1,4 @@
-"""Type helpers"""
+"""Type helpers."""
 
 import typing as t
 from inspect import signature

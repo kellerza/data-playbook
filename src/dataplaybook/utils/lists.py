@@ -26,7 +26,7 @@ def extract_pattern(text: str, regex: re.Pattern) -> tuple[str, list[tuple]]:
     matches = []
 
     def _extract(match: re.Match) -> str:
-        matches.append((match.group(0),) + match.groups())
+        matches.append((match.group(0), *match.groups()))
         return ""
 
     text = strip(regex.sub(_extract, text), strip_doubles=True)
@@ -35,7 +35,6 @@ def extract_pattern(text: str, regex: re.Pattern) -> tuple[str, list[tuple]]:
 
 def strip(val: T, *, strip_doubles: bool = False) -> T:
     """Strip spaces & quotes from strings, Strip duplicates & empty strings from a list."""
-
     if isinstance(val, str):
         res = val.strip().replace("“", '"').replace("”", '"')
         if strip_doubles and "  " in res:

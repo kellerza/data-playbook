@@ -1,6 +1,6 @@
 """XLSX tests."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 from dataplaybook import DataEnvironment
 from dataplaybook.tasks.io_xlsx import Column, Sheet, read_excel, write_excel
@@ -10,7 +10,8 @@ from dataplaybook.utils import AttrDict
 
 
 @patch("openpyxl.load_workbook")
-def test_read_excel(mock_load_workbook):
+def test_read_excel(mock_load_workbook: Mock) -> None:
+    """Test reading from an Excel file."""
     mock_workbook = MagicMock()
     mock_load_workbook.return_value = mock_workbook
 
@@ -68,7 +69,8 @@ def test_read_excel(mock_load_workbook):
 
 
 @patch("openpyxl.Workbook")
-def test_write_excel(mock_workbook):
+def test_write_excel(mock_workbook: Mock) -> None:
+    """Test writing to an Excel file."""
     mock_wbk = MagicMock()
     mock_workbook.return_value = mock_wbk
 

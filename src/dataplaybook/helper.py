@@ -41,15 +41,15 @@ def format_as_table(
         # Create a list of dictionary from the keys and the header and
         # insert it at the beginning of the list. Do the same for the
         # divider and insert below the header.
-        data.insert(0, dict(zip(keys, header_divider)))
-        data.insert(0, dict(zip(keys, header)))
+        data.insert(0, dict(zip(keys, header_divider, strict=False)))
+        data.insert(0, dict(zip(keys, header, strict=False)))
 
     column_widths = []
     for key in keys:
         column_widths.append(max(len(str(column[key])) for column in data))
 
     # Create a tuple pair of key and the associated column width for it
-    key_width_pair = zip(keys, column_widths)
+    key_width_pair = zip(keys, column_widths, strict=False)
 
     fmt = ("{} " * len(keys)).strip() + "\n"
     #   = ("%-*s ' * len(keys)).strip() + '\n'

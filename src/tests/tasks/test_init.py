@@ -1,6 +1,7 @@
-"""Tests for main tasks"""
+"""Tests for main tasks."""
 
 import re
+from typing import Any
 
 import pytest
 
@@ -18,7 +19,8 @@ from dataplaybook.tasks import (
 
 
 @pytest.fixture
-def address_table():
+def address_table() -> list[dict[str, Any]]:
+    """Fixture for address table."""
     return [
         dict(street="W", suburb="A", postcode=1001),
         dict(street="X", suburb="B", postcode=2002),
@@ -27,7 +29,7 @@ def address_table():
     ]
 
 
-def test_task_build_lookup(address_table):
+def test_task_build_lookup(address_table: list[dict[str, Any]]) -> None:
     """Test build_lookup."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -49,7 +51,7 @@ def test_task_build_lookup(address_table):
     ]
 
 
-# def test_task_build_lookup_var(address_table):
+# def test_task_build_lookup_var(address_table:list[dict[str, Any]]):
 #     """Test build_lookup_var."""
 #     tables = DataEnvironment()
 #     tables["streets"] = address_table
@@ -60,7 +62,7 @@ def test_task_build_lookup(address_table):
 #     assert hse["W"] == dict(suburb="A", postcode=1001)
 
 
-def test_task_ensure_lists(address_table):
+def test_task_ensure_lists(address_table: list[dict[str, Any]]) -> None:
     """Test ensure_list."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -69,7 +71,7 @@ def test_task_ensure_lists(address_table):
     assert tables["streets"][0] == dict(street="W", suburb=["A"], postcode=1001)
 
 
-def test_task_filter(address_table):
+def test_task_filter(address_table: list[dict[str, Any]]) -> None:
     """Test filter."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -108,7 +110,7 @@ def test_task_filter(address_table):
     assert tables.X5 == [dict(street="X", suburb="B", postcode=2002)]
 
 
-def test_task_replace(address_table):
+def test_task_replace(address_table: list[dict[str, Any]]) -> None:
     """Test replace."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -121,7 +123,7 @@ def test_task_replace(address_table):
     assert _ss == set(["A_", "B_"])
 
 
-def test_task_print(address_table):
+def test_task_print(address_table: list[dict[str, Any]]) -> None:
     """Test print."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -130,7 +132,7 @@ def test_task_print(address_table):
     print_table(tables=tables.as_dict("streets", "streets2"))
 
 
-def test_task_unique(address_table):
+def test_task_unique(address_table: list[dict[str, Any]]) -> None:
     """Test unique."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -143,7 +145,7 @@ def test_task_unique(address_table):
     ]
 
 
-def test_task_vlookup(address_table):
+def test_task_vlookup(address_table: list[dict[str, Any]]) -> None:
     """Test vlookup."""
     tables = DataEnvironment()
     tables["streets"] = address_table
@@ -166,8 +168,8 @@ def test_task_vlookup(address_table):
     ]
 
 
-def test_remove_null(address_table):
-    """test remove_null."""
+def test_remove_null(address_table: list[dict[str, Any]]) -> None:
+    """Test remove_null."""
     nul = [dict(v) for v in address_table]
     nul.append({"blah": None, "a": True})
     address_table.append({"a": True})

@@ -1,6 +1,6 @@
 """Ensure."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from whenever import Instant
@@ -68,7 +68,7 @@ def test_ensure_date() -> None:
     for test in tests:
         assert ensure_datetime(test[0]) == test[1]
         if test[1]:
-            tzt = test[1].replace(tzinfo=timezone.utc)
+            tzt = test[1].replace(tzinfo=UTC)
             inst = ensure_instant(test[0])
             assert (inst.py_datetime() if inst else None) == tzt
 
@@ -119,7 +119,7 @@ def test_ensure_list() -> None:
 
 
 def test_ensure_list_iter() -> None:
-    """generators."""
+    """Generators."""
     dct = {"a": 1, "b": 2}
     with pytest.raises(TypeError):
         ensure_list(dct)
@@ -128,6 +128,7 @@ def test_ensure_list_iter() -> None:
 
 
 def ensure_list_json() -> None:
+    """Ensure list from JSON."""
     assert ensure_list('["a",1]') == ["a", 1]
 
 
@@ -148,6 +149,7 @@ def ensure_list_json() -> None:
 
 
 def test_ensure_list_with_datetime() -> None:
+    """Ensure list with datetime."""
     res = ensure_list(
         "[{'by': 'kellerza@gmail.com', 'date': "
         "datetime.datetime(2023, 1, 13, 10, 38, 22), 'changes': "
