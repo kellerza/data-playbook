@@ -55,8 +55,8 @@ Repository = "https://github.com/kellerza/data-playbook"
 
 [project.optional-dependencies]
 mongodb = ["pymongo"]
-lxml = ["lxml>=5.4,<6", "types-lxml"]
-all = ["pymongo", "python-pptx", "lxml>=5.4,<6"]
+lxml = ["lxml>=5.4,<7"]
+pptx = ["python-pptx"]
 
 [project.scripts]
 dataplaybook = "dataplaybook.__main__:main"
