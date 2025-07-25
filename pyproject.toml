@@ -1,14 +1,11 @@
-[build-system]
-requires = ["uv_build>=0.7.6,<0.8.0"]
-build-backend = "uv_build"
-
 [project]
 name = "dataplaybook"
 version = "1.1.5"
 description = "Playbooks for data. Open, process and save table based data."
 authors = [{ name = "Johann Kellerman", email = "kellerza@gmail.com" }]
+license = { file = "LICENSE" }
 readme = "README.md"
-# license = "Apache-2.0"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
@@ -19,7 +16,6 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 keywords = ["data", "tables", "excel", "mongodb", "generators"]
-requires-python = ">=3.12"
 dependencies = [
     "office365-rest-python-client>2,<3",
     "attrs>=25,<26",
@@ -37,6 +33,9 @@ dependencies = [
     "typeguard>=4.4.2",
 ]
 
+[project.optional-dependencies]
+all = ["pymongo>=4,<5", "lxml>=5.4,<7", "python-pptx"]
+
 [dependency-groups]
 dev = [
     "mypy",
@@ -49,12 +48,17 @@ dev = [
     "types-requests",
 ]
 
+[build-system]
+# https://docs.astral.sh/uv/concepts/build-backend/
+requires = ["uv_build>=0.7.13,<0.8.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+source-exclude = [".mypy_cache"] # , "src/tests"]
+
 [project.urls]
 Homepage = "https://github.com/kellerza/data-playbook"
 Repository = "https://github.com/kellerza/data-playbook"
-
-[project.optional-dependencies]
-all = ["pymongo", "lxml>=5.4,<7", "python-pptx"]
 
 [project.scripts]
 dataplaybook = "dataplaybook.__main__:main"
@@ -92,9 +96,6 @@ asyncio_mode = "auto"
 addopts = "--cov=src --cov-report xml:cov.xml"
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.ruff]
-target-version = "py312"
-
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
@@ -122,9 +123,6 @@ select = [
     "W",     # pycodestyle
 ]
 ignore = ["E203", "E501", "D203", "D213", "PLR2004", "UP047", "PLC0415"]
-
-[tool.ruff.lint.flake8-import-conventions]
-banned-from = ["typing"]
 
 [tool.ruff.lint.isort]
 no-lines-before = ["future", "standard-library"]

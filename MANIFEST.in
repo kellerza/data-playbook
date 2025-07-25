@@ -1,6 +1,4 @@
-include LICENSE README.md
-graft dataplaybook
-include src\dataplaybook\py.typed
+include LICENSE README.md src/dataplaybook/py.typed
+graft src/dataplaybook
+graft src/tests
 recursive-exclude * *.py[co]
-exclude dataplaybook.egg-info
-prune dataplaybook.egg-info
