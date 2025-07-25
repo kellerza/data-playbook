@@ -1,6 +1,6 @@
 [project]
 name = "dataplaybook"
-version = "1.1.5"
+version = "1.1.6"
 description = "Playbooks for data. Open, process and save table based data."
 authors = [{ name = "Johann Kellerman", email = "kellerza@gmail.com" }]
 license = { file = "LICENSE" }
