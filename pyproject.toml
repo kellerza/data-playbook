@@ -1,74 +1,114 @@
+[build-system]
+build-backend = "uv_build"             # https://docs.astral.sh/uv/concepts/build-backend/
+requires = [ "uv-build>=0.7.13,<0.8" ]
+
 [project]
 name = "dataplaybook"
 version = "1.1.6"
 description = "Playbooks for data. Open, process and save table based data."
-authors = [{ name = "Johann Kellerman", email = "kellerza@gmail.com" }]
-license = { file = "LICENSE" }
 readme = "README.md"
+keywords = [ "data", "excel", "generators", "mongodb", "tables" ]
+license = { file = "LICENSE" }
+authors = [ { name = "Johann Kellerman", email = "kellerza@gmail.com" } ]
 requires-python = ">=3.12"
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
-    "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
 ]
-keywords = ["data", "tables", "excel", "mongodb", "generators"]
 dependencies = [
-    "office365-rest-python-client>2,<3",
-    "attrs>=25,<26",
-    "cattrs>=24,<26",
-    "colordict>=1.2.6",
-    "colorlog>=6,<7",
-    "jinja2>=3,<4",
-    "openpyxl==3.1.5",
-    "beartype==0.20.2",
-    "icecream",
-    "fuzzywuzzy",
-    "python-Levenshtein",
-    "requests>=2.0.0,<3",
-    "whenever>=0.8,<0.9",
-    "typeguard>=4.4.2",
+  "attrs>=25,<26",
+  "beartype==0.20.2",
+  "cattrs>=24,<26",
+  "colordict>=1.2.6",
+  "colorlog>=6,<7",
+  "fuzzywuzzy",
+  "icecream",
+  "jinja2>=3,<4",
+  "office365-rest-python-client>2,<3",
+  "openpyxl==3.1.5",
+  "python-levenshtein",
+  "requests>=2,<3",
+  "typeguard>=4.4.2",
+  "whenever>=0.8,<0.9",
 ]
 
-[project.optional-dependencies]
-all = ["pymongo>=4,<5", "lxml>=5.4,<7", "python-pptx"]
+optional-dependencies.all = [ "lxml>=5.4,<7", "pymongo>=4,<5", "python-pptx" ]
+urls.Homepage = "https://github.com/kellerza/data-playbook"
+urls.Repository = "https://github.com/kellerza/data-playbook"
+scripts.dataplaybook = "dataplaybook.__main__:main"
 
 [dependency-groups]
 dev = [
-    "mypy",
-    "pytest-aiohttp",
-    "pytest-cov",
-    "pytest-github-actions-annotate-failures",
-    "pytest",
-    "python-semantic-release",
-    "types-lxml",
-    "types-requests",
+  "mypy",
+  "pytest",
+  "pytest-aiohttp",
+  "pytest-cov",
+  "pytest-github-actions-annotate-failures",
+  "python-semantic-release",
+  "types-lxml",
+  "types-requests",
 ]
 
-[build-system]
-# https://docs.astral.sh/uv/concepts/build-backend/
-requires = ["uv_build>=0.7.13,<0.8.0"]
-build-backend = "uv_build"
+[tool.ruff]
+format.indent-style = "space"
+format.quote-style = "double"
+format.line-ending = "auto"
+format.skip-magic-trailing-comma = false
+format.docstring-code-line-length = "dynamic"
+format.docstring-code-format = true
+lint.select = [
+  "A",     # flake8-builtins
+  "ASYNC", # flake8-async
+  "B",     # bugbear
+  "D",     # pydocstyle
+  "E",     # pycodestyle
+  "F",     # pyflakes
+  "I",     # isort
+  "PGH",   # pygrep-hooks
+  "PIE",   # flake8-pie
+  "PL",    # pylint
+  "PTH",   # flake8-pathlib
+  "PYI",   # flake8-pyi
+  "RUF",   # ruff
+  "UP",    # pyupgrade
+  "W",     # pycodestyle
+]
+lint.ignore = [ "D203", "D213", "E203", "E501", "PLC0415", "PLR2004", "UP047" ]
+lint.isort.no-lines-before = [ "future", "standard-library" ]
+lint.pylint.max-args = 7
+
+[tool.codespell]
+skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]
+#ignore-words-list = []
+
+[tool.pytest.ini_options]
+pythonpath = [ "src/dataplaybook" ]
+filterwarnings = "ignore:.+@coroutine.+deprecated.+"
+norecursedirs = [ ".git", "modules" ]
+log_cli = true
+log_cli_level = "DEBUG"
+asyncio_mode = "auto"
+addopts = "--cov=src --cov-report xml:cov.xml"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.mypy]
+disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = [ "build", "dist" ]
 
 [tool.uv.build-backend]
-source-exclude = [".mypy_cache"] # , "src/tests"]
-
-[project.urls]
-Homepage = "https://github.com/kellerza/data-playbook"
-Repository = "https://github.com/kellerza/data-playbook"
-
-[project.scripts]
-dataplaybook = "dataplaybook.__main__:main"
+source-exclude = [ ".mypy_cache" ] # , "src/tests"]
 
 [tool.semantic_release]
 commit = true
 tag = true
 vcs_release = true
 commit_parser = "emoji"
-version_toml = ["pyproject.toml:project.version"]
+version_toml = [ "pyproject.toml:project.version" ]
 build_command = "pip install uv && uv build"
 commit_version_number = true
 
@@ -77,59 +117,6 @@ commit_version_number = true
 match = "master"
 
 [tool.semantic_release.commit_parser_options]
-major_tags = [":boom:"]
-minor_tags = [":rocket:"]
-patch_tags = [":ambulance:", ":lock:", ":bug:", ":dolphin:"]
-
-[tool.mypy]
-disallow_untyped_defs = true
-ignore_missing_imports = true
-exclude = ["build", "dist"]
-
-[tool.pytest.ini_options]
-pythonpath = ["src/dataplaybook"]
-filterwarnings = "ignore:.+@coroutine.+deprecated.+"
-norecursedirs = [".git", "modules"]
-log_cli = true
-log_cli_level = "DEBUG"
-asyncio_mode = "auto"
-addopts = "--cov=src --cov-report xml:cov.xml"
-asyncio_default_fixture_loop_scope = "function"
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-docstring-code-format = true
-docstring-code-line-length = "dynamic"
-
-[tool.ruff.lint]
-select = [
-    "A",     # flake8-builtins
-    "ASYNC", # flake8-async
-    "B",     # bugbear
-    "D",     # pydocstyle
-    "E",     # pycodestyle
-    "F",     # pyflakes
-    "I",     # isort
-    "PGH",   # pygrep-hooks
-    "PIE",   # flake8-pie
-    "PL",    # pylint
-    "PTH",   # flake8-pathlib
-    "PYI",   # flake8-pyi
-    "RUF",   # ruff
-    "UP",    # pyupgrade
-    "W",     # pycodestyle
-]
-ignore = ["E203", "E501", "D203", "D213", "PLR2004", "UP047", "PLC0415"]
-
-[tool.ruff.lint.isort]
-no-lines-before = ["future", "standard-library"]
-
-[tool.ruff.lint.pylint]
-max-args = 7
-
-[tool.codespell]
-skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]
-#ignore-words-list = []
+major_tags = [ ":boom:" ]
+minor_tags = [ ":rocket:" ]
+patch_tags = [ ":ambulance:", ":lock:", ":bug:", ":dolphin:" ]
