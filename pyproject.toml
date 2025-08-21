@@ -129,3 +129,7 @@ no-lines-before = ["future", "standard-library"]
 
 [tool.ruff.lint.pylint]
 max-args = 7
+
+[tool.codespell]
+skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]
+#ignore-words-list = []
