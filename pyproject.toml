@@ -119,4 +119,5 @@ match = "master"
 [tool.semantic_release.commit_parser_options]
 major_tags = [ ":boom:" ]
 minor_tags = [ ":rocket:" ]
-patch_tags = [ ":ambulance:", ":lock:", ":bug:", ":dolphin:" ]
+# patch_tags = [ ":ambulance:", ":lock:", ":bug:", ":dolphin:" ]
+patch_tags = ".*"
