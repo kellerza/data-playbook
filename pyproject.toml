@@ -120,4 +120,4 @@ match = "master"
 major_tags = [ ":boom:" ]
 minor_tags = [ ":rocket:" ]
 # patch_tags = [ ":ambulance:", ":lock:", ":bug:", ":dolphin:" ]
-patch_tags = [ ".*" ]
+patch_tags = [ "" ]
