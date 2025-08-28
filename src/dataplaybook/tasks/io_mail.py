@@ -18,7 +18,7 @@ def mail(  # noqa: PLR0913
     from_addr: str,
     subject: str,
     server: str,
-    files: list[str] | None = None,
+    files: list[Path | tuple[Path, str]] | None = None,
     priority: int = 4,
     body: str | None = "",
     html: str | None = "",
@@ -42,11 +42,11 @@ def mail(  # noqa: PLR0913
     message["Subject"] = subject
 
     if files:
-        for file_path in list(files):
-            _fp = Path(file_path)
-            if not _fp.exists():
-                files.pop(files.index(file_path))  # Remove if not found
-                body = "Attachment not found: {file_path}\n{body}"
+        for fn in list(files):
+            path, name = fn if isinstance(fn, tuple) else (fn, fn.name)
+            if not path.exists():
+                files.remove(fn)
+                body = f"Attachment not found: {name} [{path}]\n{body}"
 
     # Add body to email
     if body:
@@ -54,8 +54,10 @@ def mail(  # noqa: PLR0913
     if html:
         message.attach(MIMEText(html, "html", "utf-8"))
 
-    for file_path in files or []:
-        _attach(message, Path(file_path))
+    for fn in files or []:
+        fpath, fname = fn if isinstance(fn, tuple) else (fn, fn.name)
+        if att := attachment(fpath, fname):
+            message.attach(att)
 
     msg = message.as_string()
 
@@ -74,26 +76,17 @@ def mail(  # noqa: PLR0913
         raise
 
 
-def _attach(message: MIMEMultipart, path: Path) -> None:
+def attachment(path: Path, name: str) -> MIMEBase | None:
     """Attach a file to message."""
-    assert isinstance(path, Path)
-
     text = path.read_bytes()
     if text is None:
-        return
-
-    # Open file in binary mode
-    # with path.open('rb') as f_pt:
+        return None
     # Add file as application/octet-stream
     # Email client can usually download this automatically as attachment
     part = MIMEBase("application", "octet-stream")
     part.set_payload(text)
-
     # Encode file in ASCII characters to send by email
     encoders.encode_base64(part)
-
     # Add header as key/value pair to attachment part
-    part.add_header("Content-Disposition", f"attachment; filename= {path.name}")
-
-    # Add attachment to message and convert message to string
-    message.attach(part)
+    part.add_header("Content-Disposition", f"attachment; filename={name}")
+    return part
