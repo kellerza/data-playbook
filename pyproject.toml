@@ -22,7 +22,6 @@ classifiers = [
 ]
 dependencies = [
   "attrs>=25,<26",
-  "beartype==0.20.2",
   "cattrs>=24,<26",
   "colordict>=1.2.6",
   "colorlog>=6,<7",

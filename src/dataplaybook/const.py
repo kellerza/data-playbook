@@ -7,8 +7,8 @@ from typing import Any
 from dataplaybook.helpers.env import DataEnvironment
 
 type RowData = dict[str, Any]
-RowDataGen = Generator[RowData, None, None]
-Tables = dict[str, list[RowData]] | DataEnvironment
+type RowDataGen = Generator[RowData, None, None]
+type Tables = dict[str, list[RowData]] | DataEnvironment
 
 __all__ = (
     "DataEnvironment",

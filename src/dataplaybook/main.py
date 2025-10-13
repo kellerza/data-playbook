@@ -12,10 +12,11 @@ from typing import Any, Concatenate
 
 import attrs
 from icecream import colorizedStderrPrint, ic
+from typeguard import typechecked
 
 from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
-from dataplaybook.helpers.typeh import repr_call, repr_signature, typechecked
+from dataplaybook.helpers.typeh import repr_call, repr_signature
 from dataplaybook.utils import doublewrap, local_import_module
 from dataplaybook.utils.logger import setup_LOG
 

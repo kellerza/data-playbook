@@ -4,16 +4,11 @@ from collections.abc import Callable
 from inspect import signature
 from typing import Any, get_type_hints
 
-import typeguard
-from beartype import beartype
+from typeguard import CollectionCheckStrategy, config
 
 from dataplaybook.const import Tables
 
-USETC = False
-
-typeguard.config.collection_check_strategy = typeguard.CollectionCheckStrategy.ALL_ITEMS
-
-typechecked = typeguard.typechecked if USETC else beartype
+config.collection_check_strategy = CollectionCheckStrategy.ALL_ITEMS
 
 
 def repr_signature(func: Callable | None, /) -> str:

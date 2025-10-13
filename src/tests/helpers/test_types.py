@@ -4,9 +4,7 @@ from collections import abc
 from typing import Any
 
 import pytest
-from typeguard import TypeCheckError, typechecked
-
-from dataplaybook.helpers.typeh import typeguard
+from typeguard import CollectionCheckStrategy, TypeCheckError, config, typechecked
 
 RowDataGen = abc.Generator[dict[str, Any], None, None]
 
@@ -41,10 +39,7 @@ def test_return_some() -> None:
 
 def test_some_check_all() -> None:
     """Ensure config was ok."""
-    assert (
-        typeguard.config.collection_check_strategy
-        == typeguard.CollectionCheckStrategy.ALL_ITEMS
-    )
+    assert config.collection_check_strategy == CollectionCheckStrategy.ALL_ITEMS
     with pytest.raises(TypeCheckError) as err:
         list(return_some_good(["1", 2]))  # type:ignore[list-item]
     assert "is not an instance of str" in str(err)
