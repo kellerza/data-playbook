@@ -3,8 +3,8 @@ name: CI
 on: [push, pull_request]
 
 env:
-  RUFF_VERSION: 0.12.2
-  UV_VERSION: 0.8.11
+  RUFF_VERSION: 0.13.1
+  UV_VERSION: 0.8.22
   TEST_TARGET: "src"
 
 jobs:
@@ -46,7 +46,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12", "3.13"]
+        python-version: ["3.12", "3.13", "3.14"]
     env:
       PYTHON: ${{ matrix.python-version }}
     steps:

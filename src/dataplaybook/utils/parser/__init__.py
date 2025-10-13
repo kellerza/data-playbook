@@ -1,8 +1,8 @@
 """Parse & convert."""
 
 import logging
-import typing as t
 from collections import abc
+from typing import Any, Self, TypeVar, get_origin
 
 from cattrs._compat import adapted_fields
 from cattrs.errors import ClassValidationError, ForbiddenExtraKeysError
@@ -18,7 +18,7 @@ from .convert import (
     transform_error,
 )
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 class BaseClass:
@@ -29,7 +29,7 @@ class BaseClass:
         only_keys: abc.Iterable[str] | None = None,
         exclude_keys: abc.Iterable[str] | None = None,
         omit_if_default: bool = True,
-    ) -> dict[str, t.Any]:
+    ) -> dict[str, Any]:
         """Return class as a dictionary."""
         cvt = get_converter(omit_if_default=omit_if_default)
         res = cvt.unstructure(self)
@@ -42,22 +42,20 @@ class BaseClass:
 
     @classmethod
     def structure(
-        cls, data: abc.Mapping[str, t.Any], allow_ignore_extra: bool = False
-    ) -> t.Self:
+        cls, data: abc.Mapping[str, Any], allow_ignore_extra: bool = False
+    ) -> Self:
         """Convert dictionary to class instance."""
         return _structure1(CONVERT, data, cls, allow_ignore_extra=allow_ignore_extra)
 
     @classmethod
-    def structure_list(
-        cls, data: abc.Sequence[abc.Mapping[str, t.Any]]
-    ) -> list[t.Self]:
+    def structure_list(cls, data: abc.Sequence[abc.Mapping[str, Any]]) -> list[Self]:
         """Convert list of dictionaries to list of class instances."""
         return [_structure1(CONVERT, d, cls) for d in data]
 
 
-C = t.TypeVar("C", bound=BaseClass)
-T = t.TypeVar("T")
-DT = t.TypeVar("DT", bound=dict[str, t.Any] | abc.Mapping[str, t.Any])
+C = TypeVar("C", bound=BaseClass)
+T = TypeVar("T")
+DT = TypeVar("DT", bound=dict[str, Any] | abc.Mapping[str, Any])
 
 
 async def async_structure(
@@ -66,7 +64,7 @@ async def async_structure(
     *,
     log: int = 0,
     lenient: bool = False,
-) -> abc.AsyncGenerator[tuple[abc.Mapping[str, t.Any], C], None]:
+) -> abc.AsyncGenerator[tuple[abc.Mapping[str, Any], C], None]:
     """Structure a async generator."""
     async for row in iteratr:
         res = _structure1(CONVERT, row, cls, allow_ignore_extra=lenient)
@@ -84,25 +82,25 @@ def pre_process(
     parser: parse.Parser | None = None,
     start_unknown_fields: bool = False,
     debug: bool = False,
-) -> t.Callable[[T], T]:
+) -> abc.Callable[[T], T]:
     """Help rename/migrate field names."""
 
     def decorator(cls: T) -> T:
         struct = make_dict_structure_fn(cls, converter_arg, _cattrs_use_alias=True)  # type: ignore[var-annotated,arg-type]
 
-        def unknown_field_hook(d: dict[str, t.Any]) -> None:
+        def unknown_field_hook(d: dict[str, Any]) -> None:
             """Move unknown fields to unknown_field."""
             if not unknown_field:
                 return
             if not isinstance(d, dict):
-                _LOGGER.warning(
+                _LOG.warning(
                     "Cannot process unknown field for non-dict: %s %s", type(d), d
                 )
                 return
-            fields = adapted_fields(t.get_origin(cls) or cls)  # type: ignore[arg-type]
+            fields = adapted_fields(get_origin(cls) or cls)  # type: ignore[arg-type]
             all_fields = {a.alias or a.name for a in fields}
             if debug:
-                _LOGGER.debug(
+                _LOG.debug(
                     "Available fields %s. Incoming keys: %s", all_fields, d.keys()
                 )
             unk_fields = set(d.keys()) - all_fields
@@ -114,14 +112,14 @@ def pre_process(
                 for key in unk_fields:
                     unk[key] = _append(unk.get(key), d.pop(key))
                 if debug:
-                    _LOGGER.warning(
+                    _LOG.warning(
                         "Unknown fields %s moved to %s --> %s",
                         unk_fields,
                         unknown_field,
                         d.keys(),
                     )
 
-        def structure(d: dict[str, t.Any], cl: t.Any) -> t.Any:
+        def structure(d: dict[str, Any], cl: Any) -> Any:
             if isinstance(d, cl):
                 return d
             if start_unknown_fields:
@@ -132,7 +130,7 @@ def pre_process(
                 unknown_field_hook(d)
 
             if debug:
-                _LOGGER.debug("Structure: %s", d)
+                _LOG.debug("Structure: %s", d)
 
             return struct(d, cl)
 
@@ -143,7 +141,7 @@ def pre_process(
     return decorator
 
 
-def structure1(data: t.Any, cls: type[T]) -> T:
+def structure1(data: Any, cls: type[T]) -> T:
     """Structure simple values."""
     try:
         return CONVERT.structure(data, cls)
@@ -157,7 +155,7 @@ def structure_list(
     *,
     log: int = 0,
     lenient: bool = False,
-) -> abc.Generator[tuple[abc.Mapping[str, t.Any], C], None, None]:
+) -> abc.Generator[tuple[abc.Mapping[str, Any], C], None, None]:
     """Structure a async generator."""
     for row in iteratr:
         res = _structure1(CONVERT, row, cls, allow_ignore_extra=lenient)
@@ -171,7 +169,7 @@ def structure_list(
 
 def _structure1(
     cvt: Converter,
-    data: abc.Mapping[str, t.Any],
+    data: abc.Mapping[str, Any],
     cls: type[C],
     *,
     allow_ignore_extra: bool = False,
@@ -182,16 +180,16 @@ def _structure1(
 
     except (ClassValidationError, ForbiddenExtraKeysError) as err:
         msg = "; ".join(transform_error(err))
-        _LOGGER.error(msg)
+        _LOG.error(msg)
         ic(msg, data)
         if allow_ignore_extra and "extra fields" in msg:
-            _LOGGER.debug("allow extra!")
+            _LOG.debug("allow extra!")
             cvt = get_converter(forbid_extra_keys=False)
             return _structure1(cvt, data, cls, allow_ignore_extra=False)
         raise
 
 
-def _append(maybelist: t.Any, add: t.Any) -> t.Any:
+def _append(maybelist: Any, add: Any) -> Any:
     """Append value to the list."""
     if not add or maybelist == add:
         return maybelist

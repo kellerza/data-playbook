@@ -1,7 +1,7 @@
 """Custom cattrs converter."""
 
-import typing as t
 from collections import abc
+from typing import Any, get_args, get_origin
 
 from cattrs import ClassValidationError, Converter, transform_error
 from whenever import Instant
@@ -14,9 +14,6 @@ from ..ensure import (
     ensure_string,
 )
 
-T = t.TypeVar("T")
-
-
 CONVERT = Converter(
     forbid_extra_keys=True,
     omit_if_default=True,
@@ -25,43 +22,43 @@ CONVERT = Converter(
 
 
 @CONVERT.register_structure_hook  # type:ignore[]
-def ensure_a_string(value: t.Any, _: type) -> str:
+def ensure_a_string(value: Any, _: type) -> str:
     """Ensure this is a string."""
     return ensure_string(value)
 
 
 @CONVERT.register_structure_hook  # type:ignore[]
-def ensure_a_bool(value: t.Any, _: type) -> bool:
+def ensure_a_bool(value: Any, _: type) -> bool:
     """Ensure this is a bool."""
     return ensure_bool(value)
 
 
-def _hook_list(value: t.Any, cls: type) -> t.Any:
+def _hook_list(value: Any, cls: type) -> Any:
     """Structure a list."""
-    args = t.get_args(cls)
+    args = get_args(cls)
     arg0 = args[0]
     if isinstance(value, set | list):
         return [CONVERT.structure(i, arg0) for i in value]
     return [CONVERT.structure(i, arg0) for i in ensure_list(value)]
 
 
-CONVERT.register_structure_hook_func(lambda v: t.get_origin(v) is list, _hook_list)
+CONVERT.register_structure_hook_func(lambda v: get_origin(v) is list, _hook_list)
 
 
-def _hook_set(value: t.Any, cls: type) -> t.Any:
+def _hook_set(value: Any, cls: type) -> Any:
     """Structure a set."""
-    args = t.get_args(cls)
+    args = get_args(cls)
     arg0 = args[0]
     if isinstance(value, set | list):
         return {CONVERT.structure(i, arg0) for i in value}
     return {CONVERT.structure(i, arg0) for i in ensure_list(value)}
 
 
-CONVERT.register_structure_hook_func(lambda v: t.get_origin(v) is set, _hook_set)
+CONVERT.register_structure_hook_func(lambda v: get_origin(v) is set, _hook_set)
 
 
-def structure1(
-    data: t.Any,
+def structure1[T](
+    data: Any,
     cls: type[T],
     *,
     forbid_extra_keys: bool = True,
@@ -80,7 +77,7 @@ CONVERT.register_structure_hook(bool | str, ensure_bool_str)
 
 
 @CONVERT.register_structure_hook  # type:ignore[]
-def int_str(value: t.Any, _: type | None = None) -> int | str:
+def int_str(value: Any, _: type | None = None) -> int | str:
     """Extract a int|str."""
     if isinstance(value, int):
         return value
@@ -95,7 +92,7 @@ def int_str(value: t.Any, _: type | None = None) -> int | str:
 
 
 @CONVERT.register_structure_hook  # type:ignore[]
-def int_float(value: t.Any, _: type | None = None) -> int | float:
+def int_float(value: Any, _: type | None = None) -> int | float:
     """Extract a int|str."""
     if isinstance(value, int):
         return value
@@ -107,7 +104,7 @@ def int_float(value: t.Any, _: type | None = None) -> int | float:
 
 
 @CONVERT.register_structure_hook  # type:ignore[]
-def int_float_none(value: t.Any, _: type | None = None) -> int | float | None:
+def int_float_none(value: Any, _: type | None = None) -> int | float | None:
     """Extract a int|str."""
     if value is None or value == "":
         return None

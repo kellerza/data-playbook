@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 
-def get_logger(logger: str | logging.Logger | None = None) -> logging.Logger:
+def get_LOG(logger: str | logging.Logger | None = None) -> logging.Logger:
     """Get a logger."""
     return (
         logger
@@ -13,7 +13,7 @@ def get_logger(logger: str | logging.Logger | None = None) -> logging.Logger:
     )
 
 
-def set_logger_level(level: Any, module: logging.Logger | None = None) -> None:
+def set_LOG_level(level: Any, module: logging.Logger | None = None) -> None:
     """Set the log level."""
 
     def _level(level: Any = None) -> int:
@@ -33,13 +33,13 @@ def set_logger_level(level: Any, module: logging.Logger | None = None) -> None:
 
     level = _level(level)
     if module:
-        get_logger(module).setLevel(level)
+        get_LOG(module).setLevel(level)
 
     for mod in "dataplaybook.playbook":  # , "dataplaybook.config_validation"):
-        get_logger(mod).setLevel(level)
+        get_LOG(mod).setLevel(level)
 
 
-def setup_logger() -> None:
+def setup_LOG() -> None:
     """Configure the color log handler."""
     logging.basicConfig(level=logging.DEBUG)
     # fmt = ("%(asctime)s %(levelname)s (%(threadName)s) "
@@ -48,7 +48,7 @@ def setup_logger() -> None:
     colorfmt = f"%(log_color)s{fmt}%(reset)s"
     datefmt = "%H:%M:%S"
 
-    logging.getLogger().handlers[0].addFilter(log_filter)
+    logging.getLogger().handlers[0].addFilter(log_trim_messages)
 
     try:
         from colorlog import ColoredFormatter
@@ -71,7 +71,7 @@ def setup_logger() -> None:
         pass
 
 
-def log_filter(record: Any) -> Any:
+def log_trim_messages(record: Any) -> Any:
     """Trim log messages.
 
     https://relaxdiego.com/2014/07/logging-in-python.html

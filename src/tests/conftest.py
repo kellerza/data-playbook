@@ -10,7 +10,7 @@ from pathlib import Path
 from dataplaybook.main import ALL_TASKS, Task
 from dataplaybook.utils import local_import_module
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -27,7 +27,7 @@ def import_folder(
                 import_module(imp)
                 continue
             os.chdir(file.parent)
-            _LOGGER.info(str(file))
+            _LOG.info(str(file))
             local_import_module(file.stem)
         os.chdir(cwd)
         yield ALL_TASKS

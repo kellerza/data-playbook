@@ -16,7 +16,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from dataplaybook import PathStr, RowData, RowDataGen, Tables, task
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 @attrs.define
@@ -93,7 +93,7 @@ def read_excel(
     If no sheets are specified, all sheets are read and names returned.
     """
     wbk = openpyxl.load_workbook(file, read_only=True, data_only=True)
-    _LOGGER.debug("Loaded workbook %s.", file)
+    _LOG.debug("Loaded workbook %s.", file)
 
     if sheets is None:
         sheets = [Sheet(name=n) for n in wbk.sheetnames]
@@ -107,7 +107,7 @@ def read_excel(
         # default_sheet = *
         the_sheet = wbk.active if name == "*" else wbk[name]
         if not the_sheet:
-            _LOGGER.error("Sheet %s not found", name)
+            _LOG.error("Sheet %s not found", name)
             tables[name] = []
             continue
         tbl = _sheet_read(the_sheet, sht)
@@ -120,7 +120,7 @@ def read_excel(
 def _sheet_read(_sheet: Worksheet, shdef: Sheet) -> list[RowData]:
     """Read a sheet and return a table."""
     res = list(_sheet_yield_rows(_sheet, shdef))
-    _LOGGER.debug("Read %s rows from sheet %s", len(res), _sheet.title)
+    _LOG.debug("Read %s rows from sheet %s", len(res), _sheet.title)
     return res
 
 
@@ -140,7 +140,7 @@ def _column_map(
             continue
         idx = list(header_row).index(str(col.source))
         if col.source and idx < 0:
-            _LOGGER.error("%s not found in header %s", col.source, list(header_row))
+            _LOG.error("%s not found in header %s", col.source, list(header_row))
             raise ValueError(f"{col.source} not found in header")
         if idx < 0:
             raise ValueError(f"Bad column definition: {col.name}")
@@ -160,7 +160,7 @@ def _sheet_yield_rows(_sheet: Worksheet, shdef: Sheet) -> RowDataGen:
         header_row = []
     while len(header_row) > 1 and header_row[-1] is None:
         header_row.pop()
-    _LOGGER.debug("Header row: %s", header_row)
+    _LOG.debug("Header row: %s", header_row)
 
     colmap = list(_column_map(shdef.columns, header_row))
 
@@ -195,7 +195,7 @@ def _get_filename(filename: PathStr) -> str:
         for idx in range(50):
             newf = path.with_stem(path.stem + f" {idx}")
             if not newf.is_file():
-                _LOGGER.warning("File %s locked, saving as %s", filename, newf)
+                _LOG.warning("File %s locked, saving as %s", filename, newf)
                 return str(newf)
         raise
 
@@ -251,7 +251,7 @@ def write_excel(  # noqa: PLR0912
         wsh: Worksheet = wbk.create_sheet(table_name)
 
         if table_name not in tables:
-            _LOGGER.warning("Could not save table %s", table_name)
+            _LOG.warning("Could not save table %s", table_name)
             continue
 
         hdr: dict[str, int] = {}
@@ -285,11 +285,11 @@ def write_excel(  # noqa: PLR0912
             except ValueError as exc:
                 debugs -= 1
                 if debugs > 0:
-                    _LOGGER.warning(
+                    _LOG.warning(
                         "Error writing %s, hdrs: %s - %s", list(erow), hdrk, exc
                     )
                 wsh.append([str(row.get(h, "")) for h in hdrk])
         if debugs < 0:
-            _LOGGER.warning("Total %s errors", 2 - debugs)
+            _LOG.warning("Total %s errors", 2 - debugs)
 
     wbk.save(_get_filename(file))  # Write to disk

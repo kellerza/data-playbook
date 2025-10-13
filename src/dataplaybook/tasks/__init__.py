@@ -4,13 +4,13 @@ import json
 import logging
 import re
 import shutil
-import typing as t
 from collections import abc
+from typing import Any, Literal
 
 from dataplaybook import RowData, RowDataGen, Tables, task
 from dataplaybook.utils import ensure_list
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 @task
@@ -19,7 +19,7 @@ def build_lookup(*, table: list[RowData], key: str, columns: list[str]) -> RowDa
     lookup: RowData = {}
     all_cols = list(columns)
     all_cols.insert(0, key)
-    # _LOGGER.warning(all_cols)
+    # _LOG.warning(all_cols)
     for row in table:
         if not lookup.get(row[key]):
             yield {c: row.get(c) for c in all_cols}
@@ -31,9 +31,9 @@ def build_lookup(*, table: list[RowData], key: str, columns: list[str]) -> RowDa
 @task
 def build_lookup_dict(
     *, table: list[RowData], key: str | list[str], columns: list[str] | None = None
-) -> dict[str | tuple, t.Any]:
+) -> dict[str | tuple, Any]:
     """Build lookup tables {key: columns}."""
-    lookup: dict[str | tuple, t.Any] = {}
+    lookup: dict[str | tuple, Any] = {}
     get_key = (
         (lambda r: r.get(key) or "")
         if isinstance(key, str)
@@ -52,7 +52,7 @@ def combine(
     tables: list[list[RowData]],
     key: str,
     columns: list[str],
-    value: t.Literal[True] | str = True,
+    value: Literal[True] | str = True,
 ) -> list[RowData]:
     """Combine multiple tables on key.
 
@@ -92,7 +92,7 @@ def ensure_lists(
                     row[col] = []
                     continue
                 if not isinstance(val, str):
-                    _LOGGER.warning("ensure_lists: %s %s", type(val), val)
+                    _LOG.warning("ensure_lists: %s %s", type(val), val)
                     continue
                 if val.startswith("["):
                     # try json
@@ -121,7 +121,7 @@ def filter_rows(
             if (
                 (isinstance(crit, str) and crit == row[col])
                 or (isinstance(crit, list) and row[col] in crit)
-                or (isinstance(crit, t.Pattern) and crit.match(str(row[col])))
+                or (isinstance(crit, re.Pattern) and crit.match(str(row[col])))
             ):
                 return True
 
@@ -178,7 +178,7 @@ def remove_null(*, tables: abc.Sequence[list[RowData]]) -> None:
     """Remove nulls."""
     for table in tables:
         if not isinstance(table, list):
-            _LOGGER.warning(
+            _LOG.warning(
                 "remove_null expected a list of tables, got %s %.100s",
                 type(table),
                 table,
@@ -186,9 +186,7 @@ def remove_null(*, tables: abc.Sequence[list[RowData]]) -> None:
 
         for row in table:
             if not isinstance(row, dict):
-                _LOGGER.warning(
-                    "remove_null expected dict, got %s %.100s", type(row), row
-                )
+                _LOG.warning("remove_null expected dict, got %s %.100s", type(row), row)
                 continue
             for col in list(row.keys()):
                 if row[col] is None:
@@ -226,19 +224,19 @@ def unique(*, table: list[RowData], key: str) -> RowDataGen:
 @task  # , tables=2, columns=3)
 def vlookup(*, table0: list[RowData], acro: list[RowData], columns: list[str]) -> None:
     """Modify table0[col0], replacing table1[col1] with table1[col2]."""
-    # _LOGGER.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
-    _acro: dict[str, t.Any] = {}
+    # _LOG.debug("Expand opt %s: len(acro)=%s", str(opt), len(acro))
+    _acro: dict[str, Any] = {}
     for row in acro:
         key = str(row.get(columns[1], "")).lower()
         val = row.get(columns[2], "")
         if key in _acro:
-            _LOGGER.debug("duplicate %s=%s (used: %s)", key, val, _acro[key])
+            _LOG.debug("duplicate %s=%s (used: %s)", key, val, _acro[key])
             continue
         if key == "" or val == "":
-            # _LOGGER.debug("bad key/val: key=%s  val=%s", key, val)
+            # _LOG.debug("bad key/val: key=%s  val=%s", key, val)
             continue
         _acro[key] = val
-    _LOGGER.debug("Expand %s", str(_acro))
+    _LOG.debug("Expand %s", str(_acro))
 
     for row0 in table0:
         val0 = str(row0.get(columns[0], "")).lower()

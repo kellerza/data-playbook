@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 import re
-import typing as t
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 import attrs
 from colordict import ColorDict
@@ -80,7 +79,7 @@ class PText:
                 raise ValueError(f"expected string, got {type(val)}")
 
             for line in val.splitlines(keepends=True):
-                # _LOGGER.info("'%s'", line)
+                # _LOG.info("'%s'", line)
                 newline = line.endswith("\n")
                 matches = RE_STYLES.findall(line.strip("\n"))
                 for run in matches:
@@ -154,7 +153,7 @@ def str2styles(style_s: str) -> PStyle:
             continue
 
     highlight = False
-    # _LOGGER.error("conv col '%s'", ss)
+    # _LOG.error("conv col '%s'", ss)
     for col in ss:
         if col == "":
             highlight = True
@@ -232,8 +231,8 @@ def add_slide(prs: Presentation, layout: str) -> Slide:
     return prs.slides.add_slide(lay)
 
 
-@t.runtime_checkable
-class ShapeWithText(t.Protocol):
+@runtime_checkable
+class ShapeWithText(Protocol):
     """Shape with text."""
 
     has_text_frame: bool

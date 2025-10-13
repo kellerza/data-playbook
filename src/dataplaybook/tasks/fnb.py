@@ -11,7 +11,7 @@ from pathlib import Path
 
 from dataplaybook import PathStr, RowData, RowDataGen, task
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 RE_CARD = re.compile(r"\d{6}\*\d{4}")
 RE_DATE = re.compile(r"\D?(\d{1,2})[ -]([A-Za-z]{3})\w* ?(\d{4})?\D?")
@@ -178,7 +178,7 @@ def _clean(row: dict) -> dict:
     elif isinstance(row["description"], int | float):
         row["description"] = "''" + str(row["description"])
     else:
-        _LOGGER.info("type %s", str(type(row["description"])))
+        _LOG.info("type %s", str(type(row["description"])))
 
     if not row["description"] and "extras" in row:
         row["description"] = row.pop("extras")
@@ -197,7 +197,7 @@ def fnb_process(*, tables: dict[str, list[RowData]]) -> RowDataGen:
             try:
                 row["month"] = _budget_date(row["date"])
             except TypeError:
-                _LOGGER.warning("Skip row %s", row)
+                _LOG.warning("Skip row %s", row)
                 continue
 
             if "from" in row and "to" in row:
@@ -246,19 +246,19 @@ def fnb_read_folder(*, folder: str, pattern: str = "*.csv") -> RowDataGen:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))
-    _LOGGER.info("Open %s files", len(files))
+    _LOG.info("Open %s files", len(files))
 
     retval: dict[str, int] = {}
     for filename in files:
         try:
             try:
                 yield from _count_it(read_cheque_csv(file=str(filename)), retval)
-                _LOGGER.info("Loaded %s lines from %s", retval["count"], filename)
+                _LOG.info("Loaded %s lines from %s", retval["count"], filename)
                 continue
             except InvalidFile:
                 pass
 
-            _LOGGER.warning("Could not load %s", filename)
+            _LOG.warning("Could not load %s", filename)
         except Exception as err:
-            _LOGGER.error("Could not read %s", filename, exc_info=err)
-    _LOGGER.info("Success with %s lines", retval.get("total", 0))
+            _LOG.error("Could not read %s", filename, exc_info=err)
+    _LOG.info("Success with %s lines", retval.get("total", 0))

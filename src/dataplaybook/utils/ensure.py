@@ -2,20 +2,20 @@
 
 import logging
 import re
-import typing as t
 from ast import literal_eval
 from collections import abc
 from datetime import datetime
 from inspect import isgenerator
 from json import JSONDecodeError, loads
+from typing import Any
 
 from icecream import ic
 from whenever import Instant, PlainDateTime
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
-def ensure_bool(value: t.Any) -> bool:
+def ensure_bool(value: Any) -> bool:
     """Extract a boolean value - truthy."""
     if isinstance(value, bool):
         return value
@@ -32,7 +32,7 @@ def ensure_bool(value: t.Any) -> bool:
     return bool(value)
 
 
-def ensure_bool_str(value: t.Any, _: type | None = None) -> bool | str:
+def ensure_bool_str(value: Any, _: type | None = None) -> bool | str:
     """Extract a bool|str."""
     if isinstance(value, bool):
         return value
@@ -47,7 +47,7 @@ def ensure_bool_str(value: t.Any, _: type | None = None) -> bool | str:
     return value
 
 
-def ensure_datetime(val: t.Any, *, silent: bool = False) -> datetime | None:
+def ensure_datetime(val: Any, *, silent: bool = False) -> datetime | None:
     """Ensure we have a datetime, else log it."""
     if val is None or val == "":
         return None
@@ -55,7 +55,7 @@ def ensure_datetime(val: t.Any, *, silent: bool = False) -> datetime | None:
         return val
     if not isinstance(val, str):
         if not silent:
-            _LOGGER.warning("Invalid date format '%s' (%s)", val, type(val))
+            _LOG.warning("Invalid date format '%s' (%s)", val, type(val))
         return None
     # Parse 2022-10-07T09:49:03.009000
     if val.endswith("+0:00"):
@@ -68,11 +68,11 @@ def ensure_datetime(val: t.Any, *, silent: bool = False) -> datetime | None:
         return datetime.strptime(val, "%Y-%m-%dT%H:%M:%S.%f")
     except ValueError as err:
         if not silent:
-            _LOGGER.warning("Invalid date '%s' (%s): %s", val, type(val), err)
+            _LOG.warning("Invalid date '%s' (%s): %s", val, type(val), err)
     return None
 
 
-def ensure_instant(val: t.Any) -> Instant | None:  # noqa: PLR0911
+def ensure_instant(val: Any) -> Instant | None:  # noqa: PLR0911
     """Parse instant."""
     if not val:
         return None
@@ -106,11 +106,8 @@ def ensure_instant(val: t.Any) -> Instant | None:  # noqa: PLR0911
     raise ValueError(f"Invalid instant: {val} - {type(val)}")
 
 
-T = t.TypeVar("T")
-
-
-def ensure_list(  # noqa: PLR0911
-    val: list[T] | tuple[T] | abc.Generator[T, None, None] | t.Any,
+def ensure_list[T](  # noqa: PLR0911
+    val: list[T] | tuple[T] | abc.Generator[T, None, None] | Any,
     *,
     recurse: int = 0,
     delim: re.Pattern | str | None = r"[\n;,/]",
@@ -156,7 +153,7 @@ def ensure_list_from_str(
         try:
             return loads(val)
         except JSONDecodeError as err:
-            _LOGGER.warning("Invalid JSON: %s: %s", val, err.msg)
+            _LOG.warning("Invalid JSON: %s: %s", val, err.msg)
     if val.startswith("[") and len(val) > 32000:
         rpos = val.rfind("}")
         res = val
@@ -197,7 +194,7 @@ def _format_common_iso(val: str | datetime) -> str:
         )
 
 
-def ensure_set(val: t.Any) -> set[str]:
+def ensure_set(val: Any) -> set[str]:
     """Ensure a set."""
     return val if isinstance(val, set) else set(ensure_list(val))
 

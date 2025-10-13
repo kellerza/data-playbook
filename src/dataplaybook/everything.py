@@ -12,7 +12,7 @@ from pathlib import Path
 import attrs
 import requests
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 SANE = r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$ !C:\program !c:\$R"
 SERVER = "http://localhost:8881"
 
@@ -54,5 +54,5 @@ def search(
         elif itm["type"] == "folder":
             res.folders.append(Path(itm["path"]) / itm.get("name", ""))
         else:
-            _LOGGER.error("Unknown type '%s' in result: %s", itm["type"], itm)
+            _LOG.error("Unknown type '%s' in result: %s", itm["type"], itm)
     return res

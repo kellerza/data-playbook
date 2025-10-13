@@ -10,7 +10,7 @@ from dataplaybook.tasks import ietf
 from dataplaybook.tasks.io_xlsx import Sheet, read_excel
 from dataplaybook.utils import ensure_list
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 def test_extract_standards() -> None:
@@ -202,6 +202,6 @@ def test_compliance_file() -> None:
                 continue
 
         if len(rexl) != 1:
-            _LOGGER.error("S %s, matches %i", std, len(rexl))
+            _LOG.error("S %s, matches %i", std, len(rexl))
             cnt += 1
     assert cnt < 8, f"Too many standards without a match: {cnt}"

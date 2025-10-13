@@ -1,7 +1,8 @@
 """Type helpers."""
 
-import typing as t
+from collections.abc import Callable
 from inspect import signature
+from typing import Any, get_type_hints
 
 import typeguard
 from beartype import beartype
@@ -15,7 +16,7 @@ typeguard.config.collection_check_strategy = typeguard.CollectionCheckStrategy.A
 typechecked = typeguard.typechecked if USETC else beartype
 
 
-def repr_signature(func: t.Callable | None, /) -> str:
+def repr_signature(func: Callable | None, /) -> str:
     """Represent the signature."""
     if func is None:
         return "None"
@@ -32,7 +33,7 @@ def repr_signature(func: t.Callable | None, /) -> str:
     return sig
 
 
-def _repr(a: t.Any) -> str:
+def _repr(a: Any) -> str:
     """Represent the argument."""
     res = repr(a)
     if len(res) < 50:
@@ -41,10 +42,10 @@ def _repr(a: t.Any) -> str:
 
 
 def repr_call(
-    func: t.Callable, /, args: tuple | None = None, kwargs: dict | None = None
+    func: Callable, /, args: tuple | None = None, kwargs: dict | None = None
 ) -> str:
     """Represent the caller."""
-    type_hints = t.get_type_hints(func)
+    type_hints = get_type_hints(func)
     repr_args = [_repr(a) for a in args] if args else []
     repr_kwargs = [f"{k}={_repr(v)}" for k, v in kwargs.items()] if kwargs else []
     res = f"{func.__name__}({', '.join(repr_args + repr_kwargs)})"

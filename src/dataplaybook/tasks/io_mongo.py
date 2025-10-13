@@ -13,7 +13,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 from dataplaybook import RowData, RowDataGen, task
 from dataplaybook.utils import PlaybookError
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 def _clean_netloc(db_netloc: str) -> str:
@@ -23,7 +23,7 @@ def _clean_netloc(db_netloc: str) -> str:
         res = urlparse(db_netloc)
         return res.netloc
     except AttributeError as err:
-        _LOGGER.error("could not parse URL: %s: %s", db_netloc, err)
+        _LOG.error("could not parse URL: %s: %s", db_netloc, err)
         raise err
 
 
@@ -42,7 +42,7 @@ class MongoURI:
         try:
             res = urlparse(db_uri)
         except AttributeError as err:
-            _LOGGER.error("could not parse URL: %s: %s", db_uri, err)
+            _LOG.error("could not parse URL: %s: %s", db_uri, err)
             raise err
         if res.scheme not in ["mdb", "mongodb", "db"]:
             raise ValueError(
@@ -113,18 +113,18 @@ def write_mongo(
     try:
         col = mdb.get_collection()
         if not set_id:
-            _LOGGER.info("Writing %s documents", len(table))
+            _LOG.info("Writing %s documents", len(table))
             col.insert_many(table)
             return
 
         filtr = {"_sid": set_id}
         existing_count = col.count_documents(filtr)
         if not force and existing_count > 0 and not table:
-            _LOGGER.error(
+            _LOG.error(
                 "Trying to replace %s documents with an empty set", existing_count
             )
             return
-        _LOGGER.info(
+        _LOG.info(
             "Replacing %s documents matching %s, %s new",
             existing_count,
             set_id,
@@ -212,10 +212,10 @@ def mongo_sync_sids(
             write_mongo(mdb=mdb_remote, table=lcl, set_id=sid)
 
     if only_sync_sids:
-        _LOGGER.info("Will not remove extra remote _sids")
+        _LOG.info("Will not remove extra remote _sids")
         return
 
     extra = list(set(rsc.keys()) - set(ignore_remote or []))
     if extra:
-        _LOGGER.info("Removing sids: %s", extra)
+        _LOG.info("Removing sids: %s", extra)
         mongo_delete_sids(mdb=mdb_remote, sids=extra)

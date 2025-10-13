@@ -5,27 +5,27 @@ import os
 from pathlib import Path
 
 from dataplaybook.utils import local_import_module, time_it
-from dataplaybook.utils.logger import log_filter, set_logger_level, setup_logger
+from dataplaybook.utils.logger import log_trim_messages, set_LOG_level, setup_LOG
 
 from ..conftest import import_folder
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
-def test_logger() -> None:
+def test_LOG() -> None:
     """Test logger."""
-    setup_logger()
-    set_logger_level({"dataplaybook": "debug"})
+    setup_LOG()
+    set_LOG_level({"dataplaybook": "debug"})
 
 
 def test_filter() -> None:
     """Test log filter."""
     rec = logging.makeLogRecord({"args": [1, "aa", [1, 2], {"a": 1}]})
-    assert log_filter(rec) is True
+    assert log_trim_messages(rec) is True
 
     rec.args[1] = "aa" * 1000  # type:ignore[index]
     assert len(str(rec.args[1])) > 200  # type:ignore[index]
-    res = log_filter(rec)
+    res = log_trim_messages(rec)
     assert res.args[1].startswith("aa")
     assert "..." in res.args[1]
     assert len(res.args[1]) < 200
@@ -49,7 +49,7 @@ def test_timeit() -> None:
 
 def test_local_import_all() -> None:
     """Test local import."""
-    _LOGGER.info("Current folder %s", Path.cwd())
+    _LOG.info("Current folder %s", Path.cwd())
 
     with import_folder("./src/dataplaybook/tasks", "dataplaybook.tasks"):
         pass

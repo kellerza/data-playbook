@@ -11,7 +11,7 @@ import attrs
 
 from dataplaybook import RowData, RowDataGen, task
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 @attrs.define()
@@ -205,7 +205,7 @@ def extract_standards_from_table(
     line_offset: int = 1,
 ) -> RowDataGen:
     """Extract all RFCs from a table, into a new table."""
-    _LOGGER.debug("Header start at line: %s", line_offset)
+    _LOG.debug("Header start at line: %s", line_offset)
 
     for _no, row in enumerate(table, line_offset):
         base: dict[str, Any] = {"lineno": _no}

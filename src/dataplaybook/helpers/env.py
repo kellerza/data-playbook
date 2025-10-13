@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 import logging
-import typing as t
 from collections import abc
 from configparser import ConfigParser
 from inspect import isgenerator
 from os import getenv
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dataplaybook.utils import slugify
 
-_LOGGER = logging.getLogger(__name__)
-# Table = list[dict[str, Any]]
+_LOG = logging.getLogger(__name__)
 
-if t.TYPE_CHECKING:
+if TYPE_CHECKING:
     from dataplaybook.const import RowData
 
 
@@ -74,7 +72,7 @@ class _DataEnv(dict):
         if res is None:
             res = getenv(key, None)
             if res is None:
-                _LOGGER.critical("Could not resolve '%s' from .env or environment", key)
+                _LOG.critical("Could not resolve '%s' from .env or environment", key)
                 # raise PlaybookError(
                 #     f"Could not resolve '{key}' from .env or environment"
                 # )
@@ -123,14 +121,14 @@ class DataEnvironment(dict[str, list[dict[str, Any]]]):
             raise SyntaxError("Cannot set variables directly. Use .var.")
         if isinstance(val, list):
             dict.__setitem__(self, key, val)
-            _LOGGER.debug("tables[%s] = %s", key, val)
+            _LOG.debug("tables[%s] = %s", key, val)
             return
         if isgenerator(val):
             dict.__setitem__(self, key, list(val))
-            _LOGGER.debug("tables[%s] = list(...)", key)
+            _LOG.debug("tables[%s] = list(...)", key)
             return
         self._var[key] = val
-        _LOGGER.debug("tables.var[%s] = %s", key, val)
+        _LOG.debug("tables.var[%s] = %s", key, val)
 
     def _check_keys(self, *table_names: str) -> abc.Sequence[str]:
         res = []
@@ -139,9 +137,9 @@ class DataEnvironment(dict[str, list[dict[str, Any]]]):
                 if isinstance(self[name], list):
                     res.append(name)
                 else:
-                    _LOGGER.warning("Table %s is not a list: %s", name, self[name])
+                    _LOG.warning("Table %s is not a list: %s", name, self[name])
             else:
-                _LOGGER.warning("Table %s does not exist", name)
+                _LOG.warning("Table %s does not exist", name)
         if not table_names:
             res = [k for k, v in self.items() if isinstance(v, list)]
         return res

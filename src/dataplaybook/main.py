@@ -4,10 +4,11 @@ import atexit
 import logging
 import os
 import sys
-import typing as t
+from collections.abc import Callable
 from functools import partial, wraps
 from inspect import Parameter, isgeneratorfunction, signature
 from pathlib import Path
+from typing import Any, Concatenate
 
 import attrs
 from icecream import colorizedStderrPrint, ic
@@ -16,9 +17,9 @@ from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
 from dataplaybook.helpers.typeh import repr_call, repr_signature, typechecked
 from dataplaybook.utils import doublewrap, local_import_module
-from dataplaybook.utils.logger import setup_logger
+from dataplaybook.utils.logger import setup_LOG
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 @attrs.define
@@ -27,7 +28,7 @@ class Task:
 
     name: str = ""
     module: str = ""
-    func: t.Callable | None = None
+    func: Callable | None = None
     gen: bool = False
 
 
@@ -47,7 +48,7 @@ def print_tasks() -> None:
         colorizedStderrPrint("- " + "\n- ".join(fun))
 
 
-def _add_task(task_function: t.Callable) -> None:
+def _add_task(task_function: Callable) -> None:
     """Add the task to ALL_TASKS."""
     newtask = Task(
         name=task_function.__name__,
@@ -59,7 +60,7 @@ def _add_task(task_function: t.Callable) -> None:
     if newtask.name in ALL_TASKS:
         if newtask.module == ALL_TASKS[newtask.name].module:
             return
-        _LOGGER.warning(
+        _LOG.warning(
             "Task %s (%s) already loaded, overwriting with %s (%s)",
             newtask.name,
             ALL_TASKS[newtask.name].module,
@@ -69,16 +70,12 @@ def _add_task(task_function: t.Callable) -> None:
     ALL_TASKS[newtask.name] = newtask
 
 
-T = t.TypeVar("T")
-P = t.ParamSpec("P")
-
-
-def _run_task(
-    *args: t.Any,
-    task_function: t.Callable[P, T],
-    **kwargs: t.Any,
+def _run_task[T, **P](
+    *args: Any,
+    task_function: Callable[P, T],
+    **kwargs: Any,
 ) -> T:
-    _LOGGER.info("Calling %s", repr_call(task_function, kwargs=kwargs))
+    _LOG.info("Calling %s", repr_call(task_function, kwargs=kwargs))
 
     # Warning for explicit parameters
     if args:
@@ -88,7 +85,7 @@ def _run_task(
     try:
         value = typechecked(task_function)(*args, **kwargs)
     except Exception as err:
-        _LOGGER.error(
+        _LOG.error(
             "Task %s raised %s: %s",
             task_function.__name__,
             type(err).__name__,
@@ -100,7 +97,7 @@ def _run_task(
     return value
 
 
-def task(target: t.Callable[P, T]) -> t.Callable[t.Concatenate[P], T]:
+def task[T, **P](target: Callable[P, T]) -> Callable[Concatenate[P], T]:
     """Task wrapper."""
     sig = signature(target)
     notkw = [
@@ -119,17 +116,17 @@ def task(target: t.Callable[P, T]) -> t.Callable[t.Concatenate[P], T]:
     return wraps(target)(partial(_run_task, task_function=target))
 
 
-_ALL_PLAYBOOKS: dict[str, t.Callable] = {}
+_ALL_PLAYBOOKS: dict[str, Callable] = {}
 _DEFAULT_PLAYBOOK: str | None = None
 
 
 @doublewrap
 def playbook(
-    target: t.Callable = lambda: print("@doublewrap"),
+    target: Callable = lambda: print("@doublewrap"),
     name: str | None = None,
     default: bool = False,
     run: bool = False,
-) -> t.Callable:
+) -> Callable:
     """Verify parameters & execute task."""
     if default:
         global _DEFAULT_PLAYBOOK  # noqa: PLW0603
@@ -169,7 +166,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0
         playbooks=_ALL_PLAYBOOKS.keys(),
     )
 
-    setup_logger()
+    setup_LOG()
 
     if args.all:
         import dataplaybook.tasks.all  # noqa: F401
@@ -178,7 +175,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0
         print_tasks()
 
     if not args.files:
-        _LOGGER.info("Please specify a .py file to execute.")
+        _LOG.info("Please specify a .py file to execute.")
         return -1
 
     cwd = Path.cwd()
@@ -188,19 +185,19 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0
             spath = Path(args.files).resolve()
             if not spath.exists():
                 if spath.suffix != "" or not spath.with_suffix(".py").exists():
-                    _LOGGER.error("%s not found", spath)
+                    _LOG.error("%s not found", spath)
                     return -1
                 spath = spath.with_suffix(".py")
             if spath.is_dir():
-                _LOGGER.error("Please specify a file. %s is a folder.", spath)
+                _LOG.error("Please specify a file. %s is a folder.", spath)
                 return -1
 
-            _LOGGER.info("Loading: %s (%s)", spath.name, spath.parent)
+            _LOG.info("Loading: %s (%s)", spath.name, spath.parent)
             os.chdir(spath.parent)
             try:
                 local_import_module(spath.stem)
             except Exception as err:
-                _LOGGER.error("Unable to import %s: %s", spath.stem, err)
+                _LOG.error("Unable to import %s: %s", spath.stem, err)
                 return -1
 
         else:
@@ -210,11 +207,11 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0
         if not args.playbook:
             args.playbook = get_default_playbook()
             if not args.playbook:
-                _LOGGER.critical("No playbook found")
+                _LOG.critical("No playbook found")
                 return -1
 
         if args.playbook not in _ALL_PLAYBOOKS:
-            _LOGGER.error(
+            _LOG.error(
                 "Playbook %s not found in %s [%s]",
                 args.playbook,
                 args.files[0],
@@ -225,7 +222,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0
         try:
             retval = _ALL_PLAYBOOKS[args.playbook](_ENV)
         except Exception as err:
-            _LOGGER.error(
+            _LOG.error(
                 "Error while running playbook '%s' - %s: %s",
                 args.playbook,
                 type(err).__name__,

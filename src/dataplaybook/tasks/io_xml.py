@@ -1,8 +1,8 @@
 """Read XML files."""
 
 import logging
-import typing as t
 from collections import defaultdict
+from typing import Any
 from xml.etree import ElementTree
 
 from dataplaybook import RowData, Tables, task
@@ -10,10 +10,10 @@ from dataplaybook import RowData, Tables, task
 try:
     from lxml.etree import QName, _Element, parse
 except ImportError:
-    parse = None  # type:ignore[assignment]
+    parse = QName = lambda x: x  # type:ignore[assignment,misc]
 
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 @task
@@ -37,10 +37,10 @@ def read_xml(*, tables: Tables, file: str, targets: list[str]) -> None:
                 tables[key] = val
                 # tables[key] = val
             else:
-                _LOGGER.warning("Ignored %s: %s", key, str(val)[:20])
+                _LOG.warning("Ignored %s: %s", key, str(val)[:20])
 
     if _notok:
-        _LOGGER.warning("Expected table %s", ",".join(_notok))
+        _LOG.warning("Expected table %s", ",".join(_notok))
 
 
 # def _writejson(file: PathStr, dct: dict[str, typing.Any]) -> None:
@@ -78,7 +78,7 @@ def _etree_to_dict(el: ElementTree.Element) -> RowData:
 
 
 if parse is None:
-    _LOGGER.warning("lxml not installed. read_lxml not available.")
+    _LOG.warning("lxml not installed. read_lxml not available.")
 else:
 
     @task
@@ -88,7 +88,7 @@ else:
         root_element = root.getroot()
         dct = elem2dict(root_element)
 
-        _LOGGER.debug("xml file contains the following root keys: %s", list(dct))
+        _LOG.debug("xml file contains the following root keys: %s", list(dct))
         _notok = set(targets)
 
         for key, val in dct.items():
@@ -97,16 +97,16 @@ else:
                 _notok.discard(key)
                 tables[key] = val
                 continue
-            _LOGGER.debug("Ignored %s: %s", key, str(val)[:20])
+            _LOG.debug("Ignored %s: %s", key, str(val)[:20])
 
         if _notok:
-            _LOGGER.warning("Expected table %s", ", ".join(_notok))
+            _LOG.warning("Expected table %s", ", ".join(_notok))
         else:
-            _LOGGER.info("Successfully loaded tables: %s", ", ".join(targets))
+            _LOG.info("Successfully loaded tables: %s", ", ".join(targets))
 
-    def elem2dict(node: _Element, attributes: bool = True) -> dict:
+    def elem2dict(node: "_Element", attributes: bool = True) -> dict:
         """Convert an lxml.etree node tree into a dict."""
-        result: dict[str, t.Any] = {}
+        result: dict[str, Any] = {}
         # if isinstance(node, etree._ElementTree):
         #     return {"msg": "empty"}
 

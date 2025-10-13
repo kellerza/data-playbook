@@ -11,7 +11,7 @@ from subprocess import call
 
 from dataplaybook import PathStr, RowDataGen, task
 
-_LOGGER = logging.getLogger(__name__)
+_LOG = logging.getLogger(__name__)
 
 
 def _myreadlines(fobj: typing.IO, newline: str) -> abc.Generator[str, None, None]:
@@ -46,14 +46,14 @@ def read_pdf_pages(
         if args and isinstance(args, list):
             params.extend(args)
         params.extend((str(file), to_name))
-        _LOGGER.info("Converting %s", file)
-        _LOGGER.debug("Calling with %s", params)
+        _LOG.info("Converting %s", file)
+        _LOG.debug("Calling with %s", params)
         call(params, shell=False)
         with Path(to_name).open(encoding="utf-8", errors="replace") as __f:
             for _no, text in enumerate(_myreadlines(__f, chr(12)), 1):
                 yield {"page": _no, "text": text}
     except FileNotFoundError:
-        _LOGGER.error(
+        _LOG.error(
             "Could not find pdftotext executable. "
             "Download from https://www.xpdfreader.com/download.html"
         )
@@ -73,7 +73,7 @@ def read_pdf_files(
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))
-    _LOGGER.info("Open %s files", len(files))
+    _LOG.info("Open %s files", len(files))
 
     for filename in files:
         page_gen = read_pdf_pages(file=str(filename), layout=layout, args=args)

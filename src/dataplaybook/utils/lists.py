@@ -2,14 +2,12 @@
 
 import logging
 import re
-import typing as t
 from collections import abc
 
-L = t.TypeVar("L")
-T = t.TypeVar("T", str, list, int)
 
-
-def append_unique(target: list[T], source: abc.Iterable[T]) -> bool:
+def append_unique[T: (str, list, int)](
+    target: list[T], source: abc.Iterable[T]
+) -> bool:
     """Add unique items to a list. Return True if the list was changed."""
     res = False
     for item in source:
@@ -33,7 +31,7 @@ def extract_pattern(text: str, regex: re.Pattern) -> tuple[str, list[tuple]]:
     return text, matches
 
 
-def strip(val: T, *, strip_doubles: bool = False) -> T:
+def strip[T: (str, int, list)](val: T, *, strip_doubles: bool = False) -> T:
     """Strip spaces & quotes from strings, Strip duplicates & empty strings from a list."""
     if isinstance(val, str):
         res = val.strip().replace("“", '"').replace("”", '"')
@@ -55,7 +53,7 @@ def strip(val: T, *, strip_doubles: bool = False) -> T:
     return list(dres)
 
 
-def unique(val: list[L]) -> list[L]:
+def unique[L](val: list[L]) -> list[L]:
     """Only allow unique items in the list."""
     # Since dict insertion is ordered...
     return list(dict.fromkeys(val))

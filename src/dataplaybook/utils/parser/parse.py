@@ -1,12 +1,13 @@
 """Dictionary parser for unstructured/untrusted input."""
 
-import typing as t
+from collections.abc import Callable
 from copy import deepcopy
+from typing import Any
 
 import attrs
 
-type Row = dict[str, t.Any]
-type StepFunc = t.Callable[[str, Row], t.Any]
+type Row = dict[str, Any]
+type StepFunc = Callable[[str, Row], Any]
 
 
 @attrs.define(slots=True)
@@ -27,7 +28,7 @@ class Parser:
 
 
 def create_step(
-    convert: t.Callable[[t.Any], t.Any] | None = None,
+    convert: Callable[[Any], Any] | None = None,
     *,
     alt: tuple[str, ...] | str | None = None,
 ) -> StepFunc:
@@ -38,7 +39,7 @@ def create_step(
     if isinstance(alt, str):
         alt = (alt,)
 
-    def _call(key: str, row: Row) -> t.Any:
+    def _call(key: str, row: Row) -> Any:
         """Execute the step."""
         val = row.pop(key, None)
 
@@ -65,14 +66,14 @@ def create_step(
     return _call
 
 
-def step_remove_falsey(_: str, row: Row) -> t.Any:
+def step_remove_falsey(_: str, row: Row) -> Any:
     """Remove the field if it is falsey."""
     for rem in [key for key, val in row.items() if not val]:
         row.pop(rem)
     raise AttributeError
 
 
-def step_unknown_fields(key: str, row: Row) -> t.Any:
+def step_unknown_fields(key: str, row: Row) -> Any:
     """Step to generate 'extra' - extract all remaining values."""
     extra = row.pop(key, None)
     remain = {k: v for k, v in row.items() if v}
@@ -95,7 +96,7 @@ def step_unknown_fields(key: str, row: Row) -> t.Any:
     raise AttributeError
 
 
-def create_step_move_to_dict(prefix: str = "", empty: dict | None = None) -> t.Callable:
+def create_step_move_to_dict(prefix: str = "", empty: dict | None = None) -> Callable:
     """Create a step to move fields to a dict.
 
     Convert (ui_a:1, ui_b:2) to {ui:{a:1, b:2}}
