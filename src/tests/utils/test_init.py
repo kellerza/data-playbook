@@ -5,17 +5,17 @@ import os
 from pathlib import Path
 
 from dataplaybook.utils import local_import_module, time_it
-from dataplaybook.utils.logger import log_trim_messages, set_LOG_level, setup_LOG
+from dataplaybook.utils.logger import log_trim_messages, set_logger_level, setup_logger
 
 from ..conftest import import_folder
 
 _LOG = logging.getLogger(__name__)
 
 
-def test_LOG() -> None:
+def test_logger() -> None:
     """Test logger."""
-    setup_LOG()
-    set_LOG_level({"dataplaybook": "debug"})
+    setup_logger()
+    set_logger_level({"dataplaybook": "debug"})
 
 
 def test_filter() -> None:

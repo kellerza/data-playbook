@@ -18,7 +18,7 @@ from dataplaybook.helpers.args import parse_args
 from dataplaybook.helpers.env import DataEnvironment
 from dataplaybook.helpers.typeh import repr_call, repr_signature
 from dataplaybook.utils import doublewrap, local_import_module
-from dataplaybook.utils.logger import setup_LOG
+from dataplaybook.utils.logger import setup_logger
 
 _LOG = logging.getLogger(__name__)
 
@@ -167,7 +167,7 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912, PLR0
         playbooks=_ALL_PLAYBOOKS.keys(),
     )
 
-    setup_LOG()
+    setup_logger()
 
     if args.all:
         import dataplaybook.tasks.all  # noqa: F401

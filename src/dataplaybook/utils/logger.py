@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 
-def get_LOG(logger: str | logging.Logger | None = None) -> logging.Logger:
+def get_logger(logger: str | logging.Logger | None = None) -> logging.Logger:
     """Get a logger."""
     return (
         logger
@@ -13,7 +13,7 @@ def get_LOG(logger: str | logging.Logger | None = None) -> logging.Logger:
     )
 
 
-def set_LOG_level(level: Any, module: logging.Logger | None = None) -> None:
+def set_logger_level(level: Any, module: logging.Logger | None = None) -> None:
     """Set the log level."""
 
     def _level(level: Any = None) -> int:
@@ -33,13 +33,13 @@ def set_LOG_level(level: Any, module: logging.Logger | None = None) -> None:
 
     level = _level(level)
     if module:
-        get_LOG(module).setLevel(level)
+        get_logger(module).setLevel(level)
 
     for mod in "dataplaybook.playbook":  # , "dataplaybook.config_validation"):
-        get_LOG(mod).setLevel(level)
+        get_logger(mod).setLevel(level)
 
 
-def setup_LOG() -> None:
+def setup_logger() -> None:
     """Configure the color log handler."""
     logging.basicConfig(level=logging.DEBUG)
     # fmt = ("%(asctime)s %(levelname)s (%(threadName)s) "

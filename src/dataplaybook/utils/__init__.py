@@ -22,7 +22,7 @@ from .ensure import (  # noqa: F401
     ensure_string,
 )
 from .lists import append_unique, extract_pattern, strip, unique  # noqa: F401
-from .logger import get_LOG
+from .logger import get_logger
 
 _LOG = logging.getLogger(__name__)
 RE_SLUGIFY = re.compile(r"[^a-z0-9_]+")
@@ -52,9 +52,9 @@ def time_it(
     yield
     total = default_timer() - t_start
     if total > delta:
-        get_LOG(logger).warning("Execution time for %s: %.2fs", name, total)
+        get_logger(logger).warning("Execution time for %s: %.2fs", name, total)
     elif total > delta / 2:
-        get_LOG(logger).debug("Execution time for %s: %.2fs", name, total)
+        get_logger(logger).debug("Execution time for %s: %.2fs", name, total)
 
 
 def local_import_module(mod_name: str) -> ModuleType:
