@@ -489,7 +489,7 @@ wheels = [
 
 [[package]]
 name = "dataplaybook"
-version = "1.1.11"
+version = "1.1.12"
 source = { editable = "." }
 dependencies = [
     { name = "attrs" },
@@ -545,7 +545,7 @@ requires-dist = [
     { name = "python-pptx", marker = "extra == 'all'" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "typeguard", specifier = ">=4.4.2" },
-    { name = "whenever", specifier = ">=0.9,<1.0" },
+    { name = "whenever", specifier = ">=0.9,<1" },
 ]
 provides-extras = ["all"]
 

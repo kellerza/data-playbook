@@ -116,7 +116,7 @@ commit_version_number = true
 
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
 [tool.semantic_release.branches.main]
-match = "master"
+match = "main"
 
 [tool.semantic_release.commit_parser_options]
 major_tags = [ ":boom:" ]
