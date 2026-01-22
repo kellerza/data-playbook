@@ -1,5 +1,6 @@
 """Ensure."""
 
+import logging
 from datetime import UTC, datetime
 
 import pytest
@@ -13,6 +14,8 @@ from dataplaybook.utils.ensure import (
     ensure_list,
     ensure_string,
 )
+
+_LOG = logging.getLogger(__name__)
 
 
 def test_ensure_bool() -> None:
@@ -65,14 +68,15 @@ def test_ensure_date() -> None:
         ),
         ("2022-10-07T09:49:03.009000a", None),
     )
-    for test in tests:
+    for idx, test in enumerate(tests):
+        _LOG.debug("Test %d: %s", idx, test[0])
         assert ensure_datetime(test[0]) == test[1]
         if test[1]:
             tzt = test[1].replace(tzinfo=UTC)
             inst = ensure_instant(test[0])
             assert (inst.py_datetime() if inst else None) == tzt
 
-    assert ensure_datetime("2022-10-07T09:49:03.009000") == datetime(
+    assert ensure_datetime("2022-10-07T09:49:03.009") == datetime(
         year=2022, month=10, day=7, hour=9, minute=49, second=3, microsecond=9000
     )
 
@@ -90,6 +94,21 @@ def test_ensure_date() -> None:
 def test_ensure_instant() -> None:
     """Instant."""
     assert ensure_instant("2022-06-26") == Instant.from_utc(2022, 6, 26)
+
+
+def test_ensure_instant_date_american() -> None:
+    """Test American date parsing."""
+    dt = ensure_instant("12-31-2023")
+    assert dt == Instant.from_utc(2023, 12, 31)
+
+    dt = ensure_instant("2023-12-31")
+    assert dt == Instant.from_utc(2023, 12, 31)
+
+    dt = ensure_instant("12312023")
+    assert dt == Instant.from_utc(2023, 12, 31)
+
+    dt = ensure_instant("20231231")
+    assert dt == Instant.from_utc(2023, 12, 31)
 
 
 def test_ensure_list() -> None:
@@ -157,9 +176,7 @@ def test_ensure_list_with_datetime() -> None:
         "'<b>P3</b>', 'cse': '<b>kellerza@gmail.com</b>'} }]"
     )
     assert len(res) == 1
-    assert (
-        res[0]["date"] == Instant.from_utc(2023, 1, 13, 10, 38, 22).format_common_iso()
-    )
+    assert res[0]["date"] == Instant.from_utc(2023, 1, 13, 10, 38, 22).format_iso()
 
 
 def test_ensure_string() -> None:

@@ -72,6 +72,10 @@ def ensure_datetime(val: Any, *, silent: bool = False) -> datetime | None:
     return None
 
 
+RE_DATE_YYYYMMDD = re.compile(r"(20[1-3]\d)-?([01]\d)-?([0-3]\d)")
+RE_DATE_MMDDYYYY = re.compile(r"([01]\d)-?([0-3]\d)-?(20[1-3]\d)")
+
+
 def ensure_instant(val: Any) -> Instant | None:  # noqa: PLR0911
     """Parse instant."""
     if not val:
@@ -88,16 +92,27 @@ def ensure_instant(val: Any) -> Instant | None:  # noqa: PLR0911
 
     if isinstance(val, str):
         try:
-            return Instant.parse_common_iso(val)
+            return Instant.parse_iso(val)
         except ValueError:
             pass
         try:
-            return PlainDateTime.parse_common_iso(val).assume_utc()
+            return PlainDateTime.parse_iso(val).assume_utc()
         except ValueError:
             pass
+
+        # Parse short date & American format
+        if res := RE_DATE_YYYYMMDD.fullmatch(val.strip()):
+            return Instant.from_utc(
+                int(res.group(1)), int(res.group(2)), int(res.group(3))
+            )
+        if res := RE_DATE_MMDDYYYY.fullmatch(val.strip()):
+            return Instant.from_utc(
+                int(res.group(3)), int(res.group(1)), int(res.group(2))
+            )
+
         if len(val) <= 10:
             try:
-                return Instant.parse_common_iso(val + " 00:00:00Z")
+                return Instant.parse_iso(val + " 00:00:00Z")
             except ValueError:
                 pass
 
@@ -147,7 +162,7 @@ def ensure_list_from_str(
     """Ensure list with a str source."""
     if val.startswith("[") and val.endswith("]"):
         try:
-            return literal_eval(_format_common_iso(val))
+            return literal_eval(_format_iso(val))
         except ValueError:
             pass
         try:
@@ -175,23 +190,21 @@ def ensure_list_from_str(
     return [s for s in lst if s]
 
 
-def _format_common_iso(val: str | datetime) -> str:
+def _format_iso(val: str | datetime) -> str:
     """Convert a datetime() into a RFC3339 string."""
     if isinstance(val, str):
         if "datetime(" not in val:
             return val
         return re.sub(
             r"(?:datetime\.)?(datetime\([^()]+\))",
-            lambda m: _format_common_iso(eval(m.group(1))),
+            lambda m: _format_iso(eval(m.group(1))),
             string=val,
             flags=re.I,
         )
     try:
-        return f"'{Instant.from_py_datetime(val).format_common_iso()}'"
+        return f"'{Instant.from_py_datetime(val).format_iso()}'"
     except ValueError:
-        return (
-            f"'{PlainDateTime.from_py_datetime(val).assume_utc().format_common_iso()}'"
-        )
+        return f"'{PlainDateTime.from_py_datetime(val).assume_utc().format_iso()}'"
 
 
 def ensure_set(val: Any) -> set[str]:
