@@ -33,7 +33,7 @@ dependencies = [
   "python-levenshtein",
   "requests>=2,<3",
   "typeguard>=4.4.2",
-  "whenever>=0.8,<0.9",
+  "whenever>=0.9,<1",
 ]
 
 optional-dependencies.all = [ "lxml>=5.4,<7", "pymongo>=4,<5", "python-pptx" ]

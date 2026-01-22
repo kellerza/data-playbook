@@ -3,9 +3,8 @@ name: CI
 on: [push, pull_request]
 
 env:
-  RUFF_VERSION: 0.13.1
-  UV_VERSION: 0.8.22
-  TEST_TARGET: "src"
+  RUFF_VERSION: 0.14.10
+  UV_VERSION: 0.9.26
 
 jobs:
   ruff:
@@ -37,7 +36,7 @@ jobs:
       - name: Install Requirements
         run: uv sync --frozen --all-extras
       - name: Run mypy
-        run: uv run mypy --config-file pyproject.toml ${{ env.TEST_TARGET }}
+        run: uv run mypy . --config-file pyproject.toml
 
   pytest:
     name: Run tests Python ${{ matrix.python-version }}
