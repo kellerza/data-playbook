@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "uv_build"
-requires = [ "uv-build>=0.8.12,<0.9" ]
+requires = [ "uv-build>=0.9,<0.10" ]
 
 [project]
 name = "dataplaybook"
@@ -44,8 +44,8 @@ scripts.dataplaybook = "dataplaybook.__main__:main"
 [dependency-groups]
 dev = [
   "codespell",
-  "mypy",
   "pyproject-fmt",
+  "pyright",
   "pytest",
   "pytest-aiohttp",
   "pytest-cov",
@@ -101,10 +101,10 @@ asyncio_mode = "auto"
 addopts = "--cov=src --cov-report xml:cov.xml"
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.mypy]
-disallow_untyped_defs = true
-ignore_missing_imports = true
-exclude = [ "build", "dist" ]
+# [tool.mypy]
+# disallow_untyped_defs = true
+# ignore_missing_imports = true
+# exclude = [ "build", "dist" ]
 
 [tool.semantic_release]
 commit = true
