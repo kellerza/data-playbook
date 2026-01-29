@@ -1,12 +1,14 @@
 """XLSX tests."""
 
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
-from dataplaybook import DataEnvironment
-from dataplaybook.tasks.io_xlsx import Column, Sheet, read_excel, write_excel
-from dataplaybook.utils import AttrDict
+import pytz  # type: ignore[import]
+from whenever import Instant
 
-# from openpyxl.worksheet.worksheet import Worksheet
+from dataplaybook import DataEnvironment
+from dataplaybook.tasks.io_xlsx import Column, Sheet, _fmt, read_excel, write_excel
+from dataplaybook.utils import AttrDict
 
 
 @patch("openpyxl.load_workbook")
@@ -187,3 +189,22 @@ def test_from_old_write() -> None:
             ],
         )
     ]
+
+
+def test_fmt() -> None:
+    """Test formatting function."""
+    assert _fmt("Hello") == "Hello"
+    assert _fmt(123) == 123
+    assert _fmt(45.67) == 45.67
+    assert _fmt(None) is None
+    assert _fmt(True) is True
+    assert _fmt(False) is False
+
+    # Date & times
+    assert _fmt(datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)) == datetime(
+        2024, 1, 1, 12, 0, 0
+    )
+    naive = datetime(2024, 1, 1, 12, 0, 0)
+    dt = pytz.timezone("Africa/Johannesburg").localize(naive)
+    assert _fmt(dt) == datetime(2024, 1, 1, 10, 0, 0)
+    assert _fmt(Instant("2022-10-24 17:00:00Z")) == datetime(2022, 10, 24, 17, 0, 0)

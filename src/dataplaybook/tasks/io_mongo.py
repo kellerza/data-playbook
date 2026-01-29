@@ -4,13 +4,13 @@ from __future__ import annotations
 import logging
 from collections import abc
 from urllib.parse import urlparse
-from warnings import deprecated
 
 import attrs
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
+from typing_extensions import deprecated  # In Python 3.13 it moves to warnings
 
 from dataplaybook import RowData, RowDataGen, task
 from dataplaybook.utils import PlaybookError

@@ -8,9 +8,9 @@ from datetime import UTC, datetime
 from inspect import isgenerator
 from json import JSONDecodeError, loads
 from typing import Any
-from warnings import deprecated
 
 from icecream import ic
+from typing_extensions import deprecated  # In Python 3.13 it moves to warnings
 from whenever import Instant, OffsetDateTime, PlainDateTime, ZonedDateTime
 
 _LOG = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ def ensure_instant(val: Any, *, search_date: bool = False) -> Instant | None:  #
     return None
 
 
-def ensure_list[T](  # noqa: PLR0911
+def ensure_list[T](
     val: list[T] | tuple[T] | abc.Generator[T, None, None] | Any,
     *,
     recurse: int = 0,

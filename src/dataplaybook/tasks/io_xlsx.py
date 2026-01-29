@@ -3,6 +3,7 @@
 from __future__ import annotations
 import logging
 from collections.abc import Generator, Sequence
+from datetime import UTC, datetime
 from json import dumps
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,7 @@ from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.exceptions import IllegalCharacterError
 from openpyxl.worksheet.worksheet import Worksheet
+from whenever import Instant
 
 from dataplaybook import PathStr, RowData, RowDataGen, Tables, task
 
@@ -200,18 +202,28 @@ def _get_filename(filename: PathStr) -> str:
         raise
 
 
-def _fmt(obj: Any) -> str:
+def _fmt(obj: Any) -> Any:
     """Format an object for Excel."""
-    if callable(obj):
-        return str(obj)
+    if isinstance(obj, Instant):
+        return obj.to_fixed_offset().to_plain().py_datetime()
+    if isinstance(obj, datetime):
+        if obj.tzinfo is not None:
+            return obj.astimezone(tz=UTC).replace(tzinfo=None)
+        return obj
+
     try:
-        if isinstance(obj, list | dict | tuple):
+        if isinstance(obj, tuple):
+            return dumps(list(obj))
+        if isinstance(obj, list | dict):
             return dumps(obj)
     except TypeError:
         return str(obj)
 
     # openpyxl's _bind_value in cell.py doesn't use isinstance
-    if isinstance(obj, str) and type(obj) != str:  # noqa: E721
+    if isinstance(obj, str) and type(obj) is not str:
+        return str(obj)
+
+    if callable(obj):
         return str(obj)
 
     return obj
