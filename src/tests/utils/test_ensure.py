@@ -9,9 +9,9 @@ from whenever import Instant
 from dataplaybook.utils.ensure import (
     ensure_bool,
     ensure_bool_str,
-    ensure_datetime,
     ensure_instant,
     ensure_list,
+    ensure_naive_datetime,
     ensure_string,
 )
 
@@ -55,7 +55,7 @@ def test_ensure_date() -> None:
             datetime(year=2022, month=10, day=7, hour=9, minute=49, second=3),
         ),
         (
-            "2022-10-07T09:49:03.009000+0:00",
+            "2022-10-07T09:49:03.009000",  # +0:00",
             datetime(
                 year=2022,
                 month=10,
@@ -68,27 +68,33 @@ def test_ensure_date() -> None:
         ),
         ("2022-10-07T09:49:03.009000a", None),
     )
-    for idx, test in enumerate(tests):
-        _LOG.debug("Test %d: %s", idx, test[0])
-        assert ensure_datetime(test[0]) == test[1]
-        if test[1]:
-            tzt = test[1].replace(tzinfo=UTC)
-            inst = ensure_instant(test[0])
-            assert (inst.py_datetime() if inst else None) == tzt
+    for idx, (dt_in, dt_expected) in enumerate(tests):
+        _LOG.debug("Test %d: %s", idx, dt_in)
+        if dt_expected is None:
+            assert ensure_naive_datetime(dt_in) is None
+            assert ensure_instant(dt_in) is None
+            continue
 
-    assert ensure_datetime("2022-10-07T09:49:03.009") == datetime(
+        ndt = ensure_naive_datetime(dt_in)
+        assert ndt == dt_expected
+
+        tzt = dt_expected.replace(tzinfo=UTC)
+        inst = ensure_instant(dt_in)
+        assert (inst.py_datetime() if inst else None) == tzt
+
+    assert ensure_naive_datetime("2022-10-07T09:49:03.009") == datetime(
         year=2022, month=10, day=7, hour=9, minute=49, second=3, microsecond=9000
     )
 
-    assert ensure_datetime("2022-10-07T09:49:03") == datetime(
+    assert ensure_naive_datetime("2022-10-07T09:49:03") == datetime(
         year=2022, month=10, day=7, hour=9, minute=49, second=3
     )
 
-    assert ensure_datetime("2022-10-07T09:49:03.009000+0:00") == datetime(
+    assert ensure_naive_datetime("2022-10-07T09:49:03.009000+0:00") == datetime(
         year=2022, month=10, day=7, hour=9, minute=49, second=3, microsecond=9000
     )
 
-    assert ensure_datetime("2022-10-07T09:49:03.009000a") is None
+    assert ensure_naive_datetime("2022-10-07T09:49:03.009000a") is None
 
 
 def test_ensure_instant() -> None:
@@ -100,6 +106,11 @@ def test_ensure_instant_date_american() -> None:
     """Test American date parsing."""
     dt = ensure_instant("12-31-2023")
     assert dt == Instant.from_utc(2023, 12, 31)
+
+    search_t = ("search 12-31-2023 me", "x 2023-12-31 x", "x2023-1231x", "12312023x")
+    for dts in search_t:
+        assert ensure_instant(dts) is None
+        assert ensure_instant(dts, search_date=True) == Instant.from_utc(2023, 12, 31)
 
     dt = ensure_instant("2023-12-31")
     assert dt == Instant.from_utc(2023, 12, 31)

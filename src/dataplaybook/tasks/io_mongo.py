@@ -4,10 +4,12 @@ from __future__ import annotations
 import logging
 from collections import abc
 from urllib.parse import urlparse
+from warnings import deprecated
 
 import attrs
 from pymongo import MongoClient
 from pymongo.collection import Collection
+from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
 
 from dataplaybook import RowData, RowDataGen, task
@@ -32,12 +34,20 @@ class MongoURI:
     """MongoDB URI."""
 
     netloc: str = attrs.field(converter=_clean_netloc)
-    database: str = attrs.field()
-    collection: str = attrs.field()
-    set_id: str = attrs.field(default="")
+    database: str
+    collection: str
+    set_id: str = ""
 
+    client: MongoClient = attrs.field(default=None, init=False, repr=False)
+
+    @deprecated("Use MongoURI.from_string instead")
     @staticmethod
     def new_from_string(db_uri: str, set_id: str = "") -> MongoURI:
+        """Old."""
+        raise DeprecationWarning("Use MongoURI.from_string instead")
+
+    @staticmethod
+    def from_string(db_uri: str, set_id: str = "") -> MongoURI:
         """Mongodb URI from a string."""
         try:
             res = urlparse(db_uri)
@@ -50,9 +60,7 @@ class MongoURI:
             )
         pth = res.path.split("/")
 
-        if len(pth) == 4:
-            if set_id:
-                raise ValueError("set_id specified, not allowed in mdb URI")
+        if len(pth) == 4 and pth[3]:
             set_id = pth[3]
 
         return MongoURI(
@@ -68,15 +76,17 @@ class MongoURI:
 
     def get_client(self, connect: bool = True) -> MongoClient:
         """Return a MongoClient."""
-        return MongoClient(self.netloc, connect=connect)
+        if self.client is None:
+            self.client = MongoClient(self.netloc, connect=connect)
+        return self.client
+
+    def get_database(self, connect: bool = True) -> Database:
+        """Return the Database from the MongoClient."""
+        return self.get_client(connect=connect)[self.database]
 
     def get_collection(self, connect: bool = True) -> Collection:
         """Return the Collection from the MongoClient."""
-        return (
-            self.get_client(connect=connect)
-            .get_database(self.database)
-            .get_collection(self.collection)
-        )
+        return self.get_database(connect=connect)[self.collection]
 
 
 @task
