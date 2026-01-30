@@ -85,7 +85,8 @@ lint.select = [
 lint.ignore = [ "D203", "D213", "E203", "E501", "PLC0415", "PLR2004", "UP047" ]
 lint.isort.no-lines-before = [ "future", "standard-library" ]
 lint.pylint.max-args = 7
-lint.pylint.max-returns = 10
+lint.pylint.max-branches = 20
+lint.pylint.max-returns = 15
 
 [tool.codespell]
 skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]

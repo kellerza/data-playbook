@@ -48,7 +48,22 @@ def ensure_bool_str(value: Any, _: type | None = None) -> bool | str:
     return value
 
 
-type LogType = Literal["warning", "debug", "raise", "ignore"]
+type LogType = Literal["warning", "debug", "ValueError", False]
+
+
+def log_msg(msg: str, log: LogType) -> None:
+    """Log message based on log type."""
+    match log:
+        case "debug":
+            _LOG.debug(msg)
+        case "ValueError":
+            raise ValueError(msg)
+        case "warning":
+            _LOG.warning(msg)
+        case False:
+            pass
+        case _:
+            _LOG.warning(msg + " (invalid log type %s)", log)
 
 
 @deprecated("Use ensure_naive_datetime or ensure_instant instead")
@@ -57,7 +72,9 @@ def ensure_datetime(val: Any) -> datetime | None:
     return ensure_naive_datetime(val)
 
 
-def ensure_naive_datetime(val: Any, *, log: LogType = "ignore") -> datetime | None:
+def ensure_naive_datetime(
+    val: Any, *, search: bool = False, log: LogType = False
+) -> datetime | None:
     """Ensure we have a datetime."""
     if val is None or val == "":
         return None
@@ -65,7 +82,7 @@ def ensure_naive_datetime(val: Any, *, log: LogType = "ignore") -> datetime | No
         if val.tzinfo is not None:
             return val.astimezone(tz=UTC).replace(tzinfo=None)
         return val
-    res = ensure_instant(val, log=log)
+    res = ensure_instant(val, search=search, log=log)
     return res.to_fixed_offset().to_plain().py_datetime() if res else None
 
 
@@ -74,7 +91,7 @@ RE_DATE_MMDDYYYY = re.compile(r"([01]\d)-?([0-3]\d)-?(20[0-3]\d)")
 
 
 def ensure_instant(
-    val: Any, *, search: bool = False, log: LogType = "ignore"
+    val: Any, *, search: bool = False, log: LogType = False
 ) -> Instant | None:
     """Parse instant."""
     if not val:
@@ -122,16 +139,7 @@ def ensure_instant(
         ):
             return Instant.from_utc(int(m.group(3)), int(m.group(1)), int(m.group(2)))
 
-    if log == "ignore":
-        return None
-    msg = f"Could not parse date & time: {val}"
-    match log:
-        case "debug":
-            _LOG.debug(msg)
-        case "raise":
-            raise ValueError(msg)
-        case "warning":
-            _LOG.warning(msg)
+    log_msg(f"Could not parse date & time: {val}", log)
     return None
 
 
