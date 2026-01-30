@@ -149,7 +149,7 @@ def print_table(
     if table:
         tables["_"] = table
     try:
-        import pandas as pd
+        import pandas as pd  # type: ignore[import]
     except ImportError:
         pass
     else:
