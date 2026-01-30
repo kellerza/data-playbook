@@ -7,7 +7,7 @@ from collections import abc
 from datetime import UTC, datetime
 from inspect import isgenerator
 from json import JSONDecodeError, loads
-from typing import Any
+from typing import Any, Literal
 
 from icecream import ic
 from typing_extensions import deprecated  # In Python 3.13 it moves to warnings
@@ -48,13 +48,16 @@ def ensure_bool_str(value: Any, _: type | None = None) -> bool | str:
     return value
 
 
+type LogType = Literal["warning", "debug", "raise", "ignore"]
+
+
 @deprecated("Use ensure_naive_datetime or ensure_instant instead")
 def ensure_datetime(val: Any) -> datetime | None:
     """Ensure we have a datetime."""
     return ensure_naive_datetime(val)
 
 
-def ensure_naive_datetime(val: Any) -> datetime | None:
+def ensure_naive_datetime(val: Any, *, log: LogType = "ignore") -> datetime | None:
     """Ensure we have a datetime."""
     if val is None or val == "":
         return None
@@ -62,15 +65,17 @@ def ensure_naive_datetime(val: Any) -> datetime | None:
         if val.tzinfo is not None:
             return val.astimezone(tz=UTC).replace(tzinfo=None)
         return val
-    res = ensure_instant(val)
+    res = ensure_instant(val, log=log)
     return res.to_fixed_offset().to_plain().py_datetime() if res else None
 
 
-RE_DATE_YYYYMMDD = re.compile(r"(20[1-3]\d)-?([01]\d)-?([0-3]\d)")
-RE_DATE_MMDDYYYY = re.compile(r"([01]\d)-?([0-3]\d)-?(20[1-3]\d)")
+RE_DATE_YYYYMMDD = re.compile(r"(20[0-3]\d)-?([01]\d)-?([0-3]\d)")
+RE_DATE_MMDDYYYY = re.compile(r"([01]\d)-?([0-3]\d)-?(20[0-3]\d)")
 
 
-def ensure_instant(val: Any, *, search_date: bool = False) -> Instant | None:  # noqa: PLR0911
+def ensure_instant(
+    val: Any, *, search: bool = False, log: LogType = "ignore"
+) -> Instant | None:
     """Parse instant."""
     if not val:
         return None
@@ -101,29 +106,32 @@ def ensure_instant(val: Any, *, search_date: bool = False) -> Instant | None:  #
             return ZonedDateTime.parse_iso(val).to_instant()
         except ValueError:
             pass
+        if val.endswith("+0:00"):
+            try:
+                return PlainDateTime.parse_iso(val[:-5]).assume_utc()
+            except ValueError:
+                pass
 
         # Parse short date & American format
-        if res := (
-            RE_DATE_YYYYMMDD.search(val)
-            if search_date
-            else RE_DATE_YYYYMMDD.fullmatch(val)
+        if m := (
+            RE_DATE_YYYYMMDD.search(val) if search else RE_DATE_YYYYMMDD.fullmatch(val)
         ):
-            return Instant.from_utc(
-                int(res.group(1)), int(res.group(2)), int(res.group(3))
-            )
-        if res := (
-            RE_DATE_MMDDYYYY.search(val)
-            if search_date
-            else RE_DATE_MMDDYYYY.fullmatch(val)
+            return Instant.from_utc(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        if m := (
+            RE_DATE_MMDDYYYY.search(val) if search else RE_DATE_MMDDYYYY.fullmatch(val)
         ):
-            return Instant.from_utc(
-                int(res.group(3)), int(res.group(1)), int(res.group(2))
-            )
+            return Instant.from_utc(int(m.group(3)), int(m.group(1)), int(m.group(2)))
 
-        if val.endswith("+0:00"):
-            return PlainDateTime.parse_iso(val[:-5]).assume_utc()
-
-    _LOG.warning("Could not parse date & time: %s", val)
+    if log == "ignore":
+        return None
+    msg = f"Could not parse date & time: {val}"
+    match log:
+        case "debug":
+            _LOG.debug(msg)
+        case "raise":
+            raise ValueError(msg)
+        case "warning":
+            _LOG.warning(msg)
     return None
 
 

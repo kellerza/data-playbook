@@ -155,7 +155,7 @@ def get_default_playbook() -> str:
     return ""
 
 
-def run_playbooks(dataplaybook_cmd: bool = False) -> int:  # noqa: PLR0912
+def run_playbooks(dataplaybook_cmd: bool = False) -> int:
     """Execute playbooks, or prompt for one."""
     if _EXECUTED:
         return 0

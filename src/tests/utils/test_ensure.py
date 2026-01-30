@@ -110,7 +110,7 @@ def test_ensure_instant_date_american() -> None:
     search_t = ("search 12-31-2023 me", "x 2023-12-31 x", "x2023-1231x", "12312023x")
     for dts in search_t:
         assert ensure_instant(dts) is None
-        assert ensure_instant(dts, search_date=True) == Instant.from_utc(2023, 12, 31)
+        assert ensure_instant(dts, search=True) == Instant.from_utc(2023, 12, 31)
 
     dt = ensure_instant("2023-12-31")
     assert dt == Instant.from_utc(2023, 12, 31)

@@ -230,7 +230,7 @@ def _fmt(obj: Any) -> Any:
 
 
 @task
-def write_excel(  # noqa: PLR0912
+def write_excel(
     *,
     tables: Tables,
     file: PathStr,
