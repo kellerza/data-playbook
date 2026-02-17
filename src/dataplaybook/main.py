@@ -5,12 +5,12 @@ import logging
 import os
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 from functools import partial, wraps
 from inspect import Parameter, isgeneratorfunction, signature
 from pathlib import Path
 from typing import Any, Concatenate
 
-import attrs
 from icecream import colorizedStderrPrint, ic
 from typeguard import typechecked
 
@@ -23,7 +23,7 @@ from dataplaybook.utils.logger import setup_logger
 _LOG = logging.getLogger(__name__)
 
 
-@attrs.define
+@dataclass
 class Task:
     """Task definition."""
 

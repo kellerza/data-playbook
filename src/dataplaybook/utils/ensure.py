@@ -7,7 +7,7 @@ from collections import abc
 from datetime import UTC, datetime
 from inspect import isgenerator
 from json import JSONDecodeError, loads
-from typing import Any, Literal
+from typing import Any, Literal, overload
 
 from icecream import ic
 from typing_extensions import deprecated  # In Python 3.13 it moves to warnings
@@ -143,26 +143,113 @@ def ensure_instant(
     return None
 
 
+@overload
+def ensure_dict[T, R](val: dict[T, R]) -> dict[T, R]:
+    pass
+
+
+@overload
+def ensure_dict(val: None) -> dict[str, Any]:
+    pass
+
+
+@overload
+def ensure_dict(val: str) -> dict[str, str]:
+    pass
+
+
+def ensure_dict(val: Any) -> dict:
+    """Ensure the value is a dict."""
+    if isinstance(val, dict):
+        return val
+    if val is None:
+        return {}
+    if not isinstance(val, str):
+        return {"value": val}
+
+    if val.startswith("{") and val.endswith("}"):
+        try:
+            return literal_eval(val)
+        except ValueError:
+            pass
+        try:
+            return loads(val)
+        except JSONDecodeError as err:
+            _LOG.warning("Invalid JSON: %s: %s", val, err.msg)
+
+    return {"value": val}
+
+
+@overload
 def ensure_list[T](
-    val: list[T] | tuple[T] | abc.Generator[T, None, None] | Any,
+    val: list[T] | tuple[T] | abc.Generator[T],
     *,
     recurse: int = 0,
     delim: re.Pattern | str | None = r"[\n;,/]",
-) -> list:
+) -> list[T]:
+    pass
+
+
+@overload
+def ensure_list(  # from python 3.13 [T=str]
+    val: str,
+    *,
+    recurse: int = 0,
+    delim: re.Pattern | str | None = r"[\n;,/]",
+) -> list[str]:
+    pass
+
+
+@overload
+def ensure_list(
+    val: None,
+    *,
+    recurse: int = 0,
+    delim: re.Pattern | str | None = r"[\n;,/]",
+) -> list[str]:
+    pass
+
+
+@overload
+def ensure_list[T](
+    val: abc.Iterable[T],
+    *,
+    recurse: int = 0,
+    delim: re.Pattern | str | None = r"[\n;,/]",
+) -> list[T]:
+    pass
+
+
+@overload
+def ensure_list[T](
+    val: T,
+    *,
+    recurse: int = 0,
+    delim: re.Pattern | str | None = r"[\n;,/]",
+) -> list[T]:
+    pass
+
+
+def ensure_list(
+    val: Any,
+    *,
+    recurse: int = 0,
+    delim: re.Pattern | str | None = r"[\n;,/]",
+) -> list[Any]:
     """Ensure val is a list."""
     if val is None:
         return []
 
     if recurse > 0:
-        result: list = []  # type:ignore[]
-        for res in ensure_list(val):
+        result: list[Any] = []
+        for res in ensure_list(val):  # type: ignore[var-annotated]
             result.extend(ensure_list(res, recurse=recurse - 1, delim=delim))
         return result
 
     if isinstance(val, list):
         return val
     if isinstance(val, str):
-        return ensure_list_from_str(val, delim=delim)  # type:ignore[]
+        return ensure_list_from_str(val, delim=delim)  # type:ignore[return-value]
 
     if isinstance(val, dict):
         if not val:

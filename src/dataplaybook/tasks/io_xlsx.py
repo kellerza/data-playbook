@@ -3,12 +3,12 @@
 from __future__ import annotations
 import logging
 from collections.abc import Generator, Sequence
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from json import dumps
 from pathlib import Path
 from typing import Any
 
-import attrs
 import openpyxl
 from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.utils import get_column_letter
@@ -16,12 +16,12 @@ from openpyxl.utils.exceptions import IllegalCharacterError
 from openpyxl.worksheet.worksheet import Worksheet
 from whenever import Instant
 
-from dataplaybook import PathStr, RowData, RowDataGen, Tables, task
+from dataplaybook import PathStr, RowData, Tables, task
 
 _LOG = logging.getLogger(__name__)
 
 
-@attrs.define
+@dataclass
 class Column:
     """An Excel column definition."""
 
@@ -49,7 +49,7 @@ class Column:
         return None
 
 
-@attrs.define
+@dataclass
 class Sheet:
     """An Excel sheet definition."""
 
@@ -57,7 +57,7 @@ class Sheet:
     source: str = ""
     """Source sheet. May be '*' for the default/active sheet"""
     header: int = 0
-    columns: list[Column] | None = attrs.field(default=None)
+    columns: list[Column] | None = field(default=None)
 
     @classmethod
     def from_old(cls, *headers: dict[str, Any]) -> list[Sheet]:
@@ -149,7 +149,7 @@ def _column_map(
         yield (idx, col.name, col)
 
 
-def _sheet_yield_rows(_sheet: Worksheet, shdef: Sheet) -> RowDataGen:
+def _sheet_yield_rows(_sheet: Worksheet, shdef: Sheet) -> Generator[RowData]:
     """Read the sheet and yield the rows."""
     rows = _sheet.rows
     header = shdef.header

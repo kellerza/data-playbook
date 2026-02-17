@@ -2,6 +2,7 @@
 
 import re
 import time
+from collections.abc import Generator
 from csv import DictReader, DictWriter
 from json import dump, load, loads
 from json.decoder import JSONDecodeError
@@ -16,11 +17,10 @@ from dataplaybook import (
     DataEnvironment,
     PathStr,
     RowData,
-    RowDataGen,
     Tables,
     task,
 )
-from dataplaybook.utils import ensure_list as _ensure_list
+from dataplaybook.utils import ensure_list
 
 
 @task
@@ -42,9 +42,9 @@ def file_rotate(*, file: PathStr, count: int = 3) -> None:
 
 
 @task
-def glob(*, patterns: list[str]) -> RowDataGen:
+def glob(*, patterns: list[str]) -> Generator[RowData]:
     """Search for files matching certain patterns."""
-    for val in _ensure_list(patterns):  # type: ignore[]
+    for val in ensure_list(patterns):  # type: ignore[var-annotated]
         fol, _, pat = val.partition("/*")
         folder = Path(fol)
         for file in folder.glob("*" + pat):
@@ -52,7 +52,9 @@ def glob(*, patterns: list[str]) -> RowDataGen:
 
 
 @task
-def read_csv(*, file: PathStr, columns: dict[str, str] | None = None) -> RowDataGen:
+def read_csv(
+    *, file: PathStr, columns: dict[str, str] | None = None
+) -> Generator[RowData]:
     """Read csv file."""
     with Path(file).open("r", encoding="utf-8") as __f:
         csvf = DictReader(__f)
@@ -108,7 +110,7 @@ def write_json(
 
 
 @task
-def read_tab_delim(*, file: PathStr, headers: list[str]) -> RowDataGen:
+def read_tab_delim(*, file: PathStr, headers: list[str]) -> Generator[RowData]:
     """Read xml file."""
     with Path(file).open("r", encoding="utf-8") as __f:
         header = headers
@@ -126,7 +128,7 @@ def read_tab_delim(*, file: PathStr, headers: list[str]) -> RowDataGen:
 @task
 def read_text_regex(
     *, file: PathStr, newline: re.Pattern, fields: re.Pattern | None
-) -> RowDataGen:
+) -> Generator[RowData]:
     """Much regular expressions into a table."""
     res: dict[str, Any] | None = None
     with Path(file).open(encoding="utf-8") as fptr:

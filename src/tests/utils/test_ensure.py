@@ -2,6 +2,7 @@
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from whenever import Instant
@@ -9,6 +10,7 @@ from whenever import Instant
 from dataplaybook.utils.ensure import (
     ensure_bool,
     ensure_bool_str,
+    ensure_dict,
     ensure_instant,
     ensure_list,
     ensure_naive_datetime,
@@ -180,7 +182,7 @@ def ensure_list_json() -> None:
 
 def test_ensure_list_with_datetime() -> None:
     """Ensure list with datetime."""
-    res = ensure_list(
+    res: list[dict] = ensure_list(  # type:ignore[assignment]
         "[{'by': 'kellerza@gmail.com', 'date': "
         "datetime.datetime(2023, 1, 13, 10, 38, 22), 'changes': "
         "{'business_value': '<s>0.000001</s><b>0.001</b>', 'priority': "
@@ -198,3 +200,18 @@ def test_ensure_string() -> None:
     assert ensure_string(["", "C", "B"], sort=True) == "B, C"
     assert ensure_string("ABC") == "ABC"
     assert ensure_string([1, True, None]) == "1, True"
+
+
+def test_ensure_dict() -> None:
+    """Test ensure dict."""
+    res = ensure_dict({"a": 1, "b": 2})
+    assert res == {"a": 1, "b": 2}
+
+    resn = ensure_dict(None)
+    assert resn == {}
+
+    resm: dict[str, Any] = ensure_dict({})
+    assert resm == {}
+
+    ress = ensure_dict("aa")
+    assert ress == {"value": "aa"}

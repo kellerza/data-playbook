@@ -2,12 +2,11 @@
 
 import argparse
 from collections import abc
+from dataclasses import dataclass
 from importlib.metadata import version
 
-import attrs
 
-
-@attrs.define
+@dataclass
 class DPArg:
     """Dataplaybook arguments."""
 

@@ -4,17 +4,16 @@ from __future__ import annotations
 import logging
 import re
 from collections.abc import Callable, Generator
+from dataclasses import dataclass
 from re import Match
 from typing import Any
 
-import attrs
-
-from dataplaybook import RowData, RowDataGen, task
+from dataplaybook import RowData, task
 
 _LOG = logging.getLogger(__name__)
 
 
-@attrs.define()
+@dataclass()
 class Standard:
     """Standard data."""
 
@@ -22,7 +21,7 @@ class Standard:
     sub: str | None = None
     match: Callable[[Match], KeyStr] | None = None
 
-    def __attrs_post_init__(self) -> None:
+    def __post_init__(self) -> None:
         """Post init."""
         if self.sub and self.match:
             raise ValueError("Cannot set both sub and match for a Standard")
@@ -203,7 +202,7 @@ def extract_standards_from_table(
     include_columns: list[str] | None = None,
     name: str = "",
     line_offset: int = 1,
-) -> RowDataGen:
+) -> Generator[RowData]:
     """Extract all RFCs from a table, into a new table."""
     _LOG.debug("Header start at line: %s", line_offset)
 

@@ -2,15 +2,14 @@
 
 from collections.abc import Callable
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
-
-import attrs
 
 type Row = dict[str, Any]
 type StepFunc = Callable[[str, Row], Any]
 
 
-@attrs.define(slots=True)
+@dataclass(slots=True)
 class Parser:
     """A parser to convert a dictionary based on a recipe."""
 
@@ -19,9 +18,9 @@ class Parser:
     def __call__(self, row: Row, in_place: bool = False) -> tuple[Row, Row]:
         """Parse the row. Returns the result & remainder."""
         res, remain = (row, row) if in_place else ({}, deepcopy(row))
-        for field, step in self.recipe.items():
+        for key, step in self.recipe.items():
             try:
-                res[field] = step(field, remain)
+                res[key] = step(key, remain)
             except AttributeError:
                 pass
         return res, remain

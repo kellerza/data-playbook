@@ -9,7 +9,7 @@ from dataplaybook.tasks.io_mongo import MongoURI, mongo_sync_sids
 
 def test_db_schema_post_validator() -> None:
     """Test read."""
-    dbm = MongoURI.from_string("db://localhost:27027/d1/c1/s1")
+    dbm = MongoURI("db://localhost:27027/d1/c1/s1")
 
     assert dbm.netloc == "localhost:27027"
     assert dbm.set_id == "s1"
@@ -19,7 +19,9 @@ def test_db_schema_post_validator() -> None:
     clean = ("localhost:27027", "mongodb://localhost:27027/", "db://localhost:27027/")
 
     for test in clean:
-        dbm = MongoURI(netloc=test, database="", collection="")
+        dbm = MongoURI(test)
+        assert dbm.netloc == clean[0]
+        dbm = MongoURI(test, database="", collection="")
         assert dbm.netloc == clean[0]
 
 

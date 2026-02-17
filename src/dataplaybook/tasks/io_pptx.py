@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 import re
+from dataclasses import dataclass, field
 from typing import Any, Protocol, runtime_checkable
 
-import attrs
-from colordict import ColorDict
+from colordict import ColorDict  # type: ignore[import-untyped]
 from icecream import ic
 
 # from pptx import Presentation as NewPresentation
@@ -20,7 +20,7 @@ from pptx.util import Length, Pt
 RE_STYLES = re.compile(r"(.*?)(?:<([A-Z,0-9#-]+)>|$)")
 
 
-def int_length(val: float | Length | None) -> Length | None:
+def to_length(val: float | Length | None) -> Length | None:
     """Convert int to Length."""
     if isinstance(val, Length):
         return val
@@ -32,7 +32,7 @@ def int_length(val: float | Length | None) -> Length | None:
     return Length(val)
 
 
-@attrs.define
+@dataclass
 class PStyle:
     """Paragraph style class."""
 
@@ -40,8 +40,12 @@ class PStyle:
     color: RGBColor | tuple[int, int, int] | None = None
     highlight: RGBColor | tuple[int, int, int] | None = None
     italic: bool | None = None
-    size: Length | None = attrs.field(default=None, converter=int_length)
+    size: Length | None = None
     strike: bool | None = None
+
+    def __post_init__(self) -> None:
+        """Post init."""
+        self.size = to_length(self.size)
 
     def __bool__(self) -> bool:
         """Check if the style has any attributes set."""
@@ -240,14 +244,14 @@ class ShapeWithText(Protocol):
     top: int
 
 
-@attrs.define
+@dataclass
 class Slide3Parts:
     """Analyse a slide & the 3 main parts."""
 
     slide: Slide
-    shapes: dict[int, ShapeWithText] = attrs.field(init=False, default={})
+    shapes: dict[int, ShapeWithText] = field(init=False)
 
-    def __attrs_post_init__(self) -> None:
+    def __post_init__(self) -> None:
         """Init the class."""
         self.get_shapes()
 

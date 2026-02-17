@@ -1,8 +1,8 @@
 """Test converter."""
 
+from dataclasses import dataclass, field
 from datetime import datetime
 
-import attrs
 import cattrs
 import pytest
 from whenever import Instant
@@ -10,15 +10,15 @@ from whenever import Instant
 from dataplaybook.utils.parser import CONVERT, BaseClass, _structure1
 
 
-@attrs.define
+@dataclass
 class TstModel(BaseClass):
     """Test class."""
 
     text: str = ""
-    list_is: list[int | str] = attrs.field(factory=list)
-    list_i: list[int] = attrs.field(factory=list)
-    list_s: list[str] = attrs.field(factory=list)
-    set_i: set[int] = attrs.field(factory=set)
+    list_is: list[int | str] = field(default_factory=list)
+    list_i: list[int] = field(default_factory=list)
+    list_s: list[str] = field(default_factory=list)
+    set_i: set[int] = field(default_factory=set)
 
 
 def test_convert1() -> None:

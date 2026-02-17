@@ -5,7 +5,6 @@ from os import PathLike
 from dataplaybook.const import (
     DataEnvironment,
     RowData,
-    RowDataGen,
     Tables,
 )
 from dataplaybook.main import _ENV as ENV
@@ -18,7 +17,6 @@ __all__ = [  # noqa:RUF022
     "ENV",
     "playbook",
     "RowData",
-    "RowDataGen",
     "Tables",
     "task",
 ]

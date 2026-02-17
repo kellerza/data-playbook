@@ -6,10 +6,10 @@ Everything HTTP Example:
         "name":"filename.xlsx", "path":"C:\\...." }
 """
 
+import dataclasses
 import logging
 from pathlib import Path
 
-import attrs
 import requests
 
 _LOG = logging.getLogger(__name__)
@@ -17,13 +17,13 @@ SANE = r" !c:\windows !appdata\ !\.git !\.vscode !_old\ !.lnk !~$ !C:\program !c
 SERVER = "http://localhost:8881"
 
 
-@attrs.define()
+@dataclasses.dataclass
 class Result:
     """Result of the search."""
 
     total: int
-    files: list[Path] = attrs.field(factory=list)
-    folders: list[Path] = attrs.field(factory=list)
+    files: list[Path] = dataclasses.field(default_factory=list)
+    folders: list[Path] = dataclasses.field(default_factory=list)
 
 
 def search(

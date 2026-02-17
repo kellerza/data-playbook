@@ -6,10 +6,11 @@ import re
 import typing
 from calendar import monthrange
 from collections import abc
+from collections.abc import Generator
 from datetime import datetime
 from pathlib import Path
 
-from dataplaybook import PathStr, RowData, RowDataGen, task
+from dataplaybook import PathStr, RowData, task
 
 _LOG = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class InvalidFile(Exception):
 
 
 @task
-def read_cheque_csv(*, file: PathStr) -> RowDataGen:
+def read_cheque_csv(*, file: PathStr) -> Generator[RowData]:
     """Read an FNB cheque csv file."""
     fields = [
         "type",
@@ -188,7 +189,7 @@ def _clean(row: dict) -> dict:
 
 
 @task
-def fnb_process(*, tables: dict[str, list[RowData]]) -> RowDataGen:
+def fnb_process(*, tables: dict[str, list[RowData]]) -> Generator[RowData]:
     """Add the budget month and ID."""
     for _, t_table in tables.items():
         for row in t_table:
@@ -242,7 +243,7 @@ def _count_it(
 
 
 @task
-def fnb_read_folder(*, folder: str, pattern: str = "*.csv") -> RowDataGen:
+def fnb_read_folder(*, folder: str, pattern: str = "*.csv") -> Generator[RowData]:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))

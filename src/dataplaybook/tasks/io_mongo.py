@@ -3,16 +3,17 @@
 from __future__ import annotations
 import logging
 from collections import abc
+from collections.abc import Generator
+from dataclasses import InitVar, dataclass, field
 from urllib.parse import urlparse
 
-import attrs
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
 from typing_extensions import deprecated  # In Python 3.13 it moves to warnings
 
-from dataplaybook import RowData, RowDataGen, task
+from dataplaybook import RowData, task
 from dataplaybook.utils import PlaybookError
 
 _LOG = logging.getLogger(__name__)
@@ -29,30 +30,34 @@ def _clean_netloc(db_netloc: str) -> str:
         raise err
 
 
-@attrs.define(slots=True)
+@dataclass(slots=True)
 class MongoURI:
     """MongoDB URI."""
 
-    netloc: str = attrs.field(converter=_clean_netloc)
-    database: str
-    collection: str
+    from_str: InitVar[str]
+
+    netloc: str = field(init=False)
+    database: str = ""
+    collection: str = ""
     set_id: str = ""
 
-    client: MongoClient = attrs.field(default=None, init=False, repr=False)
+    client: MongoClient = field(init=False, repr=False)
 
-    @deprecated("Use MongoURI.from_string instead")
-    @staticmethod
-    def new_from_string(db_uri: str, set_id: str = "") -> MongoURI:
-        """Old."""
-        raise DeprecationWarning("Use MongoURI.from_string instead")
+    def __post_init__(self, from_str: str) -> None:
+        """Post init."""
+        self.client = None  # type:ignore[assignment]
 
-    @staticmethod
-    def from_string(db_uri: str, set_id: str = "") -> MongoURI:
-        """Mongodb URI from a string."""
+        if from_str == "":
+            raise ValueError("MongoURI cannot be empty")
+
+        if "/" not in from_str:
+            from_str = "mdb://" + from_str
+
         try:
-            res = urlparse(db_uri)
+            res = urlparse(from_str)
+            self.netloc = res.netloc
         except AttributeError as err:
-            _LOG.error("could not parse URL: %s: %s", db_uri, err)
+            _LOG.error("could not parse URL: %s: %s", from_str, err)
             raise err
         if res.scheme not in ["mdb", "mongodb", "db"]:
             raise ValueError(
@@ -60,15 +65,31 @@ class MongoURI:
             )
         pth = res.path.split("/")
 
-        if len(pth) == 4 and pth[3]:
-            set_id = pth[3]
+        def _set_maybe(attr: str, val: str) -> None:
+            curval = getattr(self, attr)
+            if not curval:
+                setattr(self, attr, val)
+            elif val and curval != val:
+                _LOG.debug("ignore %s='%s' in path %s, use '%s'", attr, val, curval)
 
-        return MongoURI(
-            netloc=res.netloc,
-            database=pth[1],
-            collection=pth[2],
-            set_id=set_id,
-        )
+        if len(pth) > 1 and (v := pth[1]):
+            _set_maybe("database", v)
+        if len(pth) > 2 and (v := pth[2]):
+            _set_maybe("collection", v)
+        if len(pth) > 3 and (v := pth[3]):
+            _set_maybe("set_id", v)
+
+    @deprecated("Use MongoURI() directly")
+    @staticmethod
+    def new_from_string(db_uri: str, set_id: str = "") -> MongoURI:
+        """Old."""
+        return MongoURI(db_uri, set_id=set_id)
+
+    @deprecated("Use MongoURI() directly")
+    @staticmethod
+    def from_string(db_uri: str, set_id: str = "") -> MongoURI:
+        """Mongodb URI from a string."""
+        return MongoURI(db_uri, set_id=set_id)
 
     def __str__(self) -> str:
         """As string."""
@@ -94,7 +115,7 @@ def read_mongo(
     *,
     mdb: MongoURI,
     set_id: str | None = None,
-) -> RowDataGen:
+) -> Generator[RowData]:
     """Read data from a MongoDB collection."""
     if not set_id:
         set_id = mdb.set_id

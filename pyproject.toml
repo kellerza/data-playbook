@@ -35,7 +35,6 @@ dependencies = [
   "typeguard>=4.4.2",
   "whenever>=0.9,<1",
 ]
-
 optional-dependencies.all = [ "lxml>=5.4,<7", "pymongo>=4,<5", "python-pptx" ]
 urls.Homepage = "https://github.com/kellerza/data-playbook"
 urls.Repository = "https://github.com/kellerza/data-playbook"
@@ -52,11 +51,12 @@ dev = [
   "pytest-github-actions-annotate-failures",
   "python-semantic-release",
   "types-lxml",
+  "types-openpyxl>=3.1.5.20250919",
   "types-requests",
 ]
 
-[tool.uv.build-backend]
-source-exclude = [ ".mypy_cache" ] # , "src/tests"]
+[tool.uv]
+build-backend.source-exclude = [ ".mypy_cache" ]  # , "src/tests"]
 
 [tool.ruff]
 format.indent-style = "space"
@@ -90,17 +90,18 @@ lint.pylint.max-returns = 15
 
 [tool.codespell]
 skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]
-#ignore-words-list = []
 
-[tool.pytest.ini_options]
-pythonpath = [ "src/dataplaybook" ]
-filterwarnings = "ignore:.+@coroutine.+deprecated.+"
-norecursedirs = [ ".git", "modules" ]
-log_cli = true
-log_cli_level = "DEBUG"
-asyncio_mode = "auto"
-addopts = "--cov=src --cov-report xml:cov.xml"
-asyncio_default_fixture_loop_scope = "function"
+[tool.pytest]
+# ignore-words-list = []
+
+ini_options.pythonpath = [ "src/dataplaybook" ]
+ini_options.filterwarnings = "ignore:.+@coroutine.+deprecated.+"
+ini_options.norecursedirs = [ ".git", "modules" ]
+ini_options.log_cli = true
+ini_options.log_cli_level = "DEBUG"
+ini_options.asyncio_mode = "auto"
+ini_options.addopts = "--cov=src --cov-report xml:cov.xml"
+ini_options.asyncio_default_fixture_loop_scope = "function"
 
 # [tool.mypy]
 # disallow_untyped_defs = true
@@ -115,12 +116,8 @@ commit_parser = "emoji"
 version_toml = [ "pyproject.toml:project.version" ]
 build_command = "pip install uv && uv build"
 commit_version_number = true
-
 # https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
-[tool.semantic_release.branches.main]
-match = "main"
-
-[tool.semantic_release.commit_parser_options]
-major_tags = [ ":boom:" ]
-minor_tags = [ ":rocket:" ]
-patch_tags = [ "" ]
+branches.main.match = "main"
+commit_parser_options.major_tags = [ ":boom:" ]
+commit_parser_options.minor_tags = [ ":rocket:" ]
+commit_parser_options.patch_tags = [ "" ]

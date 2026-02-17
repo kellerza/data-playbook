@@ -6,10 +6,11 @@ import os
 import tempfile
 import typing
 from collections import abc
+from collections.abc import Generator
 from pathlib import Path
 from subprocess import call
 
-from dataplaybook import PathStr, RowDataGen, task
+from dataplaybook import PathStr, RowData, task
 
 _LOG = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def _myreadlines(fobj: typing.IO, newline: str) -> abc.Generator[str, None, None
 @task
 def read_pdf_pages(
     *, file: PathStr, layout: bool = True, args: list[str] | None = None
-) -> RowDataGen:
+) -> Generator[RowData]:
     """Read pdf as text pages."""
     file = Path(file)
     if file.suffix.lower() != ".pdf":
@@ -69,7 +70,7 @@ def read_pdf_files(
     pattern: str = "*.pdf",
     layout: bool = True,
     args: list[str] | None = None,
-) -> RowDataGen:
+) -> Generator[RowData]:
     """Read all files in folder."""
     path = Path(folder)
     files = sorted(path.glob(pattern))

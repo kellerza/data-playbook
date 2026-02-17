@@ -5,16 +5,19 @@ import logging
 import re
 import shutil
 from collections import abc
+from collections.abc import Generator
 from typing import Any, Literal
 
-from dataplaybook import RowData, RowDataGen, Tables, task
+from dataplaybook import RowData, Tables, task
 from dataplaybook.utils import ensure_list
 
 _LOG = logging.getLogger(__name__)
 
 
 @task
-def build_lookup(*, table: list[RowData], key: str, columns: list[str]) -> RowDataGen:
+def build_lookup(
+    *, table: list[RowData], key: str, columns: list[str]
+) -> Generator[RowData]:
     """Build a lookup table (unique key & columns) and removing the columns."""
     lookup: RowData = {}
     all_cols = list(columns)
@@ -110,7 +113,7 @@ def filter_rows(
     table: list[RowData],
     include: dict[str, str] | None = None,
     exclude: dict[str, str | list[str] | re.Pattern] | None = None,
-) -> RowDataGen:
+) -> Generator[RowData]:
     """Filter rows from a table."""
 
     def _match(
@@ -210,7 +213,7 @@ def replace(
 
 
 @task
-def unique(*, table: list[RowData], key: str) -> RowDataGen:
+def unique(*, table: list[RowData], key: str) -> Generator[RowData]:
     """Return rows with unique keys."""
     seen = {}
     for row in table:

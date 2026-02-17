@@ -35,33 +35,33 @@ Tasks are implemented as simple Python functions and the modules can be found in
 ```bash
 $ dataplaybook --all -vvv
 dataplaybook.tasks
-- build_lookup "(*, table: list[RowData], key: str, columns: list[str]) -> RowDataGen"
+- build_lookup "(*, table: list[RowData], key: str, columns: list[str]) -> Generator[RowData]"
 - build_lookup_dict "(*, table: list[RowData], key: str | list[str], columns: list[str] | None = None) -> dict[str | tuple, Any]"
 - combine "(*, tables: list[list[RowData]], key: str, columns: list[str], value: Union[Literal[True], str] = True) -> list[RowData]"
 - ensure_lists "(*, tables: Sequence[list[RowData]], columns: Sequence[str]) -> None"
 - filter_rows "(*, table: list[RowData], include: dict[str, str] | None = None, exclude: dict[str, str | list[str] | re.Pattern] | None
-= None) -> RowDataGen"
+= None) -> Generator[RowData]"
 - print_table "(*, table: list[RowData] | None = None, tables: dict[str, list[RowData]] | DataEnvironment | None = None) -> None"
 - remove_null "(*, tables: Sequence[list[RowData]]) -> None"
 - replace "(*, table: list[RowData], replace_dict: dict[str, str], columns: list[str]) -> None"
-- unique "(*, table: list[RowData], key: str) -> RowDataGen"
+- unique "(*, table: list[RowData], key: str) -> Generator[RowData]"
 - vlookup "(*, table0: list[RowData], acro: list[RowData], columns: list[str]) -> None"
 dataplaybook.tasks.fuzzy
 - fuzzy_match "(*, table1: list[RowData], table2: list[RowData], t1_column: str, t2_column: str, t1_target_column: str) -> None"
 dataplaybook.tasks.ietf
 - add_standards_column "(*, table: list[RowData], columns: list[str], rfc_col: str) -> None"
-- extract_standards_from_table "(*, table: list[RowData], extract_columns: list[str], include_columns: list[str] | None = None, name: str = '', line_offset: int = 1) -> RowDataGen"
+- extract_standards_from_table "(*, table: list[RowData], extract_columns: list[str], include_columns: list[str] | None = None, name: str = '', line_offset: int = 1) -> Generator[RowData]"
 dataplaybook.tasks.gis
 - linestring "(*, table: list[RowData], lat_a: str = 'latA', lat_b: str = 'latB', lon_a: str = 'lonA', lon_b: str = 'lonB', linestring_column: str = 'linestring', error: str = '22 -22') -> list[RowData]"
 dataplaybook.tasks.io_mail
 - mail "(*, to_addrs: list[str] | str, from_addr: str, subject: str, server: str, files: list[str] | None = None, priority: int = 4, body: str | None = '', html: str | None = '', cc_addrs: list[str] | None = None, bcc_addrs: list[str] | None = None) -> None"
 dataplaybook.tasks.io_misc
 - file_rotate "(*, file: os.PathLike | str, count: int = 3) -> None"
-- glob "(*, patterns: list[str]) -> RowDataGen"
-- read_csv "(*, file: os.PathLike | str, columns: dict[str, str] | None = None) -> RowDataGen"
+- glob "(*, patterns: list[str]) -> Generator[RowData]"
+- read_csv "(*, file: os.PathLike | str, columns: dict[str, str] | None = None) -> Generator[RowData]"
 - read_json "(*, file: os.PathLike | str) -> list[RowData]"
-- read_tab_delim "(*, file: os.PathLike | str, headers: list[str]) -> RowDataGen"
-- read_text_regex "(*, file: os.PathLike | str, newline: re.Pattern, fields: re.Pattern | None) -> RowDataGen"
+- read_tab_delim "(*, file: os.PathLike | str, headers: list[str]) -> Generator[RowData]"
+- read_text_regex "(*, file: os.PathLike | str, newline: re.Pattern, fields: re.Pattern | None) -> Generator[RowData]"
 - wget "(*, url: str, file: os.PathLike | str, age: int = 172800, headers: dict[str, str] | None = None) -> None"
 - write_csv "(*, table: list[RowData], file: os.PathLike | str, header: list[str] | None = None) -> None"
 - write_json "(*, data: dict[str, list[RowData]] | DataEnvironment | list[RowData], file: os.PathLike | str, only_var: bool = False) ->
@@ -73,11 +73,11 @@ dataplaybook.tasks.io_mongo
 - mongo_list_sids "(*, mdb: 'MongoURI') -> 'list[str]'"
 - mongo_sync_sids "(*, mdb_local: 'MongoURI', mdb_remote: 'MongoURI', ignore_remote: 'abc.Sequence[str] | None' = None, only_sync_sids:
 'abc.Sequence[str] | None' = None) -> 'None'"
-- read_mongo "(*, mdb: 'MongoURI', set_id: 'str | None' = None) -> 'RowDataGen'"
+- read_mongo "(*, mdb: 'MongoURI', set_id: 'str | None' = None) -> 'Generator[RowData]'"
 - write_mongo "(*, table: 'list[RowData]', mdb: 'MongoURI', set_id: 'str | None' = None, force: 'bool' = False) -> 'None'"
 dataplaybook.tasks.io_pdf
-- read_pdf_files "(*, folder: str, pattern: str = '*.pdf', layout: bool = True, args: list[str] | None = None) -> RowDataGen"
-- read_pdf_pages "(*, file: os.PathLike | str, layout: bool = True, args: list[str] | None = None) -> RowDataGen"
+- read_pdf_files "(*, folder: str, pattern: str = '*.pdf', layout: bool = True, args: list[str] | None = None) -> Generator[RowData]"
+- read_pdf_pages "(*, file: os.PathLike | str, layout: bool = True, args: list[str] | None = None) -> Generator[RowData]"
 dataplaybook.tasks.io_xlsx
 - read_excel "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: os.PathLike | str, sheets: list[dataplaybook.tasks.io_xlsx.Sheet] | None = None) -> list[str]"
 - write_excel "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: os.PathLike | str, include: list[str] | None = None, sheets: list[dataplaybook.tasks.io_xlsx.Sheet] | None = None, ensure_string: bool = False) -> None"
@@ -91,19 +91,20 @@ dataplaybook.tasks.io_xml
 uv is used for dependency management. To install the dependencies.
 
 ```bash
-uv sync
+uv sync --all-extras
 ```
 
 pre-commit is used for code formatting and linting. Install pre-commit and run `pre-commit install` to install the git hooks.
 
 ```bash
-pip install pre-commit && pre-commit install
+uv tool install prek
+prek install
 ```
 
 Test locally using pre-commit (ruff, codespell, mypy)
 
 ```bash
-git add . && pre-commit run --all
+git add . && prek
 ```
 
 ## Data Playbook v0 - origins
