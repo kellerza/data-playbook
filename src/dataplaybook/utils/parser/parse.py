@@ -30,6 +30,7 @@ def create_step(
     convert: Callable[[Any], Any] | None = None,
     *,
     alt: tuple[str, ...] | str | None = None,
+    pass_false: bool = False,
 ) -> StepFunc:
     """Create a step using the convert function.
 
@@ -43,13 +44,13 @@ def create_step(
         val = row.pop(key, None)
 
         if not (alt and any(a in row for a in alt)):
-            if not val:
+            if val is None if pass_false else not val:
                 raise AttributeError
             return convert(val) if convert else val
 
         altvals = [av for av in (row.pop(v, None) for v in alt) if av]
         if not altvals:
-            if not val:
+            if val is None if pass_false else not val:
                 raise AttributeError
             return convert(val) if convert else val
 
