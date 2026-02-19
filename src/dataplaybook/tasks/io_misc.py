@@ -148,7 +148,7 @@ def read_text_regex(
             if not fields:
                 continue
             for match_obj in fields.finditer(line):
-                res[match_obj[1]] = match_obj[2]  # type:ignore[]
+                res[match_obj[1]] = match_obj[2]  # type:ignore[misc]
     if res:
         yield res
 

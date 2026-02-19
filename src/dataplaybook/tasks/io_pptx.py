@@ -107,7 +107,7 @@ class PText:
                 run.text = prun
                 if style:
                     if style.highlight:
-                        rpr = run._r.get_or_add_rPr()
+                        rpr = run._r.get_or_add_rPr()  # type:ignore[misc]
                         hl = OxmlElement("a:highlight")
                         clr = OxmlElement("a:srgbClr")
                         clr.val = str(style.highlight)  # type:ignore[attr-defined]

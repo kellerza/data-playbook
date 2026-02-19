@@ -7,7 +7,14 @@ import pytz  # type: ignore[import]
 from whenever import Instant
 
 from dataplaybook import DataEnvironment
-from dataplaybook.tasks.io_xlsx import Column, Sheet, _fmt, read_excel, write_excel
+from dataplaybook.tasks.io_xlsx import (
+    Column,
+    RowData,
+    Sheet,
+    _fmt,
+    read_excel,
+    write_excel,
+)
 from dataplaybook.utils import AttrDict
 
 
@@ -52,7 +59,7 @@ def test_read_excel(mock_load_workbook: Mock) -> None:
     )
     assert reads == ["table1", "table2"]
 
-    expected_tables = {
+    expected_tables: dict[str, list[RowData] | dict] = {
         "table1": [
             {"Name": "Alice", "Age": 30},
             {"Name": "Bob", "Age": 25},

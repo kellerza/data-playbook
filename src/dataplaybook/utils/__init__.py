@@ -98,7 +98,7 @@ def doublewrap(
         #     return fun(realf, *args, **kwargs)
 
         # return new_dec2
-        return lambda realf: fun(realf, *args, **kwargs)  # type:ignore[return-value]
+        return lambda realf: fun(realf, *args, **kwargs)  # type:ignore[return-value, misc]
 
     return new_dec
 

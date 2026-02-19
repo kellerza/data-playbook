@@ -106,7 +106,7 @@ def create_step_move_to_dict(prefix: str = "", empty: dict | None = None) -> Cal
         """Move fields to a dict."""
         nonlocal prefix
         prefix = prefix or f"{field}_"
-        ui = row.get(field) or {}
+        ui: dict[str, Any] = row.get(field) or {}
         if not isinstance(ui, dict):
             ui = {"_": ui}
         uikeys = [k for k in row if k.startswith(prefix)]

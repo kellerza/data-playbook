@@ -9,7 +9,7 @@ repos:
 
       - id: uv-lock
         name: uv lock
-        entry: uv lock
+        entry: uv sync --all-extras
         language: system
         pass_filenames: false
 
@@ -28,6 +28,12 @@ repos:
       - id: codespell
         name: codespell
         entry: uv run codespell --toml pyproject.toml
+        language: system
+        pass_filenames: false
+
+      - id: zuban
+        name: zuban
+        entry: uv run zuban check
         language: system
         pass_filenames: false
 

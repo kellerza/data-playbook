@@ -21,7 +21,6 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "attrs>=25,<26",
   "cattrs>=24,<26",
   "colordict>=1.2.6",
   "colorlog>=6,<7",
@@ -53,6 +52,7 @@ dev = [
   "types-lxml",
   "types-openpyxl>=3.1.5.20250919",
   "types-requests",
+  "zuban>=0.6",
 ]
 
 [tool.uv]
@@ -121,3 +121,6 @@ branches.main.match = "main"
 commit_parser_options.major_tags = [ ":boom:" ]
 commit_parser_options.minor_tags = [ ":rocket:" ]
 commit_parser_options.patch_tags = [ "" ]
+
+[tool.zuban]
+warn_unreachable = false

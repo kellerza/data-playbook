@@ -39,7 +39,7 @@ def search(
         **(params or {}),
     )
     if sane:
-        params["s"] += SANE
+        params["s"] = f"{params['s']} {SANE}"
     if sort:
         params["sort"] = "date_modified"
         params["ascending"] = 0
