@@ -23,7 +23,7 @@ _LOG = logging.getLogger(__name__)
 T = TypeVar("T")
 # DT = TypeVar("DT", bound=dict[str, Any] | abc.Mapping[str, Any])
 
-type RowMapping = abc.Mapping[str, Any]
+type RowMapping = abc.Mapping[str, Any] | dict[str, Any]
 
 
 class BaseClass:
@@ -75,7 +75,7 @@ class BaseClass:
     @classmethod
     def structure_list(
         cls,
-        data: abc.Iterator[RowMapping],
+        data: abc.Iterator[RowMapping] | list[RowMapping],
         log: int = 0,
         lenient: bool = False,
     ) -> list[Self]:
@@ -85,7 +85,7 @@ class BaseClass:
     @classmethod
     def structure_iter(
         cls,
-        iteratr: abc.Generator[RowMapping, None, None] | abc.Iterator[RowMapping],
+        iteratr: abc.Iterable[RowMapping],
         *,
         log: int = 0,
         lenient: bool = False,
@@ -100,7 +100,7 @@ class BaseClass:
     @classmethod
     def structure_iter_orig(
         cls,
-        iteratr: abc.Generator[RowMapping] | abc.Iterator[RowMapping],
+        iteratr: abc.Iterable[RowMapping],
         *,
         include_original: Literal[True],
         log: int = 0,
@@ -116,7 +116,7 @@ class BaseClass:
     @classmethod
     async def async_structure(
         cls,
-        iteratr: abc.AsyncGenerator[RowMapping, None] | abc.AsyncIterator[RowMapping],
+        iteratr: abc.AsyncIterable[RowMapping],
         *,
         log: int = 0,
         lenient: bool = False,
@@ -131,7 +131,7 @@ class BaseClass:
     @classmethod
     async def async_structure_orig(
         cls,
-        iteratr: abc.AsyncGenerator[RowMapping, None] | abc.AsyncIterator[RowMapping],
+        iteratr: abc.AsyncIterable[RowMapping],
         *,
         log: int = 0,
         lenient: bool = False,
