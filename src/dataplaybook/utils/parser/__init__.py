@@ -2,12 +2,13 @@
 
 import logging
 from collections import abc
-from typing import Any, Self, TypeVar, get_origin
+from typing import Any, Literal, Self, TypeVar, cast, get_origin
 
 from cattrs._compat import adapted_fields
 from cattrs.errors import ClassValidationError, ForbiddenExtraKeysError
 from cattrs.gen import make_dict_structure_fn
 from icecream import ic
+from typing_extensions import deprecated  # In Python 3.13 it moves to warnings
 
 from ..ensure import ensure_list
 from . import parse
@@ -19,6 +20,10 @@ from .convert import (
 )
 
 _LOG = logging.getLogger(__name__)
+T = TypeVar("T")
+# DT = TypeVar("DT", bound=dict[str, Any] | abc.Mapping[str, Any])
+
+type RowMapping = abc.Mapping[str, Any]
 
 
 class BaseClass:
@@ -30,7 +35,7 @@ class BaseClass:
         exclude_keys: abc.Iterable[str] | None = None,
         omit_if_default: bool = True,
     ) -> dict[str, Any]:
-        """Return class as a dictionary."""
+        """Return class as a dictionary. Unstructure."""
         cvt = get_converter(omit_if_default=omit_if_default)
         res = cvt.unstructure(self)
         if only_keys:
@@ -42,29 +47,122 @@ class BaseClass:
 
     @classmethod
     def structure(
-        cls, data: abc.Mapping[str, Any], allow_ignore_extra: bool = False
+        cls,
+        data: abc.Mapping[str, Any],
+        *,
+        lenient: bool = False,
     ) -> Self:
-        """Convert dictionary to class instance."""
-        return _structure1(CONVERT, data, cls, allow_ignore_extra=allow_ignore_extra)
+        """Convert a dictionary to class instance."""
+        cvt = cast(Converter, getattr(cls, "converter", CONVERT))
+        try:
+            return cvt.structure(data, cls)
+        except (ClassValidationError, ForbiddenExtraKeysError) as err:
+            msg = "; ".join(transform_error(err))
+            _LOG.error(msg)
+            cls.log_item(data)
+            if not (lenient and "extra fields" in msg):
+                raise
+
+        _LOG.debug("allow extra!")
+        cvt = get_converter(forbid_extra_keys=False)
+        try:
+            return cvt.structure(data, cls)
+        except (ClassValidationError, ForbiddenExtraKeysError) as err:
+            msg = "; ".join(transform_error(err))
+            _LOG.error(msg)
+            raise
 
     @classmethod
-    def structure_list(cls, data: abc.Sequence[abc.Mapping[str, Any]]) -> list[Self]:
+    def structure_list(
+        cls,
+        data: abc.Iterator[RowMapping],
+        log: int = 0,
+        lenient: bool = False,
+    ) -> list[Self]:
         """Convert list of dictionaries to list of class instances."""
-        return [_structure1(CONVERT, d, cls) for d in data]
+        return list(cls.structure_iter(data, log=log, lenient=lenient))
+
+    @classmethod
+    def structure_iter(
+        cls,
+        iteratr: abc.Generator[RowMapping, None, None] | abc.Iterator[RowMapping],
+        *,
+        log: int = 0,
+        lenient: bool = False,
+    ) -> abc.Generator[Self, None]:
+        """Structure a generator/iterator."""
+        for row in iteratr:
+            res = cls.structure(row, lenient=lenient)
+            if log > 0:
+                log = cls.log_item(res, log_n=log)
+            yield res
+
+    @classmethod
+    def structure_iter_orig(
+        cls,
+        iteratr: abc.Generator[RowMapping] | abc.Iterator[RowMapping],
+        *,
+        include_original: Literal[True],
+        log: int = 0,
+        lenient: bool = False,
+    ) -> abc.Generator[tuple[RowMapping, Self], None]:
+        """Structure a generator/iterator. Include original row in the output."""
+        for row in iteratr:
+            res = cls.structure(row, lenient=lenient)
+            if log > 0:
+                log = cls.log_item(res, log_n=log)
+            yield row, res
+
+    @classmethod
+    async def async_structure(
+        cls,
+        iteratr: abc.AsyncGenerator[RowMapping, None] | abc.AsyncIterator[RowMapping],
+        *,
+        log: int = 0,
+        lenient: bool = False,
+    ) -> abc.AsyncGenerator[Self, None]:
+        """Structure a async generator."""
+        async for row in iteratr:
+            res = cls.structure(row, lenient=lenient)
+            if log > 0:
+                log = cls.log_item(res, log_n=log)
+            yield res
+
+    @classmethod
+    async def async_structure_orig(
+        cls,
+        iteratr: abc.AsyncGenerator[RowMapping, None] | abc.AsyncIterator[RowMapping],
+        *,
+        log: int = 0,
+        lenient: bool = False,
+    ) -> abc.AsyncGenerator[tuple[RowMapping, Self], None]:
+        """Structure an async generator. Include original row in the output."""
+        async for row in iteratr:
+            res = cls.structure(row, lenient=lenient)
+            if log > 0:
+                log = cls.log_item(res, log_n=log)
+            yield row, res
+
+    @classmethod
+    def log_item(cls, data: Any, *, log_n: int = 1) -> int:
+        """Log an item and decrement by 1."""
+        if log_n <= 0:
+            return 0
+        ic(data)
+        return log_n - 1
 
 
 C = TypeVar("C", bound=BaseClass)
-T = TypeVar("T")
-DT = TypeVar("DT", bound=dict[str, Any] | abc.Mapping[str, Any])
 
 
+@deprecated("Use BaseClass.async_structure_orig instead")
 async def async_structure(
-    iteratr: abc.AsyncGenerator[DT, None] | abc.AsyncIterator[DT],
+    iteratr: abc.AsyncGenerator[RowMapping, None] | abc.AsyncIterator[RowMapping],
     cls: type[C],
     *,
     log: int = 0,
     lenient: bool = False,
-) -> abc.AsyncGenerator[tuple[abc.Mapping[str, Any], C], None]:
+) -> abc.AsyncGenerator[tuple[RowMapping, C], None]:
     """Structure a async generator."""
     async for row in iteratr:
         res = _structure1(CONVERT, row, cls, allow_ignore_extra=lenient)
@@ -141,6 +239,7 @@ def pre_process(
     return decorator
 
 
+@deprecated("Use BaseClass.structure instead")
 def structure1(data: Any, cls: type[T]) -> T:
     """Structure simple values."""
     try:
@@ -149,6 +248,7 @@ def structure1(data: Any, cls: type[T]) -> T:
         raise ValueError("; ".join(transform_error(err)))  # noqa: B904
 
 
+@deprecated("Use BaseClass.structure_list instead")
 def structure_list(
     iteratr: abc.Sequence[dict],
     cls: type[C],
@@ -156,7 +256,7 @@ def structure_list(
     log: int = 0,
     lenient: bool = False,
 ) -> abc.Generator[tuple[abc.Mapping[str, Any], C], None, None]:
-    """Structure a async generator."""
+    """Structure a list."""
     for row in iteratr:
         res = _structure1(CONVERT, row, cls, allow_ignore_extra=lenient)
 
@@ -167,6 +267,7 @@ def structure_list(
         yield row, res
 
 
+@deprecated("Use BaseClass.structure instead")
 def _structure1(
     cvt: Converter,
     data: abc.Mapping[str, Any],
