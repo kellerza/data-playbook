@@ -4,7 +4,7 @@ requires = [ "uv-build>=0.9,<0.10" ]
 
 [project]
 name = "dataplaybook"
-version = "1.2.2"
+version = "1.2.3"
 description = "Playbooks for data. Open, process and save table based data."
 readme = "README.md"
 keywords = [ "data", "excel", "generators", "mongodb", "tables" ]
