@@ -75,7 +75,7 @@ class BaseClass:
     @classmethod
     def structure_list(
         cls,
-        data: abc.Iterator[RowMapping] | list[RowMapping],
+        data: abc.Iterable[RowMapping],
         log: int = 0,
         lenient: bool = False,
     ) -> list[Self]:
@@ -235,17 +235,11 @@ def pre_process(
 
             nonlocal struct
             if struct is None:
-                # try:
                 struct = make_dict_structure_fn(
                     cls,  # type: ignore[var-annotated,arg-type]
                     converter_arg,
                     _cattrs_use_alias=True,
                 )
-                # except TypeError:
-                #     the_cl = cls._evaluate(globals(), locals(), frozenset())
-                #     struct = make_dict_structure_fn(
-                #         cl, converter_arg, _cattrs_use_alias=True
-                #     )
 
             return struct(d, cl)
 

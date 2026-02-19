@@ -7,8 +7,7 @@ from typing import Any
 import pytest
 from typeguard import CollectionCheckStrategy, TypeCheckError, config, typechecked
 
-# Generator[RowData] = abc.Generator[dict[str, Any], None, None]
-type RowData = dict[str, Any]
+from dataplaybook import RowData
 
 
 @typechecked

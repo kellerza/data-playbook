@@ -92,8 +92,6 @@ lint.pylint.max-returns = 15
 skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]
 
 [tool.pytest]
-# ignore-words-list = []
-
 ini_options.pythonpath = [ "src/dataplaybook" ]
 ini_options.filterwarnings = "ignore:.+@coroutine.+deprecated.+"
 ini_options.norecursedirs = [ ".git", "modules" ]
@@ -102,11 +100,6 @@ ini_options.log_cli_level = "DEBUG"
 ini_options.asyncio_mode = "auto"
 ini_options.addopts = "--cov=src --cov-report xml:cov.xml"
 ini_options.asyncio_default_fixture_loop_scope = "function"
-
-# [tool.mypy]
-# disallow_untyped_defs = true
-# ignore_missing_imports = true
-# exclude = [ "build", "dist" ]
 
 [tool.semantic_release]
 commit = true

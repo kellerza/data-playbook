@@ -9,7 +9,7 @@ repos:
 
       - id: uv-lock
         name: uv lock
-        entry: uv sync --all-extras
+        entry: uv sync --upgrade --all-extras
         language: system
         pass_filenames: false
 
