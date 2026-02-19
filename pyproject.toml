@@ -21,7 +21,7 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-  "cattrs>=24,<26",
+  "cattrs>=24,<27",
   "colordict>=1.2.6",
   "colorlog>=6,<7",
   "fuzzywuzzy",

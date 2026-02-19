@@ -184,7 +184,10 @@ def pre_process(
     """Help rename/migrate field names."""
 
     def decorator(cls: T) -> T:
-        struct = make_dict_structure_fn(cls, converter_arg, _cattrs_use_alias=True)  # type: ignore[var-annotated,arg-type]
+        try:
+            struct = make_dict_structure_fn(cls, converter_arg, _cattrs_use_alias=True)  # type: ignore[var-annotated,arg-type]
+        except Exception:
+            struct = None
 
         def unknown_field_hook(d: dict[str, Any]) -> None:
             """Move unknown fields to unknown_field."""
@@ -229,6 +232,20 @@ def pre_process(
 
             if debug:
                 _LOG.debug("Structure: %s", d)
+
+            nonlocal struct
+            if struct is None:
+                # try:
+                struct = make_dict_structure_fn(
+                    cls,  # type: ignore[var-annotated,arg-type]
+                    converter_arg,
+                    _cattrs_use_alias=True,
+                )
+                # except TypeError:
+                #     the_cl = cls._evaluate(globals(), locals(), frozenset())
+                #     struct = make_dict_structure_fn(
+                #         cl, converter_arg, _cattrs_use_alias=True
+                #     )
 
             return struct(d, cl)
 
