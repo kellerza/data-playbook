@@ -19,10 +19,11 @@ class Parser:
         """Parse the row. Returns the result & remainder."""
         res, remain = (row, row) if in_place else ({}, deepcopy(row))
         for key, step in self.recipe.items():
-            try:
-                res[key] = step(key, remain)
-            except AttributeError:
-                pass
+            val = step(key, remain)
+            if val is None:
+                remain.pop(key, None)
+            else:
+                res[key] = val
         return res, remain
 
 
@@ -30,7 +31,7 @@ def create_step(
     convert: Callable[[Any], Any] | None = None,
     *,
     alt: tuple[str, ...] | str | None = None,
-    pass_false: bool = False,
+    combine: Callable[[list[Any]], Any] | None = None,
 ) -> StepFunc:
     """Create a step using the convert function.
 
@@ -41,36 +42,56 @@ def create_step(
 
     def _call(key: str, row: Row) -> Any:
         """Execute the step."""
-        val = row.pop(key, None)
+        hasval = key in row
+        val = row.get(key)
 
-        if not (alt and any(a in row for a in alt)):
-            if val is None if pass_false else not val:
-                raise AttributeError
-            return convert(val) if convert else val
+        if alt and (altv := [row.pop(v) for v in alt if v in row]):
+            if hasval:
+                altv.insert(0, val)
+            if len(altv) == 1:
+                val = altv[0]
+            elif combine:
+                val = combine(altv)
+            else:
+                val = _combine_lists(altv)
 
-        altvals = [av for av in (row.pop(v, None) for v in alt) if av]
-        if not altvals:
-            if val is None if pass_false else not val:
-                raise AttributeError
-            return convert(val) if convert else val
+        if convert and val is not None:
+            val = convert(val)
 
-        # Alt exists, try to combine with val
-        if val:
-            altvals.insert(0, val)
-
-        if len(altvals) == 1:
-            return convert(altvals[0]) if convert else altvals[0]
-
-        return convert(altvals) if convert else altvals
+        return val
 
     return _call
+
+
+def _combine_lists(vals: list[Any]) -> Any:
+    """Check if all values in the list are lists, if so flatten."""
+    haslists = any(isinstance(v, list) for v in vals)
+    if haslists:
+        res = list[Any]()
+        for v in vals:
+            if isinstance(v, list):
+                res.extend(v)
+            else:
+                res.append(v)
+        vals = res
+    if vals:
+        sres = set(vals)
+        sres.discard(None)
+        sres.discard("")
+        if len(sres) < len(vals):
+            vals = list(sres)
+    if haslists:
+        return vals
+    if not vals:
+        return None
+    return vals[0] if len(vals) == 1 else vals
 
 
 def step_remove_falsey(_: str, row: Row) -> Any:
     """Remove the field if it is falsey."""
     for rem in [key for key, val in row.items() if not val]:
         row.pop(rem)
-    raise AttributeError
+    return None
 
 
 def step_unknown_fields(key: str, row: Row) -> Any:
@@ -93,7 +114,7 @@ def step_unknown_fields(key: str, row: Row) -> Any:
             remain[_key] = _val
     if remain:
         return remain
-    raise AttributeError
+    return None
 
 
 def create_step_move_to_dict(prefix: str = "", empty: dict | None = None) -> Callable:
