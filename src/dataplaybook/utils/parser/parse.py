@@ -24,6 +24,8 @@ class Parser:
                 remain.pop(key, None)
             else:
                 res[key] = val
+                if not in_place:
+                    remain.pop(key, None)
         return res, remain
 
 
