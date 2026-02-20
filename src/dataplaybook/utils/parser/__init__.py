@@ -2,9 +2,11 @@
 
 import logging
 from collections import abc
-from typing import Any, Literal, Self, TypeVar, cast, get_origin
 
-from cattrs._compat import adapted_fields
+# from cattrs._compat import adapted_fields
+from dataclasses import fields
+from typing import Any, Literal, Self, TypeVar, cast
+
 from cattrs.errors import ClassValidationError, ForbiddenExtraKeysError
 from cattrs.gen import make_dict_structure_fn
 from icecream import ic
@@ -191,15 +193,8 @@ def pre_process(
 
         def unknown_field_hook(d: dict[str, Any]) -> None:
             """Move unknown fields to unknown_field."""
-            if not unknown_field:
-                return
-            if not isinstance(d, dict):
-                _LOG.warning(
-                    "Cannot process unknown field for non-dict: %s %s", type(d), d
-                )
-                return
-            fields = adapted_fields(get_origin(cls) or cls)  # type: ignore[arg-type]
-            all_fields = {a.alias or a.name for a in fields}
+            flds = fields(cls)  # type: ignore[arg-type]
+            all_fields = {a.name for a in flds}
             if debug:
                 _LOG.debug(
                     "Available fields %s. Incoming keys: %s", all_fields, d.keys()
@@ -220,15 +215,21 @@ def pre_process(
                         d.keys(),
                     )
 
-        def structure(d: dict[str, Any], cl: Any) -> Any:
+        def structure(d: abc.Mapping[str, Any], cl: Any) -> Any:
             if isinstance(d, cl):
                 return d
-            if start_unknown_fields:
-                unknown_field_hook(d)
-            if parser:
-                parser(d, in_place=True)
-            if not start_unknown_fields:
-                unknown_field_hook(d)
+
+            if not isinstance(d, dict):
+                _LOG.warning(
+                    "Can only pre-process dicts, not mappings, not %s: %s", type(d), d
+                )
+            else:
+                if unknown_field and start_unknown_fields:
+                    unknown_field_hook(d)
+                if parser:
+                    parser(d, in_place=True)
+                if unknown_field and not start_unknown_fields:
+                    unknown_field_hook(d)
 
             if debug:
                 _LOG.debug("Structure: %s", d)
@@ -303,7 +304,7 @@ def _structure1(
 
 def _append(maybelist: Any, add: Any) -> Any:
     """Append value to the list."""
-    if not add or maybelist == add:
+    if add is None or maybelist == add:
         return maybelist
     if not maybelist:
         return add
