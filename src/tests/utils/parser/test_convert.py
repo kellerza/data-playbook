@@ -114,4 +114,4 @@ def test_date_Instant() -> None:
     # inst = Instant.now()
     idate = CONVERT.unstructure(inst, Instant)
     assert isinstance(idate, datetime)
-    assert idate == inst.py_datetime()
+    assert idate == inst.to_stdlib()

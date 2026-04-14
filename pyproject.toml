@@ -32,7 +32,7 @@ dependencies = [
   "python-levenshtein",
   "requests>=2,<3",
   "typeguard>=4,<5",
-  "whenever>=0.9,<0.11",
+  "whenever>=0.10,<0.11",
 ]
 optional-dependencies.all = [ "lxml>=5.4,<7", "pymongo>=4,<5", "python-pptx" ]
 urls.Homepage = "https://github.com/kellerza/data-playbook"

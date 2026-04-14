@@ -82,7 +82,7 @@ def test_ensure_date() -> None:
 
         tzt = dt_expected.replace(tzinfo=UTC)
         inst = ensure_instant(dt_in)
-        assert (inst.py_datetime() if inst else None) == tzt
+        assert (inst.to_stdlib() if inst else None) == tzt
 
     assert ensure_naive_datetime("2022-10-07T09:49:03.009") == datetime(
         year=2022, month=10, day=7, hour=9, minute=49, second=3, microsecond=9000

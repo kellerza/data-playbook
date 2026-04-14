@@ -83,7 +83,7 @@ def ensure_naive_datetime(
             return val.astimezone(tz=UTC).replace(tzinfo=None)
         return val
     res = ensure_instant(val, search=search, log=log)
-    return res.to_fixed_offset().to_plain().py_datetime() if res else None
+    return res.to_fixed_offset().to_plain().to_stdlib() if res else None
 
 
 RE_DATE_YYYYMMDD = re.compile(r"(20[0-3]\d)-?([01]\d)-?([0-3]\d)")
@@ -100,10 +100,10 @@ def ensure_instant(
         return val
     if isinstance(val, datetime):
         try:
-            return Instant.from_py_datetime(val)
+            return Instant(val)
         except ValueError:
             # add utc if not present
-            return PlainDateTime.from_py_datetime(val).assume_utc()
+            return PlainDateTime(val).assume_utc()
 
     if isinstance(val, str):
         val = val.strip()
@@ -311,9 +311,9 @@ def _format_iso(val: str | datetime) -> str:
             flags=re.I,
         )
     try:
-        return f"'{Instant.from_py_datetime(val).format_iso()}'"
+        return f"'{Instant(val).format_iso()}'"
     except ValueError:
-        return f"'{PlainDateTime.from_py_datetime(val).assume_utc().format_iso()}'"
+        return f"'{PlainDateTime(val).assume_utc().format_iso()}'"
 
 
 def ensure_set(val: Any) -> set[str]:

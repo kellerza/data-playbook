@@ -111,7 +111,7 @@ def int_float_none(value: Any, _: type | None = None) -> int | float | None:
     return int_float(value)
 
 
-CONVERT.register_unstructure_hook(Instant, lambda dt: dt.py_datetime())
+CONVERT.register_unstructure_hook(Instant, lambda dt: dt.to_stdlib())
 CONVERT.register_structure_hook(Instant, lambda i, _: ensure_instant(i))
 
 

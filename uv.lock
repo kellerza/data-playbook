@@ -568,7 +568,7 @@ requires-dist = [
     { name = "python-pptx", marker = "extra == 'all'" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "typeguard", specifier = ">=4,<5" },
-    { name = "whenever", specifier = ">=0.9,<0.11" },
+    { name = "whenever", specifier = ">=0.10,<0.11" },
 ]
 provides-extras = ["all"]
 

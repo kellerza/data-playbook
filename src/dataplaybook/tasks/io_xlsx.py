@@ -205,7 +205,7 @@ def _get_filename(filename: PathStr) -> str:
 def _fmt(obj: Any) -> Any:
     """Format an object for Excel."""
     if isinstance(obj, Instant):
-        return obj.to_fixed_offset().to_plain().py_datetime()
+        return obj.to_fixed_offset().to_plain().to_stdlib()
     if isinstance(obj, datetime):
         if obj.tzinfo is not None:
             return obj.astimezone(tz=UTC).replace(tzinfo=None)
