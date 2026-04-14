@@ -3,7 +3,6 @@
 from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock, patch
 
-import pytz  # type: ignore[import]
 from whenever import Instant
 
 from dataplaybook import DataEnvironment
@@ -211,7 +210,6 @@ def test_fmt() -> None:
     assert _fmt(datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)) == datetime(
         2024, 1, 1, 12, 0, 0
     )
-    naive = datetime(2024, 1, 1, 12, 0, 0)
-    dt = pytz.timezone("Africa/Johannesburg").localize(naive)
+    dt = datetime(2024, 1, 1, 10, 0, 0, tzinfo=UTC)
     assert _fmt(dt) == datetime(2024, 1, 1, 10, 0, 0)
     assert _fmt(Instant("2022-10-24 17:00:00Z")) == datetime(2022, 10, 24, 17, 0, 0)

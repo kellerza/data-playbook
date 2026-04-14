@@ -44,7 +44,7 @@ def file_rotate(*, file: PathStr, count: int = 3) -> None:
 @task
 def glob(*, patterns: list[str]) -> Generator[RowData]:
     """Search for files matching certain patterns."""
-    for val in ensure_list(patterns):  # type: ignore[var-annotated]
+    for val in ensure_list(patterns):
         fol, _, pat = val.partition("/*")
         folder = Path(fol)
         for file in folder.glob("*" + pat):
