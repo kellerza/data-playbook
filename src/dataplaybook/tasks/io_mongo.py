@@ -5,6 +5,7 @@ import logging
 from collections import abc
 from collections.abc import Generator
 from dataclasses import InitVar, dataclass, field
+from typing import Any
 from urllib.parse import urlparse
 
 from pymongo import MongoClient
@@ -17,6 +18,8 @@ from dataplaybook import RowData, task
 from dataplaybook.utils import PlaybookError
 
 _LOG = logging.getLogger(__name__)
+
+_DEFAULT_READ_PROJECTION: dict[str, Any] = {"_id": 0, "_sid": 0}
 
 
 def _clean_netloc(db_netloc: str) -> str:
@@ -115,19 +118,24 @@ def read_mongo(
     *,
     mdb: MongoURI,
     set_id: str | None = None,
+    proj: dict[str, Any] | None = None,
 ) -> Generator[RowData]:
-    """Read data from a MongoDB collection."""
+    """Read data from a MongoDB collection.
+
+    ``proj`` is passed to ``find`` as the projection. The default omits ``_id``
+    and ``_sid``. Pass ``{}`` to return all fields, or any MongoDB projection
+    dict you need.
+    """
     if not set_id:
         set_id = mdb.set_id
     col = mdb.get_collection()
-    args = [{"_sid": set_id}] if set_id else []
-    cursor = col.find(*args)
+    filtr: RowData = {"_sid": set_id} if set_id else {}
+    eff_proj = _DEFAULT_READ_PROJECTION if proj is None else proj
+    cursor = col.find(filtr, eff_proj if eff_proj else None)
 
     cursor.batch_size(200)
     for result in cursor:
-        result.pop("_sid", None)
-        result.pop("_id", None)
-        yield result
+        yield dict(result)
 
 
 @task

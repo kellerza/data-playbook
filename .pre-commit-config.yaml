@@ -37,13 +37,6 @@ repos:
         language: system
         pass_filenames: false
 
-      - id: pyright
-        name: pyright
-        entry: uv run pyright --project pyproject.toml
-        language: system
-        types: [python]
-        pass_filenames: false
-
       - id: pytest
         name: pytest
         entry: uv run pytest

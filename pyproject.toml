@@ -31,10 +31,12 @@ dependencies = [
   "openpyxl==3.1.5",
   "python-levenshtein",
   "requests>=2,<3",
+  "rumdl>=0.2.16",
   "typeguard>=4,<5",
   "whenever>=0.10,<0.11",
 ]
-optional-dependencies.all = [ "lxml>=5.4,<7", "pymongo>=4,<5", "python-pptx" ]
+optional-dependencies.all = [ "lxml>=5.4,<7", "motor>=3,<4", "pymongo>=4,<5", "python-pptx" ]
+optional-dependencies.mongo = [ "motor>=3,<4", "pymongo>=4,<5" ]
 urls.Homepage = "https://github.com/kellerza/data-playbook"
 urls.Repository = "https://github.com/kellerza/data-playbook"
 scripts.dataplaybook = "dataplaybook.__main__:main"
@@ -43,7 +45,6 @@ scripts.dataplaybook = "dataplaybook.__main__:main"
 dev = [
   "codespell",
   "pyproject-fmt",
-  "pyright",
   "pytest",
   "pytest-aiohttp",
   "pytest-cov",
@@ -89,31 +90,45 @@ lint.pylint.max-branches = 20
 lint.pylint.max-returns = 15
 
 [tool.codespell]
-skip = [ "build/*", "*.json", "*.csv", "**/node_modules/*", "./s2-js/dist/*" ]
+skip = [ "**/node_modules/*", "*.csv", "*.json", "./s2-js/dist/*", "build/*" ]
 
 [tool.pytest]
 ini_options.pythonpath = [ "src/dataplaybook" ]
-ini_options.filterwarnings = "ignore:.+@coroutine.+deprecated.+"
 ini_options.norecursedirs = [ ".git", "modules" ]
+ini_options.addopts = "--cov=src --cov-report xml:cov.xml"
+ini_options.filterwarnings = "ignore:.+@coroutine.+deprecated.+"
 ini_options.log_cli = true
 ini_options.log_cli_level = "DEBUG"
-ini_options.asyncio_mode = "auto"
-ini_options.addopts = "--cov=src --cov-report xml:cov.xml"
 ini_options.asyncio_default_fixture_loop_scope = "function"
+ini_options.asyncio_mode = "auto"
 
 [tool.semantic_release]
-commit = true
-tag = true
-vcs_release = true
-commit_parser = "emoji"
 version_toml = [ "pyproject.toml:project.version" ]
 build_command = "pip install uv && uv build"
-commit_version_number = true
-# https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
-branches.main.match = "main"
+commit_parser = "emoji"
 commit_parser_options.major_tags = [ ":boom:" ]
 commit_parser_options.minor_tags = [ ":rocket:" ]
 commit_parser_options.patch_tags = [ "" ]
+# https://python-semantic-release.readthedocs.io/en/latest/multibranch_releases.html#configuring-multibranch-releases
+branches.main.match = "main"
+commit = true
+commit_version_number = true
+tag = true
+vcs_release = true
 
 [tool.zuban]
+mypy_path = [ "src" ]
 warn_unreachable = false
+
+[tool.rumdl]
+exclude = [ "CHANGELOG.md" ]
+include = [ "**/*.md", "**/*.mdc" ]
+respect-gitignore = true
+extend-enable = [ "MD060" ]  # table formatting
+MD013.severity = "info"
+MD013.line-length = 100
+MD013.code_blocks = false
+MD013.tables = false
+MD013.reflow = true
+MD013.reflow-mode = "normalize"
+MD033.allowed-elements = [ "br", "i-mdi-dev-to" ]

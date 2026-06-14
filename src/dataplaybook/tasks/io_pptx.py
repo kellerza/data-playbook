@@ -260,7 +260,7 @@ class Slide3Parts:
         shapes: list[ShapeWithText] = []
         for sh in self.slide.shapes:
             if isinstance(sh, ShapeWithText) and sh.has_text_frame:
-                shapes.append(sh)
+                shapes.append(sh)  # type:ignore[arg-type]
 
         self.shapes = dict(enumerate(sorted(shapes, key=lambda s: s.top)))
 

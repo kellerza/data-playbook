@@ -19,8 +19,8 @@ jobs:
           args: "format --check"
           version: ${{ env.RUFF_VERSION }}
 
-  pyright:
-    name: Check pyright
+  zuban:
+    name: Check zuban
     needs: [ruff]
     runs-on: ubuntu-latest
     steps:
@@ -33,12 +33,10 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           version: ${{ env.UV_VERSION }}
-      - name: Install Requirements
+      - name: Install dependencies
         run: uv sync --frozen --all-extras
-      - name: Install Requirements
-        run: uv pip install pyright[nodejs]
-      - name: Run pyright
-        run: uv run pyright --project pyproject.toml
+      - name: Run zuban
+        run: uv run zuban check
 
   pytest:
     name: Run tests Python ${{ matrix.python-version }}
@@ -75,7 +73,7 @@ jobs:
 
   release:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
-    needs: [pytest, pyright]
+    needs: [pytest, zuban]
     #if: startsWith(github.ref, 'refs/tags')
 
     runs-on: ubuntu-latest
