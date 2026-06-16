@@ -15,3 +15,9 @@ updates:
       interval: "daily"
     allow:
       - dependency-type: "production"
+      - dependency-type: "development"
+    groups:
+      dev-deps:
+        dependency-type: "development"
+        patterns:
+          - "*"
