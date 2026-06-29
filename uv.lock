@@ -524,7 +524,7 @@ wheels = [
 
 [[package]]
 name = "dataplaybook"
-version = "1.2.15"
+version = "1.2.16"
 source = { editable = "." }
 dependencies = [
     { name = "cattrs" },
@@ -1846,17 +1846,17 @@ wheels = [
 
 [[package]]
 name = "rumdl"
-version = "0.2.17"
+version = "0.2.25"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/24/58/f36453b87ca2bfb3564b9621436904419befabaf12965f0abb828401d186/rumdl-0.2.17.tar.gz", hash = "sha256:b61cdd341970a8e4c02c6a1d7328c88d5fd9701c72967767e6aec220a950bcbe", size = 2731696, upload-time = "2026-06-15T20:19:35.995Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/06/2881a79565268afd275f38d360f0aa6606ab2c736c672fa23a3081ab7100/rumdl-0.2.25.tar.gz", hash = "sha256:239dd084832fabfe4badd7151e3356f0906f2b3b1aacb1cf62eef7b97894d2cb", size = 2810402, upload-time = "2026-06-28T16:25:18.4Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/18/ff6624815f5386bab192537b28882995d89f73180cea0f15f11a79f8dc49/rumdl-0.2.17-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:befdf4a9ebd06ccc92ebadc0933e7e151386fcb533b1cdc21cf49e38c3904083", size = 5578827, upload-time = "2026-06-15T20:19:29.297Z" },
-    { url = "https://files.pythonhosted.org/packages/b7/0d/a7ad151ece8afe47906c067e9f82ab09d5c2f02cb614cd95e36ced88af9e/rumdl-0.2.17-py3-none-macosx_11_0_arm64.whl", hash = "sha256:4d461ddae44be7dc98d57872f16ef4f6eb4ba4c8c81dede32066f02f8f0b65bc", size = 5173415, upload-time = "2026-06-15T20:19:24.505Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/7d/d1c35267ac1e941af7737ed3672adfabea1c43dc0e2916ae3489a3a76b81/rumdl-0.2.17-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:ec153c48822e65c4461cb04e561c0fbf7b8b78fab80e748bf0d59ba79b4fa8c8", size = 5398741, upload-time = "2026-06-15T20:19:26.474Z" },
-    { url = "https://files.pythonhosted.org/packages/0b/d9/c56c279094b7364d0c040366487cd572a6a2f9b9d8834b3fa231314a1dea/rumdl-0.2.17-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:df7ed08ca4c7d8ed6f7eef2a2196799d9c6002ef37d1cf6d7f30a59d37be5f51", size = 5802466, upload-time = "2026-06-15T20:19:32.757Z" },
-    { url = "https://files.pythonhosted.org/packages/4f/a3/10936800d261f71defa16b5f9d26b74ae8cb5b449a44c1b230e36dd5b97e/rumdl-0.2.17-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:dfc94558d7dffd48a5f508be7e3257ecaa64f87d073ed1453e0fb16c7c1c4362", size = 5402141, upload-time = "2026-06-15T20:19:27.713Z" },
-    { url = "https://files.pythonhosted.org/packages/4f/79/646a6652535108bb5d260286cef721febb8e17061ea900ae89716f84c078/rumdl-0.2.17-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:0d2d7074782712112406f8d0e6b146855d2cfdb5c5321f6109e231e8b0e51702", size = 5794428, upload-time = "2026-06-15T20:19:34.407Z" },
-    { url = "https://files.pythonhosted.org/packages/b5/75/ff6865ca398b3ff774e3787d4badd2885ea34d87ea5c250248107b4ecfba/rumdl-0.2.17-py3-none-win_amd64.whl", hash = "sha256:4cfc2311222ac5596b3aaab8f5aa806a20316dcbd4d96f7721172e225a5fbac6", size = 5868567, upload-time = "2026-06-15T20:19:31.107Z" },
+    { url = "https://files.pythonhosted.org/packages/72/e3/9805d2035f11639cfcebbbb19c9ead21d79b8fa19c375db32b0988ab092e/rumdl-0.2.25-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:9cf19bb154b0c2df9877d9300ea866716bcd4de732730044b6d9e09e8accb683", size = 6019500, upload-time = "2026-06-28T16:25:05.969Z" },
+    { url = "https://files.pythonhosted.org/packages/16/8a/ec99df8c8df5264964806b7953699be6de6dd4ea8b990eec6129cf5796d9/rumdl-0.2.25-py3-none-macosx_11_0_arm64.whl", hash = "sha256:ed3ff0068878531a0e5cfa97bbddc21f3f46625c42b7fc5ec10a836530572bdf", size = 5683755, upload-time = "2026-06-28T16:25:07.923Z" },
+    { url = "https://files.pythonhosted.org/packages/38/e3/ecd3e716691ed4fdf4b60bc66b284732d851b0121ed1e8bff93769a5fb50/rumdl-0.2.25-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:e79b0da67e8b30d851380bc029267f9723c98de2e5798aa95eb1ca6ab165ed13", size = 5803372, upload-time = "2026-06-28T16:25:09.603Z" },
+    { url = "https://files.pythonhosted.org/packages/9b/d2/be14ace7980781f7ffc34f64891ceb1858437c7550c3b00f6d568926e1a0/rumdl-0.2.25-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:c779202900596a84ecaa1cf53fae8bc21ad92aa7e99821c54c7acceb8999bfc8", size = 6206821, upload-time = "2026-06-28T16:25:11.298Z" },
+    { url = "https://files.pythonhosted.org/packages/21/bd/05fa3fcfe267890fa255ba7c3d65a9c55f7a33e3de79ffc61e446a4f791a/rumdl-0.2.25-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:a83d6cefa14bb22c167f837cb0cd14c7a00ae908b3d2bfc8ac683b7877388078", size = 5797607, upload-time = "2026-06-28T16:25:12.652Z" },
+    { url = "https://files.pythonhosted.org/packages/27/da/9dfed06b6401f9a9a1ac67388ae7efd5acbf613a61a9c4890422833db877/rumdl-0.2.25-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:cdbca39062d9670a1fa0e0025ffd0cc703e234ad706f829eef0adb284e65df88", size = 6186341, upload-time = "2026-06-28T16:25:14.744Z" },
+    { url = "https://files.pythonhosted.org/packages/31/7f/59d974700a15c26c4d29dd1736e9609fdca1605e2960f7f42c2c17a3c46a/rumdl-0.2.25-py3-none-win_amd64.whl", hash = "sha256:c2952e0dc3e334d2b638362ab70dd8b9eec7b8d18dee2ffb5de99d18bd715c14", size = 6107999, upload-time = "2026-06-28T16:25:16.467Z" },
 ]
 
 [[package]]
