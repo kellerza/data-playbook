@@ -47,6 +47,9 @@ scripts.dataplaybook = "dataplaybook.__main__:main"
 [dependency-groups]
 dev = [
   "codespell",
+  "mongomock-motor",
+  "motor>=3,<4",
+  "pymongo>=4,<5",
   "pyproject-fmt",
   "pytest",
   "pytest-aiohttp",
@@ -87,6 +90,7 @@ lint.select = [
   "W",     # pycodestyle
 ]
 lint.ignore = [ "D203", "D213", "E203", "E501", "PLC0415", "PLR2004", "UP047" ]
+lint.per-file-ignores."src/tests/**/*.py" = [ "D103" ]
 lint.isort.no-lines-before = [ "future", "standard-library" ]
 lint.pylint.max-args = 7
 lint.pylint.max-branches = 20
@@ -124,7 +128,6 @@ mypy_path = [ "src" ]
 warn_unreachable = false
 
 [tool.rumdl]
-exclude = [ "CHANGELOG.md" ]
 include = [ "**/*.md", "**/*.mdc" ]
 respect-gitignore = true
 extend-enable = [ "MD060" ]  # table formatting
@@ -134,4 +137,6 @@ MD013.code_blocks = false
 MD013.tables = false
 MD013.reflow = true
 MD013.reflow-mode = "normalize"
-MD033.allowed-elements = [ "br", "i-mdi-dev-to" ]
+MD033.allowed-elements = [ "br" ]
+MD060.enabled = true
+MD060.style = "aligned"

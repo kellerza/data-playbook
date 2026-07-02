@@ -4,88 +4,255 @@
 [![Workflow Status](https://github.com/kellerza/data-playbook/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/kellerza/data-playbook/actions)
 [![codecov](https://codecov.io/gh/kellerza/data-playbook/branch/master/graph/badge.svg)](https://codecov.io/gh/kellerza/data-playbook)
 
-Automate repetitive tasks on table based data. Include various input and output tasks.
+Automate repetitive load → process → save workflows on table-based data (`RowData` =
+`dict[str, Any]` rows). Built-in tasks cover common input/output formats; custom logic is plain
+Python decorated with `@task` and `@playbook`.
 
 Install: `pip install dataplaybook`
 
-Use the `@task` and `@playbook` decorators
-
 ```python
-from dataplaybook import task, playbook
-from dataplaybook.tasks.io_xlsx
+from dataplaybook import DataEnvironment, playbook, task
+from dataplaybook.tasks.io_misc import read_csv, write_csv
+
+
+@playbook(default=True)
+def my_play(env: DataEnvironment) -> None:
+    env["rows"] = list(read_csv(file="data.csv"))
+    write_csv(table=env["rows"], file="out.csv")
+
 
 @task
-def print
+def uppercase(*, table: list[dict]) -> None:
+    for row in table:
+        for key, val in row.items():
+            if isinstance(val, str):
+                row[key] = val.upper()
 ```
 
-## Tasks
+Run: `dataplaybook script.py [playbook_name] [-v] [--all]`
 
-Tasks are implemented as simple Python functions and the modules can be found in the
-dataplaybook/tasks folder.
+## Core API
 
-| Description                                      | Module                        | Functions                                                                                      |
-| :----------------------------------------------- | ----------------------------- | :--------------------------------------------------------------------------------------------- |
-| Generic function to work on tables               | `dataplaybook.tasks`          | build_lookup, build_lookup_var, combine, drop, extend, filter, print, replace, unique, vlookup |
-| Fuzzy string matching                            | `dataplaybook.taksk.fuzzy`    | Requires _pip install fuzzywuzzy_                                                              |
-| Read/write excel files ()                        | `dataplaybook.tasks.io_xlsx`  | read_excel, write_excel                                                                        |
-| Misc IO tasks                                    | `dataplaybook.tasks.io_misc`  | read_csv, read_tab_delim, read_text_regex, wget, write_csv                                     |
-| MongoDB functions                                | `dataplaybook.tasks.io_mongo` | read_mongo, write_mongo, columns_to_list, list_to_columns                                      |
-| PDF functions. Requires _pdftotext_ on your path | `dataplaybook.tasks.io_pdf`   | read_pdf_pages, read_pdf_files                                                                 |
-| Read XML                                         | `dataplaybook.tasks.io_xml`   | read_xml                                                                                       |
+```python
+from dataplaybook import DataEnvironment, ENV, RowData, Tables, playbook, task
+```
+
+| Symbol            | Role                                                |
+| ----------------- | --------------------------------------------------- |
+| `RowData`         | `dict[str, Any]` — one table row                    |
+| `Tables`          | `dict[str, list[RowData]]` or `DataEnvironment`     |
+| `DataEnvironment` | Playbook state: named tables plus `var` for scalars |
+| `@task`           | Register a keyword-only function as a reusable task |
+| `@playbook`       | Entry point; receives `DataEnvironment`             |
+| `ENV`             | Module-level `DataEnvironment` singleton            |
+
+Task functions must use keyword-only parameters (`*, table: ...`). They return `list[RowData]`,
+`Generator[RowData]`, scalars, or `None`. Generators are consumed into lists when assigned to a
+table; non-tabular return values go to `env.var`.
+
+List all registered tasks with signatures:
 
 ```bash
-$ dataplaybook --all -vvv
-dataplaybook.tasks
-- build_lookup "(*, table: list[RowData], key: str, columns: list[str]) -> Generator[RowData]"
-- build_lookup_dict "(*, table: list[RowData], key: str | list[str], columns: list[str] | None = None) -> dict[str | tuple, Any]"
-- combine "(*, tables: list[list[RowData]], key: str, columns: list[str], value: Union[Literal[True], str] = True) -> list[RowData]"
-- ensure_lists "(*, tables: Sequence[list[RowData]], columns: Sequence[str]) -> None"
-- filter_rows "(*, table: list[RowData], include: dict[str, str] | None = None, exclude: dict[str, str | list[str] | re.Pattern] | None
-= None) -> Generator[RowData]"
-- print_table "(*, table: list[RowData] | None = None, tables: dict[str, list[RowData]] | DataEnvironment | None = None) -> None"
-- remove_null "(*, tables: Sequence[list[RowData]]) -> None"
-- replace "(*, table: list[RowData], replace_dict: dict[str, str], columns: list[str]) -> None"
-- unique "(*, table: list[RowData], key: str) -> Generator[RowData]"
-- vlookup "(*, table0: list[RowData], acro: list[RowData], columns: list[str]) -> None"
-dataplaybook.tasks.fuzzy
-- fuzzy_match "(*, table1: list[RowData], table2: list[RowData], t1_column: str, t2_column: str, t1_target_column: str) -> None"
-dataplaybook.tasks.ietf
-- add_standards_column "(*, table: list[RowData], columns: list[str], rfc_col: str) -> None"
-- extract_standards_from_table "(*, table: list[RowData], extract_columns: list[str], include_columns: list[str] | None = None, name: str = '', line_offset: int = 1) -> Generator[RowData]"
-dataplaybook.tasks.gis
-- linestring "(*, table: list[RowData], lat_a: str = 'latA', lat_b: str = 'latB', lon_a: str = 'lonA', lon_b: str = 'lonB', linestring_column: str = 'linestring', error: str = '22 -22') -> list[RowData]"
-dataplaybook.tasks.io_mail
-- mail "(*, to_addrs: list[str] | str, from_addr: str, subject: str, server: str, files: list[str] | None = None, priority: int = 4, body: str | None = '', html: str | None = '', cc_addrs: list[str] | None = None, bcc_addrs: list[str] | None = None) -> None"
-dataplaybook.tasks.io_misc
-- file_rotate "(*, file: os.PathLike | str, count: int = 3) -> None"
-- glob "(*, patterns: list[str]) -> Generator[RowData]"
-- read_csv "(*, file: os.PathLike | str, columns: dict[str, str] | None = None) -> Generator[RowData]"
-- read_json "(*, file: os.PathLike | str) -> list[RowData]"
-- read_tab_delim "(*, file: os.PathLike | str, headers: list[str]) -> Generator[RowData]"
-- read_text_regex "(*, file: os.PathLike | str, newline: re.Pattern, fields: re.Pattern | None) -> Generator[RowData]"
-- wget "(*, url: str, file: os.PathLike | str, age: int = 172800, headers: dict[str, str] | None = None) -> None"
-- write_csv "(*, table: list[RowData], file: os.PathLike | str, header: list[str] | None = None) -> None"
-- write_json "(*, data: dict[str, list[RowData]] | DataEnvironment | list[RowData], file: os.PathLike | str, only_var: bool = False) ->
-None"
-dataplaybook.tasks.io_mongo
-- columns_to_list "(*, table: 'list[RowData]', list_column: 'str', columns: 'list[str]') -> 'None'"
-- list_to_columns "(*, table: 'list[RowData]', list_column: 'str', columns: 'list[str]') -> 'None'"
-- mongo_delete_sids "(*, mdb: 'MongoURI', sids: 'list[str]') -> 'None'"
-- mongo_list_sids "(*, mdb: 'MongoURI') -> 'list[str]'"
-- mongo_sync_sids "(*, mdb_local: 'MongoURI', mdb_remote: 'MongoURI', ignore_remote: 'abc.Sequence[str] | None' = None, only_sync_sids:
-'abc.Sequence[str] | None' = None) -> 'None'"
-- read_mongo "(*, mdb: 'MongoURI', set_id: 'str | None' = None) -> 'Generator[RowData]'"
-- write_mongo "(*, table: 'list[RowData]', mdb: 'MongoURI', set_id: 'str | None' = None, force: 'bool' = False) -> 'None'"
-dataplaybook.tasks.io_pdf
-- read_pdf_files "(*, folder: str, pattern: str = '*.pdf', layout: bool = True, args: list[str] | None = None) -> Generator[RowData]"
-- read_pdf_pages "(*, file: os.PathLike | str, layout: bool = True, args: list[str] | None = None) -> Generator[RowData]"
-dataplaybook.tasks.io_xlsx
-- read_excel "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: os.PathLike | str, sheets: list[dataplaybook.tasks.io_xlsx.Sheet] | None = None) -> list[str]"
-- write_excel "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: os.PathLike | str, include: list[str] | None = None, sheets: list[dataplaybook.tasks.io_xlsx.Sheet] | None = None, ensure_string: bool = False) -> None"
-dataplaybook.tasks.io_xml
-- read_lxml "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: str, targets: list[str]) -> None"
-- read_xml "(*, tables: dict[str, list[RowData]] | DataEnvironment, file: str, targets: list[str]) -> None"
+dataplaybook --all -vvv
 ```
+
+## Registered tasks
+
+Grouped by module. Run `dataplaybook --all -vvv` for full signatures.
+
+### `dataplaybook.tasks` — table operations
+
+| Task                | Purpose                                         |
+| ------------------- | ----------------------------------------------- |
+| `build_lookup`      | Yield lookup rows from a table by key + columns |
+| `build_lookup_dict` | Build dict lookup (single or composite key)     |
+| `combine`           | Pivot/join multiple tables on a key             |
+| `ensure_lists`      | Coerce columns to lists across tables           |
+| `filter_rows`       | Include/exclude rows by column values or regex  |
+| `print_table`       | Print one table or all tables in env            |
+| `remove_null`       | Strip null/empty values from tables             |
+| `replace`           | String replace in specified columns             |
+| `unique`            | Deduplicate rows by key                         |
+| `vlookup`           | Join columns from lookup table into target      |
+
+### `dataplaybook.tasks.fuzzy`
+
+| Task          | Purpose                                                |
+| ------------- | ------------------------------------------------------ |
+| `fuzzy_match` | Fuzzy-match two tables on columns (needs `fuzzywuzzy`) |
+
+### `dataplaybook.tasks.gis`
+
+| Task         | Purpose                                        |
+| ------------ | ---------------------------------------------- |
+| `linestring` | Build GIS linestring column from lat/lon pairs |
+
+### `dataplaybook.tasks.ietf`
+
+| Task                           | Purpose                                  |
+| ------------------------------ | ---------------------------------------- |
+| `extract_standards_from_table` | Extract RFC/IETF refs from text columns  |
+| `add_standards_column`         | Add standards column from extracted refs |
+
+Non-task helpers: `extract_standards`, `extract_standards_ordered`, `extract_one_standard`,
+`KeyStr`.
+
+### `dataplaybook.tasks.io_mail`
+
+| Task   | Purpose                              |
+| ------ | ------------------------------------ |
+| `mail` | Send email with optional attachments |
+
+### `dataplaybook.tasks.io_misc`
+
+| Task              | Purpose                                   |
+| ----------------- | ----------------------------------------- |
+| `file_rotate`     | Rotate numbered backup files              |
+| `glob`            | Yield rows from glob patterns             |
+| `read_csv`        | Read CSV to rows                          |
+| `read_json`       | Read JSON file to rows                    |
+| `read_tab_delim`  | Read tab-delimited file with headers      |
+| `read_text_regex` | Parse text file with regex newline/fields |
+| `wget`            | Download URL to file (skip if fresh)      |
+| `write_csv`       | Write table to CSV                        |
+| `write_json`      | Write tables or rows to JSON              |
+
+### `dataplaybook.tasks.io_mongo`
+
+Requires `pip install dataplaybook[mongo]`.
+
+| Task                | Purpose                                    |
+| ------------------- | ------------------------------------------ |
+| `read_mongo`        | Read MongoDB set to rows                   |
+| `write_mongo`       | Write rows to MongoDB set                  |
+| `columns_to_list`   | Flatten columns into a list column         |
+| `list_to_columns`   | Expand list column into separate columns   |
+| `mongo_list_sids`   | List set IDs in a MongoDB database         |
+| `mongo_delete_sids` | Delete sets by ID                          |
+| `mongo_sync_sids`   | Sync sets between local and remote MongoDB |
+
+Async helpers (not `@task`): `read_mongo_async`, `write_mongo_async`, `mongo_list_sids_async`,
+`delete_sids_async`, `mongo_sync_sids_async`, `get_remote_client`.
+
+### `dataplaybook.tasks.io_pdf`
+
+Requires `pdftotext` on PATH.
+
+| Task             | Purpose                       |
+| ---------------- | ----------------------------- |
+| `read_pdf_pages` | Read PDF pages as rows        |
+| `read_pdf_files` | Read PDFs from folder as rows |
+
+### `dataplaybook.tasks.io_xlsx`
+
+| Task          | Purpose                                            |
+| ------------- | -------------------------------------------------- |
+| `read_excel`  | Read Excel sheets into named tables                |
+| `write_excel` | Write tables to Excel (supports `Sheet`, `Column`) |
+
+### `dataplaybook.tasks.io_xml`
+
+| Task        | Purpose                                  |
+| ----------- | ---------------------------------------- |
+| `read_xml`  | Parse XML targets into tables (stdlib)   |
+| `read_lxml` | Parse XML with lxml (needs `lxml` extra) |
+
+Define domain tasks in your own script with `@task`. Import `dataplaybook.tasks.all` or specific
+task modules to preload built-ins.
+
+## Utilities
+
+### `dataplaybook.utils` — general
+
+| Symbol                          | Purpose                                   |
+| ------------------------------- | ----------------------------------------- |
+| `slugify(text)`                 | Lowercase slug for var/table keys         |
+| `time_it(name, delta, logger)`  | Context manager; warn on slow runs        |
+| `local_import_module(mod_name)` | Import `.py` from cwd (used by CLI)       |
+| `doublewrap`                    | Decorator helper for optional args        |
+| `PlaybookError`                 | Recoverable playbook exception            |
+| `AttrDict`                      | Read-only recursive dict attribute access |
+
+Re-exported from submodules:
+
+| Symbol                                                                                                                                                           | Module         | Purpose               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------------- |
+| `ensure_bool`, `ensure_bool_str`, `ensure_naive_datetime`, `ensure_instant`, `ensure_dict`, `ensure_list`, `ensure_list_from_str`, `ensure_set`, `ensure_string` | `utils.ensure` | Coerce untyped values |
+| `append_unique`, `extract_pattern`, `strip`, `unique`                                                                                                            | `utils.lists`  | List helpers          |
+
+### `dataplaybook.utils.json`
+
+| Symbol                         | Purpose                      |
+| ------------------------------ | ---------------------------- |
+| `orjson_dumpb`, `orjson_dumps` | Fast JSON serialize (orjson) |
+| `orjson_load`, `orjson_aload`  | Load JSON sync/async         |
+| `write_orjson`                 | Write JSON file              |
+
+### `dataplaybook.utils.cache`
+
+| Symbol                  | Purpose                                           |
+| ----------------------- | ------------------------------------------------- |
+| `CacheDict`             | TTL cache (minutes) with `clear`, `get`, `get_as` |
+| `CACHE`                 | Global `CacheDict` (30 min default)               |
+| `cache_return(minutes)` | Async decorator to cache function results         |
+
+### `dataplaybook.utils.prettytable`
+
+| Symbol         | Purpose                                               |
+| -------------- | ----------------------------------------------------- |
+| `pretty_table` | Build `PrettyTable` from headers + rows               |
+| `table_data`   | Convert `list[dict]` to headers + row matrix          |
+| `StatSummary`  | Accumulate labelled stat rows and print summary table |
+
+### `dataplaybook.utils.logger`
+
+| Symbol                                           | Purpose                          |
+| ------------------------------------------------ | -------------------------------- |
+| `get_logger`, `set_logger_level`, `setup_logger` | Colorlog setup and level control |
+
+### `dataplaybook.utils.parser` — structuring untrusted dicts
+
+| Symbol                     | Purpose                                                                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------- |
+| `BaseClass`                | Dataclass base: `structure`, `structure_list`, `structure_iter`, `async_structure`, `asdict` |
+| `Parser`, `create_step`    | Field-rename/coerce recipe for row dicts                                                     |
+| `pre_process`              | Class decorator: unknown fields, parser hooks                                                |
+| `CONVERT`, `get_converter` | Shared `cattrs.Converter` with type hooks                                                    |
+| `structure1`               | One-shot structure via converter                                                             |
+
+### `dataplaybook.helpers`
+
+| Symbol                        | Module          | Purpose                                          |
+| ----------------------------- | --------------- | ------------------------------------------------ |
+| `DataEnvironment`, `DataVars` | `helpers.env`   | Playbook state (also exported from package root) |
+| `parse_args`                  | `helpers.args`  | CLI arg parsing (`DPArg`)                        |
+| `repr_signature`, `repr_call` | `helpers.typeh` | Task signature logging                           |
+
+### `dataplaybook.everything`
+
+| Symbol           | Purpose                                               |
+| ---------------- | ----------------------------------------------------- |
+| `search(*terms)` | Find files via Everything HTTP API (`localhost:8881`) |
+| `Result`         | `total`, `files`, `folders`                           |
+
+### `dataplaybook.main`
+
+| Symbol                            | Purpose                           |
+| --------------------------------- | --------------------------------- |
+| `ALL_TASKS`                       | Registry of all `@task` functions |
+| `print_tasks()`                   | Print registered tasks to stderr  |
+| `run_playbooks(dataplaybook_cmd)` | Execute playbook from CLI args    |
+| `get_default_playbook(module)`    | Resolve default `@playbook` name  |
+
+### Optional extras
+
+| Extra / dep                         | Enables                             |
+| ----------------------------------- | ----------------------------------- |
+| `dataplaybook[mongo]`               | MongoDB tasks + async motor helpers |
+| `dataplaybook[all]`                 | lxml, mongo, python-pptx            |
+| `fuzzywuzzy` + `python-levenshtein` | `fuzzy_match`                       |
+| `pdftotext` binary                  | PDF tasks                           |
+| Everything (voidtools)              | `everything.search` file resolution |
 
 ## Local development
 
@@ -146,8 +313,7 @@ Data playbook tasks are different form Ansible's **actions**:
 - they can return lists containing rows or be Python iterators (that `yield` rows of a table)
 - if they dont return any tabular data (a list), the return value will be added to the `var` table
   in the environment
-- Each have a strict voluptuous schema, evaluated when loading and during runtime (e.g. to expand
-  templates) to allow quick troubleshooting
+- Each task is type-checked at runtime via `typeguard` to allow quick troubleshooting
 
 You could argue I can do this with Ansible, but it won't be as elegant with single item hosts files,
 `gather_facts: no` and `delegate_to: localhost` throughout the playbooks. It will likely only be
