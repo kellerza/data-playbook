@@ -118,7 +118,7 @@ def task[T, **P](target: Callable[P, T]) -> Callable[Concatenate[P], T]:
 
 
 _ALL_PLAYBOOKS: dict[str, Callable] = {}
-_DEFAULT_PLAYBOOK: str | None = None
+_DEFAULT_PLAYBOOK: dict[str, str] = {}  # module -> playbook name
 
 
 @doublewrap
@@ -129,13 +129,14 @@ def playbook(
     run: bool = False,
 ) -> Callable:
     """Verify parameters & execute task."""
+    pb_name = name or target.__name__
     if default:
-        global _DEFAULT_PLAYBOOK  # noqa: PLW0603
-        if _DEFAULT_PLAYBOOK:
-            sys.exit("Multiple default playbooks")
-        _DEFAULT_PLAYBOOK = name or target.__name__
+        mod = target.__module__
+        if mod in _DEFAULT_PLAYBOOK:
+            sys.exit(f"Multiple default playbooks in module {mod}")
+        _DEFAULT_PLAYBOOK[mod] = pb_name
 
-    _ALL_PLAYBOOKS[name or target.__name__] = target
+    _ALL_PLAYBOOKS[pb_name] = target
 
     if run:
         atexit.register(run_playbooks)
@@ -146,10 +147,12 @@ def playbook(
 _EXECUTED: list[bool] = []
 
 
-def get_default_playbook() -> str:
+def get_default_playbook(module: str | None = None) -> str:
     """Get the name of the default playbook, if any."""
-    if _DEFAULT_PLAYBOOK:
-        return _DEFAULT_PLAYBOOK
+    if module:
+        return _DEFAULT_PLAYBOOK.get(module, "")
+    if len(_DEFAULT_PLAYBOOK) == 1:
+        return next(iter(_DEFAULT_PLAYBOOK.values()))
     if len(_ALL_PLAYBOOKS) == 1:
         return next(iter(_ALL_PLAYBOOKS))
     return ""
@@ -196,17 +199,18 @@ def run_playbooks(dataplaybook_cmd: bool = False) -> int:
             _LOG.info("Loading: %s (%s)", spath.name, spath.parent)
             os.chdir(spath.parent)
             try:
-                local_import_module(spath.stem)
+                mod = local_import_module(spath.stem)
             except Exception as err:
                 _LOG.error("Unable to import %s: %s", spath.stem, err)
                 return -1
-
+            default_module = mod.__name__
         else:
             # Ensure we are in the calling script's folder
             os.chdir(Path(sys.argv[0]).resolve().parent)
+            default_module = None
 
         if not args.playbook:
-            args.playbook = get_default_playbook()
+            args.playbook = get_default_playbook(default_module)
             if not args.playbook:
                 _LOG.critical("No playbook found")
                 return -1

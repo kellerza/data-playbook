@@ -21,6 +21,7 @@ classifiers = [
   "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+  "anyio>=4,<5",
   "cattrs>=24,<27",
   "colordict>=1.2.6",
   "colorlog>=6,<7",
@@ -29,6 +30,8 @@ dependencies = [
   "jinja2>=3,<4",
   "office365-rest-python-client>2,<3",
   "openpyxl==3.1.5",
+  "orjson>=3.10,<4",
+  "prettytable>3,<4",
   "python-levenshtein",
   "requests>=2,<3",
   "rumdl>=0.2.16",

@@ -6,7 +6,7 @@ from collections import abc
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from motor.motor_asyncio import AsyncIOMotorCollection
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 
 _LOG = logging.getLogger(__name__)
 
@@ -113,3 +113,8 @@ async def mongo_sync_sids_async(
     if extra:
         _LOG.info("Removing sids: %s", extra)
         await delete_sids_async(col=mdb_remote, sids=extra)
+
+
+def get_remote_client(uri: str = "mongodb://localhost:27027") -> AsyncIOMotorClient:
+    """Get a remote MongoDB client."""
+    return AsyncIOMotorClient(uri)
