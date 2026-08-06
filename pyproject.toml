@@ -28,7 +28,7 @@ dependencies = [
   "fuzzywuzzy",
   "icecream",
   "jinja2>=3,<4",
-  "office365-rest-python-client>2,<3",
+  "office365-rest-python-client>2,<4",
   "openpyxl==3.1.5",
   "orjson>=3.10,<4",
   "prettytable>3,<4",
