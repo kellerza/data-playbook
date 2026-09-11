@@ -1,14 +1,14 @@
 # Data Playbook
 
 :book: Playbooks for data. Open, process and save table based data.
-[![Workflow Status](https://github.com/kellerza/data-playbook/actions/workflows/main.yml/badge.svg?branch=master)](https://github.com/kellerza/data-playbook/actions)
+[![Workflow Status](https://github.com/kellerza/data-playbook/actions/workflows/main.yml/badge.svg)](https://github.com/kellerza/data-playbook/actions/workflows/main.yml)
 [![codecov](https://codecov.io/gh/kellerza/data-playbook/branch/master/graph/badge.svg)](https://codecov.io/gh/kellerza/data-playbook)
 
 Automate repetitive load → process → save workflows on table-based data (`RowData` =
 `dict[str, Any]` rows). Built-in tasks cover common input/output formats; custom logic is plain
 Python decorated with `@task` and `@playbook`.
 
-Install: `pip install dataplaybook`
+Install: `uv tool install dataplaybook`
 
 ```python
 from dataplaybook import DataEnvironment, playbook, task
@@ -119,7 +119,7 @@ Non-task helpers: `extract_standards`, `extract_standards_ordered`, `extract_one
 
 ### `dataplaybook.tasks.io_mongo`
 
-Requires `pip install dataplaybook[mongo]`.
+Requires `uv install dataplaybook[mongo]`.
 
 | Task                | Purpose                                    |
 | ------------------- | ------------------------------------------ |

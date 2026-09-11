@@ -1,4 +1,0 @@
-include LICENSE README.md src/dataplaybook/py.typed
-graft src/dataplaybook
-graft src/tests
-recursive-exclude * *.py[co]
