@@ -36,7 +36,7 @@ dependencies = [
   "requests>=2,<3",
   "rumdl>=0.2.16",
   "typeguard>=4,<5",
-  "whenever>=0.10,<0.11",
+  "whenever>=0.10,<0.12",
 ]
 optional-dependencies.all = [ "lxml>=5.4,<7", "motor>=3,<4", "pymongo>=4,<5", "python-pptx" ]
 optional-dependencies.mongo = [ "motor>=3,<4", "pymongo>=4,<5" ]
