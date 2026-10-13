@@ -93,8 +93,7 @@ jobs:
         run: |
           git checkout -B ${{ github.ref_name }} ${{ github.sha }}
 
-      # Install before semantic-release so build_command uses the same pinned uv
-      # as publish (pip install uv would pull latest and break older uv publish).
+      # Install uv on the runner; the semantic-release action runs in a container.
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -108,6 +107,11 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "github-actions"
           git_committer_email: "actions@users.noreply.github.com"
+          build: false
+
+      - name: Build distribution 📦
+        run: uv build
+        if: steps.release.outputs.released == 'true'
 
       - name: Publish distribution 📦 to PyPI
         run: uv publish
