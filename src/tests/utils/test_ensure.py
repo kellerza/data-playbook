@@ -102,6 +102,34 @@ def test_ensure_date() -> None:
 def test_ensure_instant() -> None:
     """Instant."""
     assert ensure_instant("2022-06-26") == Instant.from_utc(2022, 6, 26)
+    assert ensure_instant(None) is None
+    assert ensure_instant("") is None
+
+    # Pass an existing Instant
+    inst = Instant.from_utc(2022, 6, 26, 12, 0)
+    assert ensure_instant(inst) == inst
+
+    # Datetime inputs (naive and aware)
+    assert ensure_instant(datetime(2022, 6, 26, 12, 0)) == inst
+    assert ensure_instant(datetime(2022, 6, 26, 12, 0, tzinfo=UTC)) == inst
+
+    # ISO strings
+    assert ensure_instant("2022-06-26T12:00:00Z") == inst
+    assert ensure_instant("2022-06-26T12:00:00") == inst
+    assert ensure_instant("2022-06-26T14:00:00+02:00") == inst
+
+    # ZonedDateTime ISO strings including disambiguation during DST transition
+    assert ensure_instant("2023-10-29T01:30:00[Europe/London]") is not None
+    assert ensure_instant(
+        "2023-10-29T01:30:00+01:00[Europe/London]"
+    ) == Instant.from_utc(2023, 10, 29, 0, 30)
+
+    # Short +0:00 suffix
+    assert ensure_instant("2022-06-26T12:00:00+0:00") == inst
+
+    # Invalid input with log="ValueError"
+    with pytest.raises(ValueError, match="Could not parse date & time"):
+        ensure_instant("not-a-date", log="ValueError")
 
 
 def test_ensure_instant_date_american() -> None:
