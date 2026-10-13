@@ -120,7 +120,9 @@ def ensure_instant(
         except ValueError:
             pass
         try:
-            return ZonedDateTime.parse_iso(val).to_instant()
+            return ZonedDateTime.parse_iso(
+                val, disambiguation="compatible"
+            ).to_instant()
         except ValueError:
             pass
         if val.endswith("+0:00"):
