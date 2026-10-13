@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   RUFF_VERSION: 0.15.10
-  UV_VERSION: 0.11.6
+  UV_VERSION: 0.12.24
 
 jobs:
   ruff:
@@ -93,6 +93,13 @@ jobs:
         run: |
           git checkout -B ${{ github.ref_name }} ${{ github.sha }}
 
+      # Install before semantic-release so build_command uses the same pinned uv
+      # as publish (pip install uv would pull latest and break older uv publish).
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
       - name: Action | Semantic Version Release
         id: release
         # Adjust tag with desired version if applicable.
@@ -101,12 +108,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "github-actions"
           git_committer_email: "actions@users.noreply.github.com"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          version: ${{ env.UV_VERSION }}
-        if: steps.release.outputs.released == 'true'
 
       - name: Publish distribution 📦 to PyPI
         run: uv publish

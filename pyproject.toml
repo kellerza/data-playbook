@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "uv_build"
-requires = [ "uv-build>=0.11,<0.13" ]
+requires = [ "uv-build>=0.11,<0.14" ]
 
 [project]
 name = "dataplaybook"
@@ -111,7 +111,7 @@ ini_options.asyncio_mode = "auto"
 
 [tool.semantic_release]
 version_toml = [ "pyproject.toml:project.version" ]
-build_command = "pip install uv && uv build"
+build_command = "uv build"
 commit_parser = "emoji"
 commit_parser_options.major_tags = [ ":boom:" ]
 commit_parser_options.minor_tags = [ ":rocket:" ]
