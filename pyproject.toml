@@ -130,6 +130,7 @@ warn_unreachable = false
 [tool.rumdl]
 include = [ "**/*.md", "**/*.mdc" ]
 respect-gitignore = true
+exclude = [ "LICENSE" ]
 extend-enable = [ "MD060" ]  # table formatting
 MD013.severity = "info"
 MD013.line-length = 100
