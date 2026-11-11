@@ -177,8 +177,8 @@ def extract_standards(val: str) -> Generator[KeyStr, None, None]:
 
 
 def extract_standards_ordered(val: str) -> list[KeyStr]:
-    """Ensure sorted."""
-    return sorted(extract_standards(val), key=lambda x: x.start)
+    """Sort by start position; longer match first when starts tie."""
+    return sorted(extract_standards(val), key=lambda x: (x.start, -len(x)))
 
 
 def extract_one_standard(val: str) -> KeyStr | None:
